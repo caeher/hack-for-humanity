@@ -12,12 +12,12 @@ export function MessagesChatView() {
   const [messages, setMessages] = useState([
     {
       from: 'Dr. Olivia Brooks',
-      text: 'Your mobility trend looks encouraging. Keep the current exercise intensity until our review.',
+      text: 'I reviewed your symptom log. Please keep following the plan we discussed until our appointment.',
       mine: false,
     },
     {
       from: 'Maya Chen',
-      text: 'Thank you. Should I mention the stiffness I feel after waking?',
+      text: 'Thank you. I will bring up the headaches I notice after longer screen sessions.',
       mine: true,
     },
   ])
@@ -56,7 +56,7 @@ export function MessagesChatView() {
             </p>
           </div>
           <div className="p-3 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer">
-            <p className="text-xs font-semibold text-foreground">Physical therapy team</p>
+            <p className="text-xs font-semibold text-foreground">Concussion care team</p>
             <p className="mt-1 text-xs text-muted-foreground">Next session Sep 2</p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export function MessagesChatView() {
           <div className="border-b border-border p-4 flex items-center justify-between">
             <div>
               <p className="font-semibold text-sm text-foreground">Dr. Olivia Brooks</p>
-              <p className="text-xs text-muted-foreground">Orthopedic surgery · Usually replies in 4h</p>
+              <p className="text-xs text-muted-foreground">Sports medicine · Usually replies in 4h</p>
             </div>
             <Badge tone="good">Online</Badge>
           </div>

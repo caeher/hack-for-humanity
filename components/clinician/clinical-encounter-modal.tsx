@@ -35,7 +35,7 @@ export function ClinicalEncounterModal({
 }: ClinicalEncounterModalProps) {
   const [form, setForm] = useState({
     encounterType: 'in-person',
-    diagnosis: 'acl',
+    diagnosis: 'diagnosed-concussion',
     datetime: '2026-08-31 09:30',
     notes: '',
   })
@@ -70,14 +70,14 @@ export function ClinicalEncounterModal({
           />
 
           <ComboboxField
-            label="Primary Diagnosis / Protocol"
+            label="Reported Status / Review Context"
             value={form.diagnosis}
             onChange={e => setForm({ ...form, diagnosis: e.target.value })}
             options={[
-              { label: 'ACL Reconstruction Protocol', value: 'acl' },
-              { label: 'Total Knee Replacement', value: 'knee' },
-              { label: 'Rotator Cuff Tendon Repair', value: 'rotator' },
-              { label: 'Lumbar Decompression', value: 'spine' },
+              { label: 'Clinician-diagnosed concussion', value: 'diagnosed-concussion' },
+              { label: 'Suspected concussion', value: 'suspected-concussion' },
+              { label: 'Head injury under evaluation', value: 'head-injury-review' },
+              { label: 'Persistent symptoms follow-up', value: 'persistent-symptoms' },
             ]}
           />
 
@@ -89,7 +89,7 @@ export function ClinicalEncounterModal({
 
           <TextareaField
             label="Clinical Findings & Next Steps"
-            placeholder="Document ROM measurements, wound healing, exercise adherence..."
+            placeholder="Document patient-reported changes, examination findings, and follow-up context..."
             value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
             autoResize

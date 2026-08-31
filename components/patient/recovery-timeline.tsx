@@ -16,7 +16,7 @@ export function RecoveryTimeline() {
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <Card className="p-6">
           <h2 className="font-semibold text-foreground">Recovery trajectory</h2>
-          <p className="text-sm text-muted-foreground">Score, mobility, and symptoms</p>
+          <p className="text-sm text-muted-foreground">Patient-reported symptom total and headache rating</p>
           <div className="mt-4">
             <TrendChart clinical />
           </div>
@@ -25,10 +25,10 @@ export function RecoveryTimeline() {
           <h2 className="font-semibold text-foreground">Milestones</h2>
           <div className="mt-5 flex flex-col gap-5">
             {[
-              'Surgery completed · Aug 13',
-              'Walking without crutches · Aug 27',
-              '90° knee flexion · Today',
-              'Return to light training · Target Sep 24',
+              'Head injury reported · Aug 19',
+              'Initial clinical evaluation · Aug 20',
+              'Daily tracking started · Aug 21',
+              'Follow-up appointment · Sep 3',
             ].map((x, i) => (
               <div className="flex gap-3" key={x}>
                 <span
@@ -39,7 +39,7 @@ export function RecoveryTimeline() {
                 <div>
                   <p className="text-sm font-medium text-foreground">{x}</p>
                   <p className="text-xs text-muted-foreground">
-                    {i < 3 ? 'Completed' : 'Upcoming milestone'}
+                    {i < 3 ? 'Recorded' : 'Upcoming appointment'}
                   </p>
                 </div>
               </div>
@@ -48,9 +48,9 @@ export function RecoveryTimeline() {
         </Card>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Mobility" value="72 / 100" detail="+9% over seven days" icon={Activity} />
-        <StatCard label="Sleep" value="6h 48m" detail="Below 7h target" icon={HeartPulse} />
-        <StatCard label="Medication" value="96%" detail="One dose missed" icon={ClipboardCheck} />
+        <StatCard label="Symptom total" value="15 / 48" detail="Patient-reported today" icon={Activity} />
+        <StatCard label="Sleep" value="6h 48m" detail="Self-reported duration" icon={HeartPulse} />
+        <StatCard label="Check-ins" value="11 / 12" detail="One day not recorded" icon={ClipboardCheck} />
       </div>
     </div>
   )

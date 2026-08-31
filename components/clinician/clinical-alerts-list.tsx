@@ -13,9 +13,9 @@ export function ClinicalAlertsList() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Triage workspace"
+        eyebrow="Follow-up workspace"
         title="Clinical alerts"
-        description="Review and document recovery signals that may require follow-up."
+        description="Review patient-reported safety events and patterns that may require follow-up."
       />
       <div className="flex gap-2">
         {['All', 'High priority', 'Unassigned', 'Resolved'].map((x, i) => (

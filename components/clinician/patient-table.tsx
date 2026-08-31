@@ -26,7 +26,7 @@ export function PatientTable({ onAddPatient }: PatientTableProps) {
   const filtered = patients.filter(
     p =>
       p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.procedure.toLowerCase().includes(query.toLowerCase())
+      p.recoveryContext.toLowerCase().includes(query.toLowerCase())
   )
 
   return (
@@ -34,7 +34,7 @@ export function PatientTable({ onAddPatient }: PatientTableProps) {
       <div className="flex items-center justify-between gap-4 border-b border-border p-4 bg-card">
         <div className="flex-1 max-w-md">
           <SearchField
-            placeholder="Search patients by name or procedure..."
+            placeholder="Search patients by name or recovery context..."
             value={query}
             onChange={e => setQuery(e.target.value)}
             size="sm"
@@ -52,7 +52,7 @@ export function PatientTable({ onAddPatient }: PatientTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            {['Patient', 'Procedure', 'Day', 'Score', 'Adherence', 'Status'].map(x => (
+            {['Patient', 'Recovery context', 'Day', 'Symptoms', 'Check-ins', 'Attention'].map(x => (
               <TableHead key={x}>{x}</TableHead>
             ))}
           </TableRow>
@@ -69,21 +69,21 @@ export function PatientTable({ onAddPatient }: PatientTableProps) {
                 </Link>
                 <p className="text-xs text-muted-foreground font-mono">{p.id}</p>
               </TableCell>
-              <TableCell>{p.procedure}</TableCell>
+              <TableCell>{p.recoveryContext}</TableCell>
               <TableCell>{p.day}</TableCell>
-              <TableCell className="font-semibold">{p.score}</TableCell>
-              <TableCell>{p.adherence}%</TableCell>
+              <TableCell className="font-semibold">{p.symptomTotal} / 48</TableCell>
+              <TableCell>{p.checkInRate}%</TableCell>
               <TableCell>
                 <Badge
                   tone={
-                    p.risk === 'Stable'
+                    p.attention === 'Routine'
                       ? 'good'
-                      : p.risk === 'Elevated'
+                      : p.attention === 'Safety'
                       ? 'bad'
                       : 'warn'
                   }
                 >
-                  {p.risk}
+                  {p.attention}
                 </Badge>
               </TableCell>
             </TableRow>

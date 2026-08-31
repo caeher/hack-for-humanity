@@ -19,7 +19,7 @@ export function CaseloadOverview() {
       <PageHeader
         eyebrow="Clinical command center"
         title="Caseload overview"
-        description="Prioritize attention using recovery trajectories, patient-reported outcomes, and care-plan adherence."
+        description="Review patient-reported symptom histories, check-in coverage, and safety events."
         action={
           <button
             onClick={() => setShowAddModal(true)}
@@ -33,14 +33,14 @@ export function CaseloadOverview() {
         <StatCard label="Active patients" value="42" detail="8 added this month" icon={Users} />
         <StatCard label="Needs review" value="6" detail="2 high priority" icon={AlertTriangle} />
         <StatCard label="Check-in rate" value="87%" detail="+4% this week" icon={ClipboardCheck} />
-        <StatCard label="Avg. recovery" value="74" detail="Within target" icon={Activity} />
+        <StatCard label="Avg. symptoms" value="24 / 48" detail="Patient-reported" icon={Activity} />
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="font-semibold text-foreground">Caseload trajectory</h2>
-              <p className="text-sm text-muted-foreground">Average recovery score</p>
+              <p className="text-sm text-muted-foreground">Average patient-reported symptom total</p>
             </div>
             <Badge>42 patients</Badge>
           </div>

@@ -4,63 +4,66 @@ export const seedDatabase = mutation({
   args: {},
   handler: async ctx => {
     // 1. Seed Patients
+    // Legacy field names remain until the longitudinal schema migration in issue #6.
+    // `procedure` stores recovery context, `score` stores the tracked symptom total,
+    // `surgeon` stores the assigned clinician, and `surgeryDate` stores incident date.
     const existingPatients = await ctx.db.query('patients').collect()
     if (existingPatients.length === 0) {
       const initialPatients = [
         {
           patientId: 'P-1042',
           name: 'Maya Chen',
-          procedure: 'ACL reconstruction',
-          day: 18,
-          score: 78,
+          procedure: 'Clinician-diagnosed concussion',
+          day: 12,
+          score: 15,
           risk: 'Stable' as const,
           adherence: 92,
-          surgeon: 'Dr. Olivia Brooks',
+          surgeon: 'Dr. Olivia Brooks, Sports Medicine',
           caregiverName: 'David Chen',
-          surgeryDate: '2026-08-13',
+          surgeryDate: '2026-08-19',
         },
         {
           patientId: 'P-1038',
           name: 'Daniel Ortiz',
-          procedure: 'Total knee replacement',
-          day: 9,
-          score: 54,
+          procedure: 'Suspected concussion',
+          day: 5,
+          score: 31,
           risk: 'Review' as const,
           adherence: 71,
-          surgeon: 'Dr. Olivia Brooks',
-          surgeryDate: '2026-08-22',
+          surgeon: 'Dr. Olivia Brooks, Sports Medicine',
+          surgeryDate: '2026-08-26',
         },
         {
           patientId: 'P-1031',
           name: 'Ava Williams',
-          procedure: 'Rotator cuff repair',
-          day: 27,
-          score: 83,
+          procedure: 'Clinician-diagnosed concussion',
+          day: 21,
+          score: 10,
           risk: 'Stable' as const,
           adherence: 96,
-          surgeon: 'Dr. Marcus Vance',
-          surgeryDate: '2026-08-04',
+          surgeon: 'Dr. Marcus Vance, Neurology',
+          surgeryDate: '2026-08-10',
         },
         {
           patientId: 'P-1027',
           name: 'James Kim',
-          procedure: 'Lumbar decompression',
-          day: 6,
-          score: 46,
+          procedure: 'Head injury under evaluation',
+          day: 2,
+          score: 38,
           risk: 'Elevated' as const,
           adherence: 64,
-          surgeon: 'Dr. Olivia Brooks',
-          surgeryDate: '2026-08-25',
+          surgeon: 'Dr. Olivia Brooks, Sports Medicine',
+          surgeryDate: '2026-08-29',
         },
         {
           patientId: 'P-1019',
           name: 'Nora Patel',
-          procedure: 'Hip replacement',
+          procedure: 'Persistent concussion symptoms',
           day: 34,
-          score: 88,
-          risk: 'Stable' as const,
+          score: 26,
+          risk: 'Review' as const,
           adherence: 89,
-          surgeon: 'Dr. Marcus Vance',
+          surgeon: 'Dr. Marcus Vance, Neurology',
           surgeryDate: '2026-07-28',
         },
       ]
@@ -71,16 +74,17 @@ export const seedDatabase = mutation({
     }
 
     // 2. Seed Recovery Trends for Maya Chen (P-1042)
+    // `score` stores symptom burden, `pain` stores headache, and `mobility` is unused.
     const existingTrends = await ctx.db.query('recoveryTrends').collect()
     if (existingTrends.length === 0) {
       const initialTrends = [
-        { day: 'Aug 25', score: 58, pain: 7, mobility: 42 },
-        { day: 'Aug 26', score: 62, pain: 6, mobility: 48 },
-        { day: 'Aug 27', score: 64, pain: 6, mobility: 51 },
-        { day: 'Aug 28', score: 68, pain: 5, mobility: 57 },
-        { day: 'Aug 29', score: 72, pain: 4, mobility: 63 },
-        { day: 'Aug 30', score: 74, pain: 4, mobility: 68 },
-        { day: 'Today', score: 78, pain: 3, mobility: 72 },
+        { day: 'Aug 25', score: 27, pain: 5, mobility: 0 },
+        { day: 'Aug 26', score: 25, pain: 5, mobility: 0 },
+        { day: 'Aug 27', score: 23, pain: 4, mobility: 0 },
+        { day: 'Aug 28', score: 24, pain: 5, mobility: 0 },
+        { day: 'Aug 29', score: 20, pain: 4, mobility: 0 },
+        { day: 'Aug 30', score: 18, pain: 3, mobility: 0 },
+        { day: 'Today', score: 15, pain: 2, mobility: 0 },
       ]
 
       for (const t of initialTrends) {
@@ -98,7 +102,7 @@ export const seedDatabase = mutation({
         {
           patientId: 'P-1027',
           patientName: 'James Kim',
-          detail: 'Pain increased 3 points in 24 hours',
+          detail: 'Self-reported repeated vomiting; emergency guidance displayed',
           severity: 'High' as const,
           status: 'active' as const,
           timeAgo: '18 min ago',
@@ -107,7 +111,7 @@ export const seedDatabase = mutation({
         {
           patientId: 'P-1038',
           patientName: 'Daniel Ortiz',
-          detail: 'Missed medication and mobility check-in',
+          detail: 'Headache increased 3 points in 24 hours',
           severity: 'Medium' as const,
           status: 'active' as const,
           timeAgo: '1 hr ago',
@@ -135,35 +139,35 @@ export const seedDatabase = mutation({
       const initialTasks = [
         {
           patientId: 'P-1042',
-          title: 'Morning Ice & Elevation (20 min)',
-          category: 'wound_care',
+          title: 'Morning symptom check-in',
+          category: 'check_in',
           targetTime: '08:00 AM',
           completed: true,
-          dayNumber: 18,
+          dayNumber: 12,
         },
         {
           patientId: 'P-1042',
-          title: 'Physical Therapy: Quad Sets & Heel Slides',
-          category: 'mobility',
+          title: 'Review clinician-provided recovery plan',
+          category: 'care_plan',
           targetTime: '10:30 AM',
           completed: true,
-          dayNumber: 18,
+          dayNumber: 12,
         },
         {
           patientId: 'P-1042',
-          title: 'Post-op Anti-inflammatory (Naproxen 500mg)',
-          category: 'medication',
+          title: 'Prepare questions for follow-up appointment',
+          category: 'appointment',
           targetTime: '01:00 PM',
           completed: false,
-          dayNumber: 18,
+          dayNumber: 12,
         },
         {
           patientId: 'P-1042',
-          title: 'Evening Walking Drill (10 min assisted)',
-          category: 'mobility',
+          title: 'Evening symptom and activity reflection',
+          category: 'check_in',
           targetTime: '06:00 PM',
           completed: false,
-          dayNumber: 18,
+          dayNumber: 12,
         },
       ]
 

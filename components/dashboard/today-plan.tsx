@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils'
 export function TodayPlan() {
   const [done, setDone] = useState([true, false, false])
   const tasks = [
-    'Morning medication · 8:00 AM',
-    'Knee flexion exercises · 12 reps',
-    'Evening symptom check',
+    'Morning symptom check-in · 8:00 AM',
+    'Review today\'s clinician-provided plan',
+    'Prepare questions for the next appointment',
   ]
 
   const toggleTask = (index: number) => {
@@ -24,7 +24,7 @@ export function TodayPlan() {
     <Card className="p-6">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-foreground">Today&apos;s care plan</h2>
+          <h2 className="font-semibold text-foreground">Today&apos;s recovery plan</h2>
           <p className="text-sm text-muted-foreground">{remaining} of {tasks.length} activities remaining</p>
         </div>
         <Link

@@ -8,26 +8,26 @@ export const roles: Record<Role, { label: string; home: string }> = {
 }
 
 export const recoveryTrend = [
-  { day: 'Aug 25', score: 58, pain: 7, mobility: 42 },
-  { day: 'Aug 26', score: 62, pain: 6, mobility: 48 },
-  { day: 'Aug 27', score: 64, pain: 6, mobility: 51 },
-  { day: 'Aug 28', score: 68, pain: 5, mobility: 57 },
-  { day: 'Aug 29', score: 72, pain: 4, mobility: 63 },
-  { day: 'Aug 30', score: 74, pain: 4, mobility: 68 },
-  { day: 'Today', score: 78, pain: 3, mobility: 72 },
+  { day: 'Aug 25', symptomBurden: 27, headache: 5 },
+  { day: 'Aug 26', symptomBurden: 25, headache: 5 },
+  { day: 'Aug 27', symptomBurden: 23, headache: 4 },
+  { day: 'Aug 28', symptomBurden: 24, headache: 5 },
+  { day: 'Aug 29', symptomBurden: 20, headache: 4 },
+  { day: 'Aug 30', symptomBurden: 18, headache: 3 },
+  { day: 'Today', symptomBurden: 15, headache: 2 },
 ]
 
 export const patients = [
-  { id: 'P-1042', name: 'Maya Chen', procedure: 'ACL reconstruction', day: 18, score: 78, risk: 'Stable', adherence: 92 },
-  { id: 'P-1038', name: 'Daniel Ortiz', procedure: 'Total knee replacement', day: 9, score: 54, risk: 'Review', adherence: 71 },
-  { id: 'P-1031', name: 'Ava Williams', procedure: 'Rotator cuff repair', day: 27, score: 83, risk: 'Stable', adherence: 96 },
-  { id: 'P-1027', name: 'James Kim', procedure: 'Lumbar decompression', day: 6, score: 46, risk: 'Elevated', adherence: 64 },
-  { id: 'P-1019', name: 'Nora Patel', procedure: 'Hip replacement', day: 34, score: 88, risk: 'Stable', adherence: 89 },
+  { id: 'P-1042', name: 'Maya Chen', recoveryContext: 'Clinician-diagnosed concussion', day: 12, symptomTotal: 15, attention: 'Routine', checkInRate: 92 },
+  { id: 'P-1038', name: 'Daniel Ortiz', recoveryContext: 'Suspected concussion', day: 5, symptomTotal: 31, attention: 'Review', checkInRate: 71 },
+  { id: 'P-1031', name: 'Ava Williams', recoveryContext: 'Clinician-diagnosed concussion', day: 21, symptomTotal: 10, attention: 'Routine', checkInRate: 96 },
+  { id: 'P-1027', name: 'James Kim', recoveryContext: 'Head injury under evaluation', day: 2, symptomTotal: 38, attention: 'Safety', checkInRate: 64 },
+  { id: 'P-1019', name: 'Nora Patel', recoveryContext: 'Persistent concussion symptoms', day: 34, symptomTotal: 26, attention: 'Review', checkInRate: 89 },
 ]
 
 export const alerts = [
-  { patient: 'James Kim', detail: 'Pain increased 3 points in 24 hours', severity: 'High', time: '18 min ago' },
-  { patient: 'Daniel Ortiz', detail: 'Missed medication and mobility check-in', severity: 'Medium', time: '1 hr ago' },
+  { patient: 'James Kim', detail: 'Self-reported repeated vomiting; emergency guidance displayed', severity: 'High', time: '18 min ago' },
+  { patient: 'Daniel Ortiz', detail: 'Headache increased 3 points in 24 hours', severity: 'Medium', time: '1 hr ago' },
   { patient: 'Maya Chen', detail: 'Sleep quality below baseline for 3 nights', severity: 'Low', time: '3 hrs ago' },
 ]
 
