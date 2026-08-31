@@ -21,6 +21,8 @@ The application serves four primary personas via route groups:
 - **Framework:** [Next.js 16](https://nextjs.org/) (App Router, Turbopack support)
 - **Language:** TypeScript 5.7 (strict mode enabled in `tsconfig.json`)
 - **UI Library:** React 19
+- **Authentication:** [Clerk](https://clerk.com/) (`@clerk/nextjs`) integrated with Convex (`ConvexProviderWithClerk`)
+- **Backend & Database:** [Convex](https://convex.dev/) reactive backend
 - **Primitives & Components:** [Radix UI](https://www.radix-ui.com/) (`@radix-ui/react-*`), [Shadcn UI](https://ui.shadcn.com/) architecture, [Lucide React](https://lucide.dev/) icons
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) with `@theme inline` and `tw-animate-css`
 - **Charts & Data Viz:** [Recharts](https://recharts.org/)
@@ -37,6 +39,7 @@ The application serves four primary personas via route groups:
 ├── AGENTS.md                   # This instruction file for AI agents
 ├── app/                        # Next.js App Router root
 │   ├── (admin)/                # Organization & Admin workspace
+│   ├── (auth)/                 # Clerk authentication routes (/sign-in, /sign-up)
 │   ├── (caregiver)/            # Caregiver workspace
 │   ├── (clinician)/            # Clinician & Clinical workspace
 │   ├── (patient)/              # Patient recovery workspace
@@ -52,13 +55,19 @@ The application serves four primary personas via route groups:
 │   ├── layouts/                # DashboardLayout, Sidebar, Header, PageHeader
 │   ├── messages/               # Split-pane secure messaging chat component
 │   ├── patient/                # Check-in flow, care plan, timeline, patient profile
+│   ├── providers/              # Convex & Clerk unified client provider
 │   ├── reports/                # Printable recovery summary reports
 │   └── ui/                     # Primitives (Button, Badge, Card)
+├── convex/                     # Convex reactive backend schema, functions & auth config
+│   ├── auth.config.ts          # Clerk JWT authentication verification for Convex
+│   ├── schema.ts               # Database schema definition
+│   └── ...                     # Reactive queries, mutations and actions
 ├── docs/                       # Project documentation
 │   └── frontend-design-specs.md# Detailed frontend design system specifications
 ├── lib/
 │   ├── cri-data.ts             # Mock datasets, role types, navigation configurations
 │   └── utils.ts                # cn() helper (clsx + tailwind-merge)
+├── middleware.ts               # Clerk route protection & auth middleware
 ├── components.json             # Shadcn configuration
 ├── commitlint.config.mjs       # Conventional commits linting configuration
 ├── next.config.mjs             # Next.js configuration & security headers
