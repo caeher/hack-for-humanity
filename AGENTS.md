@@ -148,3 +148,13 @@ When completing a task, verify:
 2. Responsive design works across mobile (`< 768px`), tablet (`768px - 1024px`), and desktop (`> 1024px`).
 3. Focus states (`focus-visible`) and keyboard navigation remain accessible.
 4. Clean component props and TypeScript interfaces are provided.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
