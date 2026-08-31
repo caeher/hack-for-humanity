@@ -1,0 +1,31 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2c1f0a" />
+      <stop offset="100%" stop-color="#181104" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="40" y1="40" x2="140" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffb72b" />
+      <stop offset="100%" stop-color="#e08e00" />
+    </linearGradient>
+    <filter id="glow" x="20" y="20" width="140" height="140" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Background with smooth rounded corners -->
+  <rect width="180" height="180" rx="40" fill="url(#bgGrad)" />
+  <rect x="1.5" y="1.5" width="177" height="177" rx="38.5" stroke="#453416" stroke-width="1.5" />
+  
+  <!-- CRI Recovery Cross / Pulse Emblem -->
+  <g transform="translate(90, 90)">
+    <!-- Pulse ring -->
+    <circle r="46" stroke="#453416" stroke-width="3" fill="none" />
+    <circle r="46" stroke="url(#amberGrad)" stroke-width="3.5" stroke-dasharray="70 200" stroke-linecap="round" fill="none" transform="rotate(-45)" />
+
+    <!-- Central Recovery Shield / Cross -->
+    <rect x="-10" y="-30" width="20" height="60" rx="7" fill="url(#amberGrad)" />
+    <rect x="-30" y="-10" width="60" height="20" rx="7" fill="url(#amberGrad)" />
+    <circle r="7" fill="#ffffff" />
+  </g>
+</svg>

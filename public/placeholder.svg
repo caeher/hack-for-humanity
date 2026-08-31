@@ -1,0 +1,23 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#f8f7f5" />
+  <!-- Subtle Grid Pattern -->
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#e3dfd5" stroke-width="1" />
+    </pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#grid)" opacity="0.6" />
+
+  <!-- Center Card Graphic -->
+  <g transform="translate(400, 300)">
+    <rect x="-140" y="-100" width="280" height="200" rx="16" fill="#ffffff" stroke="#e3dfd5" stroke-width="2" filter="drop-shadow(0 12px 24px rgba(38,27,7,0.06))" />
+    
+    <!-- Pulse wave graphic -->
+    <path d="M -90 10 L -40 10 L -20 -30 L 0 35 L 20 -20 L 35 15 L 50 10 L 90 10" fill="none" stroke="#f9a600" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="0" cy="35" r="4" fill="#f9a600" />
+    
+    <!-- Text -->
+    <text x="0" y="60" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="14" fill="#261b07">CRI Intelligence</text>
+    <text x="0" y="80" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="400" font-size="11" fill="#726957">Coordinated Recovery System</text>
+  </g>
+</svg>
