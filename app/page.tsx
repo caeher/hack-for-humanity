@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Activity, ArrowRight, HeartPulse, ShieldCheck, Sparkles, Stethoscope, Users } from 'lucide-react'
-import { Show, UserButton } from '@clerk/nextjs'
+import { Show, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs'
 
 const portals = [
   {
@@ -45,18 +45,16 @@ export default function Page() {
 
         <div className="flex items-center gap-3">
           <Show when="signed-out">
-            <Link
-              href="/sign-in"
-              className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/sign-up"
-              className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Get started
-            </Link>
+            <SignInButton mode="modal">
+              <button className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer">
+                Sign in
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90 cursor-pointer">
+                Get started
+              </button>
+            </SignUpButton>
           </Show>
           <Show when="signed-in">
             <Link

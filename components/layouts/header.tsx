@@ -3,7 +3,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, Menu, LogIn } from 'lucide-react'
-import { Show, UserButton, SignInButton } from '@clerk/nextjs'
+import { Show, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Select,
@@ -98,6 +98,11 @@ export function Header({ role, onMenuClick }: HeaderProps) {
                 <span>Sign in</span>
               </button>
             </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="hidden sm:inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 cursor-pointer">
+                Sign up
+              </button>
+            </SignUpButton>
             <Avatar>
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
