@@ -1,5 +1,6 @@
 import { Geist_Mono, Inter } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
+import { ConvexClientProvider } from '@/components/providers/convex-client-provider'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="bg-background">
       <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
-        {children}
+        <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
     </html>
   )
