@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:all": "convex dev --start \"next dev\"",
     "build": "next build",
     "start": "next start",
     "convex:dev": "convex dev",
+    "convex:seed": "convex run seed:seedDatabase",
     "prepare": "husky",
     "commit": "cz"
   },
