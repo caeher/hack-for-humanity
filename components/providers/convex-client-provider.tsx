@@ -1,16 +1,17 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { ConvexProvider, ConvexReactClient } from 'convex/react'
+import { ConvexReactClient } from 'convex/react'
+import { ConvexProviderWithClerk } from 'convex/react-clerk'
+import { useAuth } from '@clerk/nextjs'
 
 interface ConvexClientProviderProps {
   children: React.ReactNode
 }
 
 /**
- * ConvexClientProvider supplies the reactive Convex client to the React component tree.
- * If NEXT_PUBLIC_CONVEX_URL is not yet configured, it uses a safe fallback to allow
- * local static rendering and preview builds without crashing.
+ * ConvexClientProvider supplies the reactive Convex client to the React tree
+ * authenticated via Clerk.
  */
 export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
@@ -20,5 +21,9 @@ export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
     return new ConvexReactClient(url)
   }, [convexUrl])
 
-  return <ConvexProvider client={client}>{children}</ConvexProvider>
+  return (
+    <ConvexProviderWithClerk client={client} useAuth={useAuth}>
+      {children}
+    </ConvexProviderWithClerk>
+  )
 }
