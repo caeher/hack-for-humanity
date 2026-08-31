@@ -9,7 +9,7 @@ Welcome to the **CRI (Care Recovery Intelligence)** codebase. This document outl
 **CRI** is a coordinated concussion recovery workspace designed to organize patient-reported symptoms, daily context, safety guidance, and clinician-facing summaries.
 
 The application serves four primary personas via route groups:
-1. **Patient (`/patient/*`):** Daily recovery check-ins, score tracking, care plan adherence, educational insights, messages, and reports.
+1. **Patient (`/patient/*`):** Daily recovery check-ins, symptom tracking, care plan adherence, educational insights, messages, and reports.
 2. **Caregiver (`/caregiver/*`):** Privacy-conscious, permission-based view to support loved ones with reminders and recovery status.
 3. **Clinician (`/clinician/*`):** Caseload triage, longitudinal recovery trajectories, risk classification (`Stable`, `Review`, `Elevated`), clinical encounters, and alerts.
 4. **Organization / Admin (`/admin/*`):** Population metrics, cohort comparisons, user provisioning, security audit logs, and organization settings.
@@ -63,7 +63,9 @@ The application serves four primary personas via route groups:
 │   ├── schema.ts               # Database schema definition
 │   └── ...                     # Reactive queries, mutations and actions
 ├── docs/                       # Project documentation
-│   └── frontend-design-specs.md# Detailed frontend design system specifications
+│   ├── base.md                 # Concussion Recovery Intelligence product vision and safety boundaries
+│   ├── concussion-demo-review.md # Current demo baseline, PR #39 summary, and GitHub backlog
+│   └── frontend-design-specs.md  # Detailed frontend design system specifications
 ├── lib/
 │   ├── cri-data.ts             # Mock datasets, role types, navigation configurations
 │   └── utils.ts                # cn() helper (clsx + tailwind-merge)
