@@ -2,7 +2,8 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Menu } from 'lucide-react'
+import { Bell, Menu, LogIn } from 'lucide-react'
+import { Show, UserButton, SignInButton } from '@clerk/nextjs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Select,
@@ -74,9 +75,34 @@ export function Header({ role, onMenuClick }: HeaderProps) {
           <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
         </button>
 
-        <Avatar>
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
+        {/* Clerk Auth State & User Menu */}
+        <Show when="signed-in">
+          <div className="flex items-center">
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: 'size-9 rounded-full ring-1 ring-border',
+                },
+              }}
+            />
+          </div>
+        </Show>
+
+        <Show when="signed-out">
+          <div className="flex items-center gap-2">
+            <SignInButton mode="modal">
+              <button
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+              >
+                <LogIn className="size-3.5" />
+                <span>Sign in</span>
+              </button>
+            </SignInButton>
+            <Avatar>
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </div>
+        </Show>
       </div>
     </header>
   )

@@ -1,5 +1,6 @@
 import { Geist_Mono, Inter } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
+import { ClerkProvider } from '@clerk/nextjs'
 import { ConvexClientProvider } from '@/components/providers/convex-client-provider'
 import './globals.css'
 
@@ -15,10 +16,20 @@ export const viewport: Viewport = { themeColor: '#f8f7f5', colorScheme: 'light',
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="bg-background">
-      <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
-        <ConvexClientProvider>{children}</ConvexClientProvider>
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: '#f9a600',
+          colorBackground: '#ffffff',
+          borderRadius: '0.5rem',
+        },
+      }}
+    >
+      <html lang="en" className="bg-background">
+        <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
