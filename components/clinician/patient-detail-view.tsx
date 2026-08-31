@@ -19,9 +19,9 @@ export function PatientDetailView({ id = 'P-1042' }: PatientDetailViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`${id} · Day 18`}
+        eyebrow={`${id} · Day 12`}
         title="Maya Chen"
-        description="ACL reconstruction · Dr. Olivia Brooks · Last check-in today at 8:42 AM"
+        description="Clinician-diagnosed concussion · Dr. Olivia Brooks · Last check-in today at 8:42 AM"
         action={
           <button
             onClick={() => setShowNoteModal(true)}
@@ -32,10 +32,10 @@ export function PatientDetailView({ id = 'P-1042' }: PatientDetailViewProps) {
         }
       />
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Recovery score" value="78" detail="+6 this week" icon={Activity} />
-        <StatCard label="Pain" value="3 / 10" detail="Improving" icon={HeartPulse} />
-        <StatCard label="Adherence" value="92%" detail="High" icon={Check} />
-        <StatCard label="Risk" value="Low" detail="1 flag to review" icon={ShieldCheck} />
+        <StatCard label="Symptom total" value="15 / 48" detail="Patient-reported today" icon={Activity} />
+        <StatCard label="Headache" value="2 / 6" detail="Down from 5 on Aug 25" icon={HeartPulse} />
+        <StatCard label="Check-in coverage" value="92%" detail="11 of 12 days" icon={Check} />
+        <StatCard label="Safety events" value="0" detail="In selected period" icon={ShieldCheck} />
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <Card className="p-6">
@@ -49,7 +49,7 @@ export function PatientDetailView({ id = 'P-1042' }: PatientDetailViewProps) {
       <Card className="p-6">
         <h2 className="font-semibold text-foreground">Recent check-ins</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {['Today · Pain 3 · Mood 8', 'Yesterday · Pain 4 · Mood 7', 'Aug 29 · Pain 4 · Mood 7'].map(x => (
+          {['Today · Symptoms 15 · Headache 2', 'Yesterday · Symptoms 18 · Headache 3', 'Aug 29 · Symptoms 20 · Headache 4'].map(x => (
             <div className="rounded-lg border border-border p-4 text-sm font-medium text-foreground" key={x}>
               {x}
             </div>

@@ -14,9 +14,9 @@ export default function InsightsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <InsightCard />
         {[
-          'Pain is improving faster after exercise days',
-          'Medication consistency supports lower evening pain',
-          'Mobility gains are aligned with your care plan',
+          'Longer screen sessions preceded higher headache ratings on 3 days',
+          'Dizziness ratings were lower on lower-activity days',
+          'Concentration difficulty and fatigue changed together this week',
         ].map((t, i) => (
           <Card className="p-6" key={t}>
             <div className="flex justify-between items-center mb-4">
@@ -27,7 +27,7 @@ export default function InsightsPage() {
             </div>
             <h2 className="text-lg font-semibold text-foreground">{t}</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              CRI found a consistent relationship in your recent recovery data. Discuss this pattern with your clinician before changing your care routine.
+              CRI found a temporal association in simulated check-in data. It does not establish cause. Discuss the observation with a clinician before changing your routine.
             </p>
             <button className="mt-5 text-sm font-semibold text-foreground underline underline-offset-4 hover:text-primary cursor-pointer">
               View evidence

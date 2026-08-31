@@ -10,9 +10,9 @@ export interface InsightCardProps {
 }
 
 export function InsightCard({
-  title = 'Your sleep may be affecting morning stiffness',
-  description = 'On nights with 7+ hours of sleep, your morning mobility scores were 14% higher.',
-  footer = 'BASED ON 12 CHECK-INS · MODERATE CONFIDENCE',
+  title = 'Shorter sleep and higher headache ratings appeared together',
+  description = 'On 4 of the last 5 nights with less than 7 hours of sleep, the next check-in included a higher headache rating. This observation does not establish cause.',
+  footer = 'BASED ON 12 CHECK-INS · SIMULATED DATA',
 }: InsightCardProps) {
   return (
     <Card className="p-6">

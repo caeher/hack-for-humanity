@@ -21,12 +21,12 @@ export function TrendChart({ clinical = false }: TrendChartProps) {
   return (
     <div
       className="h-64 w-full"
-      aria-label="Recovery score increased from 58 to 78 over seven days"
+      aria-label="Patient-reported symptom total decreased from 27 to 15 over seven days"
     >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={recoveryTrend} margin={{ top: 15, right: 8, left: -24, bottom: 0 }}>
           <defs>
-            <linearGradient id="score" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="symptomBurden" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#f9a600" stopOpacity={0.28} />
               <stop offset="100%" stopColor="#f9a600" stopOpacity={0} />
             </linearGradient>
@@ -39,11 +39,20 @@ export function TrendChart({ clinical = false }: TrendChartProps) {
             tickLine={false}
           />
           <YAxis
-            domain={[30, 100]}
+            yAxisId="symptom-total"
+            domain={[0, 48]}
             tick={{ fontSize: 11, fill: '#726957' }}
             axisLine={false}
             tickLine={false}
           />
+          {clinical && (
+            <YAxis
+              yAxisId="headache"
+              orientation="right"
+              domain={[0, 6]}
+              hide
+            />
+          )}
           <Tooltip
             contentStyle={{
               backgroundColor: '#ffffff',
@@ -53,19 +62,25 @@ export function TrendChart({ clinical = false }: TrendChartProps) {
             }}
           />
           <Area
+            yAxisId="symptom-total"
             type="monotone"
-            dataKey="score"
+            dataKey="symptomBurden"
+            name="Symptom total"
             stroke="#996515"
             strokeWidth={2}
-            fill="url(#score)"
+            fill="url(#symptomBurden)"
           />
-          <Line
-            type="monotone"
-            dataKey={clinical ? 'mobility' : 'score'}
-            stroke="#261b07"
-            strokeWidth={1.5}
-            dot={false}
-          />
+          {clinical && (
+            <Line
+              yAxisId="headache"
+              type="monotone"
+              dataKey="headache"
+              name="Headache"
+              stroke="#261b07"
+              strokeWidth={1.5}
+              dot={false}
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

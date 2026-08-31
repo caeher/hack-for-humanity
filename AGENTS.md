@@ -6,7 +6,7 @@ Welcome to the **CRI (Care Recovery Intelligence)** codebase. This document outl
 
 ## 1. Project Overview & Mission
 
-**CRI** is a coordinated recovery workspace designed to unify patient-reported outcomes, care plans, and clinical telemetry for post-operative recovery.
+**CRI** is a coordinated concussion recovery workspace designed to organize patient-reported symptoms, daily context, safety guidance, and clinician-facing summaries.
 
 The application serves four primary personas via route groups:
 1. **Patient (`/patient/*`):** Daily recovery check-ins, score tracking, care plan adherence, educational insights, messages, and reports.

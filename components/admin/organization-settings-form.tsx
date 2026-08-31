@@ -16,13 +16,13 @@ import {
 
 export function OrganizationSettingsForm() {
   const [settings, setSettings] = useState({
-    orgName: 'Northstar Orthopedics',
+    orgName: 'Northstar Concussion Collaborative',
     primaryContact: 'clinicalops@northstar.example',
     retention: '7 years',
     cohortLimit: 250,
     fee: 175.0,
     themeColor: '#f9a600',
-    pathways: ['acl', 'knee', 'spine'],
+    pathways: ['diagnosed', 'suspected', 'persistent'],
     autoEscalate: true,
   })
 
@@ -105,17 +105,17 @@ export function OrganizationSettingsForm() {
             value={settings.pathways}
             onChange={e => setSettings({ ...settings, pathways: e.target.value })}
             options={[
-              { label: 'ACL Reconstruction', value: 'acl' },
-              { label: 'Total Knee Arthroplasty', value: 'knee' },
-              { label: 'Spine Recovery', value: 'spine' },
-              { label: 'Rotator Cuff', value: 'rotator' },
+              { label: 'Clinician-diagnosed concussion', value: 'diagnosed' },
+              { label: 'Suspected concussion', value: 'suspected' },
+              { label: 'Persistent symptoms', value: 'persistent' },
+              { label: 'Return-to-learn support', value: 'return-to-learn' },
             ]}
           />
 
           <SwitchField
             inline
             label="Automated High-Risk Escalations"
-            sublabel="Immediately notify attending surgeon if 3-day recovery trajectory drops by >15%"
+            sublabel="Notify the assigned reviewer when a versioned safety rule records a patient-reported danger sign"
             checked={settings.autoEscalate}
             onChange={e => setSettings({ ...settings, autoEscalate: e.target.checked })}
           />

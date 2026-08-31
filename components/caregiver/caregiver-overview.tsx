@@ -24,13 +24,13 @@ export function CaregiverOverview({ patientId }: CaregiverOverviewProps) {
         }
       />
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Recovery score" value="78" detail="On track" icon={Activity} />
-        <StatCard label="Today’s tasks" value="2 left" detail="Next: exercises" icon={ClipboardCheck} />
+        <StatCard label="Symptom total" value="15 / 48" detail="Patient-reported today" icon={Activity} />
+        <StatCard label="Today’s check-in" value="Complete" detail="Logged at 8:42 AM" icon={ClipboardCheck} />
         <StatCard label="Next appointment" value="Sep 3" detail="10:30 AM" icon={CalendarDays} />
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <Card className="p-6">
-          <h2 className="font-semibold text-foreground">Recovery progress</h2>
+          <h2 className="font-semibold text-foreground">Symptom history</h2>
           <div className="mt-4">
             <TrendChart />
           </div>
@@ -39,9 +39,9 @@ export function CaregiverOverview({ patientId }: CaregiverOverviewProps) {
           <h2 className="font-semibold text-foreground">How you can help today</h2>
           <div className="mt-4 flex flex-col gap-3">
             {[
-              'Remind Maya about noon exercises',
+              'Offer a quiet place if Maya needs less stimulation',
               'Help prepare questions for Sep 3 visit',
-              'Encourage an earlier bedtime',
+              'Follow the care team’s instructions if symptoms change',
             ].map(x => (
               <div className="rounded-lg bg-muted p-3 text-sm font-medium text-foreground" key={x}>
                 {x}
@@ -51,7 +51,7 @@ export function CaregiverOverview({ patientId }: CaregiverOverviewProps) {
         </Card>
       </div>
       <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-        <strong className="text-foreground">Shared with permission.</strong> Medication details and private clinical notes are not included in this caregiver view.
+        <strong className="text-foreground">Shared with permission.</strong> Private notes and clinician-only records are not included in this caregiver view.
       </div>
     </div>
   )

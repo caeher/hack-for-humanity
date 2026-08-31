@@ -14,7 +14,7 @@ export function PatientProfileForm() {
     color: '#f9a600',
     smsReminders: true,
     largeText: false,
-    wearables: true,
+    wearables: false,
   })
 
   return (
@@ -74,10 +74,11 @@ export function PatientProfileForm() {
           />
           <SwitchField
             inline
-            label="Wearable Activity Auto-Sync"
-            sublabel="Connected to Apple Health / Google Fit"
+            label="Wearable data sync (planned)"
+            sublabel="Not connected in this prototype. No device data is being collected."
             checked={profileForm.wearables}
             onChange={e => setProfileForm({ ...profileForm, wearables: e.target.checked })}
+            disabled
           />
 
           <div className="pt-4 border-t border-border">

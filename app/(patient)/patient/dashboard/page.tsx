@@ -11,7 +11,7 @@ export default function PatientDashboardPage() {
       <PageHeader
         eyebrow="Monday, August 31"
         title="Good morning, Maya"
-        description="Day 18 after ACL reconstruction. Your recovery is moving forward steadily."
+        description="Day 12 after a clinician-diagnosed concussion. Track how symptoms and daily activities change over time."
         action={
           <Link
             href="/patient/check-in"
@@ -24,16 +24,16 @@ export default function PatientDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_1.7fr]">
         <Card className="p-6">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-semibold text-foreground">Recovery score</h2>
+            <h2 className="font-semibold text-foreground">Today&apos;s symptom total</h2>
             <span className="font-mono text-xs text-muted-foreground">UPDATED 8:42 AM</span>
           </div>
-          <ScoreGauge score={78} />
+          <ScoreGauge score={15} maxScore={48} />
         </Card>
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-semibold text-foreground">7-day trajectory</h2>
-              <p className="text-sm text-muted-foreground">Composite recovery score</p>
+              <p className="text-sm text-muted-foreground">Patient-reported symptom total</p>
             </div>
             <Badge>Last 7 days</Badge>
           </div>
@@ -42,15 +42,15 @@ export default function PatientDashboardPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
-          label="Plan adherence"
+          label="Check-in consistency"
           value="92%"
-          detail="11 of 12 tasks complete"
+          detail="11 of 12 days logged"
           icon={ClipboardCheck}
         />
         <StatCard
-          label="Pain level"
-          value="3 / 10"
-          detail="Down from 5 last week"
+          label="Headache"
+          value="2 / 6"
+          detail="Patient-reported today"
           icon={Activity}
         />
         <StatCard

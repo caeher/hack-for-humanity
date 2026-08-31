@@ -14,7 +14,7 @@ export default function ClinicianPatientsPage() {
       <PageHeader
         eyebrow="Clinical workspace"
         title="Patient caseload"
-        description="Review recovery status, adherence, and emerging concerns across your active patients."
+        description="Review patient-reported symptoms, check-in coverage, and emerging concerns across active recovery profiles."
         action={
           <button
             onClick={() => setShowAddModal(true)}

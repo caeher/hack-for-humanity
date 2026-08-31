@@ -5,15 +5,15 @@ export default defineSchema({
   patients: defineTable({
     patientId: v.string(), // e.g. "P-1042"
     name: v.string(),
-    procedure: v.string(),
+    procedure: v.string(), // Legacy: recovery context until issue #6 schema migration
     day: v.number(),
-    score: v.number(),
+    score: v.number(), // Legacy: tracked symptom total, not a recovery score
     risk: v.union(v.literal('Stable'), v.literal('Review'), v.literal('Elevated')),
     adherence: v.number(),
-    surgeon: v.optional(v.string()),
+    surgeon: v.optional(v.string()), // Legacy: assigned clinician
     caregiverId: v.optional(v.string()),
     caregiverName: v.optional(v.string()),
-    surgeryDate: v.optional(v.string()),
+    surgeryDate: v.optional(v.string()), // Legacy: incident date
     notes: v.optional(v.string()),
   })
     .index('by_patientId', ['patientId'])
@@ -22,9 +22,9 @@ export default defineSchema({
   recoveryTrends: defineTable({
     patientId: v.string(),
     day: v.string(), // e.g. "Aug 25" or "Today"
-    score: v.number(),
-    pain: v.number(),
-    mobility: v.number(),
+    score: v.number(), // Legacy: symptom burden total
+    pain: v.number(), // Legacy: headache rating
+    mobility: v.number(), // Legacy and unused by the concussion demo
     date: v.optional(v.string()),
   }).index('by_patientId', ['patientId']),
 

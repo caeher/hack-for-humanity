@@ -29,8 +29,8 @@ export function RecoveryReportsView() {
               <FileText className="size-6" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">14-day recovery summary</h2>
-              <p className="text-sm text-muted-foreground">Aug 17–31 · 8 pages · Updated today</p>
+              <h2 className="font-semibold text-foreground">14-day patient-reported summary</h2>
+              <p className="text-sm text-muted-foreground">Aug 18 to 31 · 12 check-ins · Updated today</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -47,12 +47,16 @@ export function RecoveryReportsView() {
         <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-8 warm-shadow">
           <p className="font-mono text-xs text-muted-foreground">CRI RECOVERY SUMMARY · P-1042</p>
           <h2 className="mt-3 text-2xl font-semibold text-foreground">Maya Chen</h2>
-          <p className="mt-1 text-sm text-muted-foreground">ACL reconstruction · Day 18</p>
+          <p className="mt-1 text-sm text-muted-foreground">Clinician-diagnosed concussion · Day 12</p>
           <div className="mt-8 grid grid-cols-3 gap-3">
-            <StatCard label="Score" value="78" detail="On track" icon={Activity} />
-            <StatCard label="Adherence" value="92%" detail="High" icon={Check} />
-            <StatCard label="Flags" value="1" detail="Low priority" icon={AlertTriangle} />
+            <StatCard label="Symptoms" value="15 / 48" detail="Patient-reported" icon={Activity} />
+            <StatCard label="Check-ins" value="12 / 14" detail="Two missing days" icon={Check} />
+            <StatCard label="Safety events" value="0" detail="In selected period" icon={AlertTriangle} />
           </div>
+          <p className="mt-6 text-xs leading-5 text-muted-foreground">
+            Simulated patient-reported data for demonstration. This report is not clinically verified
+            and does not diagnose concussion or determine readiness to return to activity.
+          </p>
         </div>
       </div>
     </div>
