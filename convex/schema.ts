@@ -244,7 +244,7 @@ export default defineSchema({
     .index('by_checkInId', ['checkInId'])
     .index('by_patientId_and_createdAt', ['patientId', 'createdAt']),
 
-  // 8. Daily Exertion & Activity Exposures
+  // 8. Daily Exertion & Activity Exposures (rollup summaries)
   activityExposures: defineTable({
     patientId: v.id('patients'),
     episodeId: v.optional(v.id('recoveryEpisodes')),
@@ -259,6 +259,46 @@ export default defineSchema({
   })
     .index('by_patientId', ['patientId'])
     .index('by_patientId_and_date', ['patientId', 'date'])
+    .index('by_episodeId', ['episodeId']),
+
+  // 8b. Granular exposure entries (physical, cognitive, screen, work/school, sleep)
+  exposureEntries: defineTable({
+    patientId: v.id('patients'),
+    episodeId: v.optional(v.id('recoveryEpisodes')),
+    checkInId: v.optional(v.id('checkIns')),
+    date: v.string(),
+    domain: v.union(
+      v.literal('physical'),
+      v.literal('cognitive'),
+      v.literal('work_school'),
+      v.literal('screen'),
+      v.literal('sleep')
+    ),
+    activityType: v.string(),
+    durationMinutes: v.optional(v.number()),
+    intensity: v.optional(v.number()),
+    startTime: v.optional(v.string()),
+    endTime: v.optional(v.string()),
+    symptomsWorsened: v.union(
+      v.literal('yes'),
+      v.literal('no'),
+      v.literal('not_sure'),
+      v.literal('not_applicable')
+    ),
+    symptomOnsetMinutes: v.optional(v.number()),
+    symptomMagnitude: v.optional(v.number()),
+    symptomRecoveryMinutes: v.optional(v.number()),
+    sleepHours: v.optional(v.number()),
+    sleepQuality: v.optional(v.number()),
+    contextNote: v.optional(v.string()),
+    submittedByUserId: v.id('users'),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index('by_patientId', ['patientId'])
+    .index('by_patientId_and_date', ['patientId', 'date'])
+    .index('by_patientId_and_domain', ['patientId', 'domain'])
+    .index('by_checkInId', ['checkInId'])
     .index('by_episodeId', ['episodeId']),
 
   // 9. Longitudinal Daily Recovery Trend Summaries

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layouts/page-header'
 import { StatCard, TrendChart, SymptomMethodologyPanel } from '@/components/dashboard'
 import { CheckInHistory } from '@/components/patient/check-in-history'
+import { ExposureEntryList } from '@/components/patient/exposure-entry-list'
 import { computeDescriptiveTrend, METHODOLOGY_COPY } from '@/lib/symptomMethodology'
 
 const demoTrendPoints = [
@@ -66,6 +67,7 @@ export function RecoveryTimeline() {
         </Card>
       </div>
       <CheckInHistory />
+      <ExposureEntryList />
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Symptom total" value="15 / 48" detail="Patient-reported today" icon={Activity} />
         <StatCard label="Sleep" value="6h 48m" detail="Self-reported duration" icon={HeartPulse} />
