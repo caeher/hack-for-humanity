@@ -78,11 +78,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: node scripts/verify-routes-from-manifest.mjs
-      - uses: actions/upload-artifact@v5
-        with:
-          name: next-build
-          path: .next
-          retention-days: 7
 
   dependency-scan:
     name: Dependency scan
