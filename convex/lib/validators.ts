@@ -825,4 +825,76 @@ export const dashboardSummaryValidator = v.object({
   safetyEscalation: v.union(dashboardSafetyEscalationValidator, v.null()),
 })
 
+// --- Recovery Timeline Validators ---
+
+export const timelineRangeKeyValidator = v.union(
+  v.literal('7'),
+  v.literal('14'),
+  v.literal('30'),
+  v.literal('episode')
+)
+
+export const symptomGroupKeyValidator = v.union(
+  v.literal('all'),
+  v.literal('headache'),
+  v.literal('vestibular'),
+  v.literal('sensory'),
+  v.literal('cognitive_fatigue'),
+  v.literal('sleep_related')
+)
+
+export const comparisonViewKeyValidator = v.union(
+  v.literal('symptoms_activity'),
+  v.literal('symptoms_sleep'),
+  v.literal('symptoms_screen')
+)
+
+export const timelineEventKindValidator = v.union(
+  v.literal('incident'),
+  v.literal('clinical_encounter'),
+  v.literal('plan_change'),
+  v.literal('amendment'),
+  v.literal('safety_event')
+)
+
+export const timelineDayPointValidator = v.object({
+  date: v.string(),
+  dayLabel: v.string(),
+  symptomValue: v.union(v.number(), v.null()),
+  exposureValue: v.union(v.number(), v.null()),
+  checkInId: v.union(v.id('checkIns'), v.null()),
+  exposureId: v.union(v.id('activityExposures'), v.null()),
+})
+
+export const timelineEventMarkerValidator = v.object({
+  id: v.string(),
+  date: v.string(),
+  kind: timelineEventKindValidator,
+  title: v.string(),
+  detail: v.string(),
+  sourceType: v.string(),
+  sourceId: v.string(),
+})
+
+export const timelineSummaryValidator = v.object({
+  headline: v.string(),
+  description: v.string(),
+  loggedSymptomDays: v.number(),
+  loggedExposureDays: v.number(),
+  gapDays: v.number(),
+  associationNote: v.string(),
+})
+
+export const recoveryTimelinePayloadValidator = v.object({
+  dataSource: v.literal('live'),
+  timeZone: v.string(),
+  range: timelineRangeKeyValidator,
+  symptomGroup: symptomGroupKeyValidator,
+  comparisonView: comparisonViewKeyValidator,
+  windowStart: v.string(),
+  windowEnd: v.string(),
+  points: v.array(timelineDayPointValidator),
+  events: v.array(timelineEventMarkerValidator),
+  summary: timelineSummaryValidator,
+})
 
