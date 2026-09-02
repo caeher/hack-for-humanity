@@ -95,6 +95,20 @@ export default defineSchema({
         weeklySummary: v.boolean(),
       })
     ),
+    accessibilityPreferences: v.optional(
+      v.object({
+        largeText: v.boolean(),
+        highContrast: v.boolean(),
+        reducedMotion: v.boolean(),
+      })
+    ),
+    quietHours: v.optional(
+      v.object({
+        start: v.string(),
+        end: v.string(),
+      })
+    ),
+    notificationConsentRevokedAt: v.optional(v.number()),
     onboardingCompletedAt: v.optional(v.number()),
     baselineCompletedAt: v.optional(v.number()),
     status: v.union(v.literal('Active'), v.literal('Discharged'), v.literal('Inactive')),
@@ -346,6 +360,7 @@ export default defineSchema({
     episodeId: v.optional(v.id('recoveryEpisodes')),
     assignedByUserId: v.optional(v.id('users')),
     title: v.string(),
+    description: v.optional(v.string()),
     category: v.union(
       v.literal('cognitive_pacing'),
       v.literal('physical_activity'),
@@ -356,16 +371,77 @@ export default defineSchema({
       v.literal('education'),
       v.literal('accommodations')
     ),
+    /** Clinician-recorded medication instruction only — never AI-generated. */
+    medicationInstruction: v.optional(v.string()),
     targetTime: v.optional(v.string()),
+    scheduledDate: v.optional(v.string()),
+    completionStatus: v.union(
+      v.literal('pending'),
+      v.literal('completed'),
+      v.literal('skipped'),
+      v.literal('unable_to_complete')
+    ),
+    statusNote: v.optional(v.string()),
     completed: v.boolean(),
     completedAt: v.optional(v.number()),
     completedByUserId: v.optional(v.id('users')),
+    allowPatientCompletion: v.boolean(),
+    isClinicianAuthored: v.boolean(),
     dayNumber: v.optional(v.number()),
     createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+    updatedByUserId: v.optional(v.id('users')),
   })
     .index('by_patientId', ['patientId'])
     .index('by_patientId_and_completed', ['patientId', 'completed'])
+    .index('by_patientId_and_completionStatus', ['patientId', 'completionStatus'])
     .index('by_episodeId', ['episodeId']),
+
+  // 11b. Immutable care plan change history (audited, non-punitive adherence context)
+  carePlanEvents: defineTable({
+    patientId: v.id('patients'),
+    carePlanId: v.optional(v.id('carePlans')),
+    actorUserId: v.id('users'),
+    actorRole: v.string(),
+    eventType: v.union(
+      v.literal('created'),
+      v.literal('updated'),
+      v.literal('completed'),
+      v.literal('skipped'),
+      v.literal('unable_to_complete'),
+      v.literal('reopened')
+    ),
+    summary: v.string(),
+    previousStatus: v.optional(v.string()),
+    newStatus: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
+    .index('by_carePlanId', ['carePlanId']),
+
+  // 11c. Configurable plan reminders (respect consent, quiet hours, revocation)
+  planReminders: defineTable({
+    patientId: v.id('patients'),
+    carePlanId: v.optional(v.id('carePlans')),
+    title: v.string(),
+    channel: v.union(v.literal('email'), v.literal('sms')),
+    scheduledTime: v.string(),
+    timeZone: v.string(),
+    status: v.union(v.literal('active'), v.literal('paused'), v.literal('revoked')),
+    createdByUserId: v.id('users'),
+    createdByRole: v.union(
+      v.literal('patient'),
+      v.literal('caregiver'),
+      v.literal('clinician'),
+      v.literal('admin')
+    ),
+    revokedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index('by_patientId', ['patientId'])
+    .index('by_patientId_and_status', ['patientId', 'status'])
+    .index('by_carePlanId', ['carePlanId']),
 
   // 12. Clinical Safety Alerts & Triage
   alerts: defineTable({

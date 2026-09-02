@@ -368,7 +368,10 @@ export const migrateLegacyDataset = mutation({
         title: finalTitle,
         category,
         targetTime: legacyPlan.targetTime,
+        completionStatus: legacyPlan.completed ? 'completed' : 'pending',
         completed: legacyPlan.completed ?? false,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: legacyPlan.dayNumber,
         createdAt: Date.now(),
       })
