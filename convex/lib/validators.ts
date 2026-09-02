@@ -146,6 +146,18 @@ export const encounterTypeValidator = v.union(
   v.literal('asynchronous')
 )
 
+export const encounterStatusValidator = v.union(
+  v.literal('draft'),
+  v.literal('finalized')
+)
+
+export const attachmentScanStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('clean'),
+  v.literal('quarantined'),
+  v.literal('failed')
+)
+
 export const carePlanCategoryValidator = v.union(
   v.literal('cognitive_pacing'),
   v.literal('physical_activity'),
@@ -727,12 +739,63 @@ export const encounterDocValidator = v.object({
   orgId: v.id('organizations'),
   clinicianUserId: v.id('users'),
   encounterType: encounterTypeValidator,
+  status: v.optional(encounterStatusValidator),
   diagnosis: v.string(),
   datetime: v.string(),
   clinicalSummary: v.string(),
   notes: v.string(),
   attachmentStorageId: v.optional(v.id('_storage')),
+  finalizedAt: v.optional(v.number()),
+  updatedAt: v.optional(v.number()),
   createdAt: v.number(),
+})
+
+export const encounterAmendmentDocValidator = v.object({
+  _id: v.id('encounterAmendments'),
+  _creationTime: v.number(),
+  encounterId: v.id('clinicalEncounters'),
+  patientId: v.id('patients'),
+  orgId: v.id('organizations'),
+  amendedByUserId: v.id('users'),
+  reason: v.string(),
+  clinicalSummary: v.string(),
+  notes: v.string(),
+  originalClinicalSummary: v.string(),
+  originalNotes: v.string(),
+  createdAt: v.number(),
+})
+
+export const encounterAttachmentMetadataValidator = v.object({
+  _id: v.id('encounterAttachmentMetadata'),
+  _creationTime: v.number(),
+  encounterId: v.optional(v.id('clinicalEncounters')),
+  patientId: v.id('patients'),
+  orgId: v.id('organizations'),
+  uploadedByUserId: v.id('users'),
+  fileName: v.string(),
+  mimeType: v.string(),
+  sizeBytes: v.number(),
+  storageId: v.optional(v.id('_storage')),
+  scanStatus: attachmentScanStatusValidator,
+  authorizationScope: v.string(),
+  createdAt: v.number(),
+})
+
+export const encounterWithAmendmentsValidator = v.object({
+  encounter: encounterDocValidator,
+  amendments: v.array(encounterAmendmentDocValidator),
+  attachments: v.array(encounterAttachmentMetadataValidator),
+  clinicianName: v.union(v.string(), v.null()),
+})
+
+export const attachmentPolicyValidator = v.object({
+  allowedMimeTypes: v.array(v.string()),
+  allowedExtensions: v.array(v.string()),
+  maxSizeBytes: v.number(),
+  maxFilesPerEncounter: v.number(),
+  malwareScanPlan: v.string(),
+  storageStatus: v.string(),
+  authorizationRequired: v.boolean(),
 })
 
 export const carePlanDocValidator = v.object({
