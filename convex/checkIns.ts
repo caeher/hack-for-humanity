@@ -12,6 +12,7 @@ import {
   validateConcussionSymptoms,
   validateDateString,
 } from './lib/businessLogic'
+import { evaluateCheckIn, LongitudinalRecord } from './lib/safetyEngine'
 
 /**
  * List historical check-ins for a patient in reverse-chronological order.
@@ -57,8 +58,8 @@ export const getLatest = query({
 
 /**
  * Submit a daily concussion check-in.
- * Validates 8-symptom ratings (0-6), computes total (0-48), checks danger signs,
- * records submitter identity, and triggers safety triage alerts if needed.
+ * Validates 8-symptom ratings (0-6), computes total (0-48), runs deterministic Safety Engine,
+ * records submitter identity, creates safety evaluation audit, and triggers clinical alerts if needed.
  */
 export const submitCheckIn = mutation({
   args: {
@@ -69,6 +70,8 @@ export const submitCheckIn = mutation({
     activityImpact: activityImpactValidator,
     dangerSigns: v.optional(v.array(v.string())),
     note: v.optional(v.string()),
+    screenMinutes: v.optional(v.number()),
+    cognitiveMinutes: v.optional(v.number()),
   },
   returns: v.id('checkIns'),
   handler: async (ctx, args) => {
@@ -86,6 +89,31 @@ export const submitCheckIn = mutation({
     const dangerSignsPresent = dangerSignsList.length > 0
     const now = Date.now()
 
+    // Retrieve previous check-in records for trajectory / multi-day analysis
+    const recentCheckIns = await ctx.db
+      .query('checkIns')
+      .withIndex('by_patientId_and_createdAt', q => q.eq('patientId', args.patientId))
+      .order('desc')
+      .take(14)
+
+    const history: LongitudinalRecord[] = recentCheckIns.map(c => ({
+      date: c.date,
+      symptomTotal: c.symptomTotal,
+      symptoms: c.symptoms,
+    }))
+
+    // Execute Deterministic Safety Engine
+    const safetyResult = evaluateCheckIn(
+      args.symptoms,
+      dangerSignsList,
+      sanitizedNote,
+      history,
+      {
+        screenMinutes: args.screenMinutes,
+        cognitiveMinutes: args.cognitiveMinutes,
+      }
+    )
+
     const checkInId = await ctx.db.insert('checkIns', {
       patientId: args.patientId,
       episodeId: args.episodeId,
@@ -100,16 +128,36 @@ export const submitCheckIn = mutation({
       createdAt: now,
     })
 
-    // Automatic Safety Escalation: If danger signs are checked, generate immediate high alert
-    if (dangerSignsPresent) {
+    // Record immutable Safety Engine evaluation linked to check-in
+    await ctx.db.insert('safetyEvaluations', {
+      patientId: args.patientId,
+      orgId: patient.orgId,
+      evaluatedByUserId: user._id,
+      contextType: 'check_in',
+      status: safetyResult.status,
+      highestSeverity: safetyResult.highestSeverity,
+      ruleEngineVersion: safetyResult.ruleEngineVersion,
+      matchedRuleCodes: safetyResult.matchedRules.map(r => r.outputCode),
+      matchedEvidenceSummary: safetyResult.matchedRules.map(r => r.matchedEvidenceSummary),
+      primaryEscalation: safetyResult.primaryEscalation,
+      blockedActions: safetyResult.blockedActions,
+      failSafeApplied: safetyResult.failSafeApplied,
+      targetResourceId: checkInId,
+      createdAt: now,
+    })
+
+    // Automatic Safety Escalation: If emergency danger signs or elevated severity triggered, generate alert
+    if (safetyResult.highestSeverity === 'emergency' || safetyResult.highestSeverity === 'high') {
+      const topRule = safetyResult.matchedRules[0]
+      const alertSeverity = safetyResult.highestSeverity === 'emergency' ? 'High' : 'High'
       await ctx.db.insert('alerts', {
         patientId: args.patientId,
         episodeId: args.episodeId,
         orgId: patient.orgId,
-        detail: `Tier 1 danger sign(s) reported: ${dangerSignsList.join(', ')}`,
-        severity: 'High',
+        detail: `[Safety Engine v${safetyResult.ruleEngineVersion}] ${topRule?.name || 'Clinical safety event'}: ${topRule?.matchedEvidenceSummary || 'High risk detected'}`,
+        severity: alertSeverity,
         status: 'active',
-        dangerSigns: dangerSignsList,
+        dangerSigns: dangerSignsPresent ? dangerSignsList : undefined,
         createdAt: now,
       })
     }
@@ -120,7 +168,7 @@ export const submitCheckIn = mutation({
       actorRole: user.role,
       orgId: patient.orgId,
       patientId: patient._id,
-      event: `Submitted daily check-in (Symptom Total: ${symptomTotal}/48, Danger Signs: ${dangerSignsPresent ? 'YES' : 'NO'})`,
+      event: `Submitted daily check-in (Symptom Total: ${symptomTotal}/48, Danger Signs: ${dangerSignsPresent ? 'YES' : 'NO'}, Safety Status: ${safetyResult.status.toUpperCase()})`,
       targetResource: 'checkIns',
       resourceId: checkInId,
       action: 'create',
@@ -130,4 +178,5 @@ export const submitCheckIn = mutation({
     return checkInId
   },
 })
+
 
