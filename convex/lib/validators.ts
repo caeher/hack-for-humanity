@@ -615,6 +615,75 @@ export const checkInSubmitResultValidator = v.object({
   safetyResult: safetyEvaluationResultValidator,
 })
 
+export const checkInAmendmentDocValidator = v.object({
+  _id: v.id('checkInAmendments'),
+  _creationTime: v.number(),
+  checkInId: v.id('checkIns'),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  amendedByUserId: v.id('users'),
+  reason: v.string(),
+  symptoms: symptomsObjectValidator,
+  symptomTotal: v.number(),
+  methodologyVersion: v.optional(methodologyVersionValidator),
+  activityImpact: activityImpactValidator,
+  dangerSignsPresent: v.boolean(),
+  dangerSigns: v.array(v.string()),
+  note: v.optional(v.string()),
+  originalSymptoms: symptomsObjectValidator,
+  originalSymptomTotal: v.number(),
+  originalActivityImpact: activityImpactValidator,
+  originalDangerSignsPresent: v.boolean(),
+  originalDangerSigns: v.array(v.string()),
+  originalNote: v.optional(v.string()),
+  safetyEvaluationId: v.optional(v.id('safetyEvaluations')),
+  createdAt: v.number(),
+})
+
+export const checkInCompletenessValidator = v.union(
+  v.literal('complete'),
+  v.literal('partial')
+)
+
+export const checkInHistoryRecordedEntryValidator = v.object({
+  kind: v.literal('recorded'),
+  date: v.string(),
+  checkInId: v.id('checkIns'),
+  submittedAt: v.number(),
+  submittedByUserId: v.id('users'),
+  reporterRole: roleValidator,
+  reporterName: v.string(),
+  completeness: checkInCompletenessValidator,
+  safetyStatus: safetyStatusValidator,
+  symptomTotal: v.number(),
+  methodologyVersion: v.optional(methodologyVersionValidator),
+  dangerSignsPresent: v.boolean(),
+  activityImpact: activityImpactValidator,
+  hasAmendment: v.boolean(),
+  amendmentCount: v.number(),
+  canAmend: v.boolean(),
+  originalSymptomTotal: v.optional(v.number()),
+  amendmentReason: v.optional(v.string()),
+  showNotes: v.boolean(),
+  note: v.optional(v.string()),
+})
+
+export const checkInHistoryMissedEntryValidator = v.object({
+  kind: v.literal('missed'),
+  date: v.string(),
+})
+
+export const checkInHistoryEntryValidator = v.union(
+  checkInHistoryRecordedEntryValidator,
+  checkInHistoryMissedEntryValidator
+)
+
+export const checkInAmendResultValidator = v.object({
+  amendmentId: v.id('checkInAmendments'),
+  safetyEvaluationId: v.id('safetyEvaluations'),
+  safetyResult: safetyEvaluationResultValidator,
+})
+
 export const safetyRuleInfoValidator = v.object({
   ruleId: v.string(),
   version: v.string(),

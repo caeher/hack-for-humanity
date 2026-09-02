@@ -187,6 +187,61 @@ export default defineSchema({
     .index('by_patientId_and_date', ['patientId', 'date'])
     .index('by_episodeId', ['episodeId'])
     .index('by_submittedByUserId', ['submittedByUserId'])
+    .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
+    .index('by_episodeId_and_date', ['episodeId', 'date']),
+
+  // 7b. Append-only check-in amendments (original records remain immutable)
+  checkInAmendments: defineTable({
+    checkInId: v.id('checkIns'),
+    patientId: v.id('patients'),
+    episodeId: v.optional(v.id('recoveryEpisodes')),
+    amendedByUserId: v.id('users'),
+    reason: v.string(),
+    symptoms: v.object({
+      headache: v.number(),
+      dizziness: v.number(),
+      nausea: v.number(),
+      lightSensitivity: v.number(),
+      noiseSensitivity: v.number(),
+      fatigue: v.number(),
+      concentration: v.number(),
+      sleepDifficulty: v.number(),
+    }),
+    symptomTotal: v.number(),
+    methodologyVersion: v.optional(v.string()),
+    activityImpact: v.union(
+      v.literal('yes'),
+      v.literal('no'),
+      v.literal('not-sure'),
+      v.literal('none')
+    ),
+    dangerSignsPresent: v.boolean(),
+    dangerSigns: v.array(v.string()),
+    note: v.optional(v.string()),
+    originalSymptoms: v.object({
+      headache: v.number(),
+      dizziness: v.number(),
+      nausea: v.number(),
+      lightSensitivity: v.number(),
+      noiseSensitivity: v.number(),
+      fatigue: v.number(),
+      concentration: v.number(),
+      sleepDifficulty: v.number(),
+    }),
+    originalSymptomTotal: v.number(),
+    originalActivityImpact: v.union(
+      v.literal('yes'),
+      v.literal('no'),
+      v.literal('not-sure'),
+      v.literal('none')
+    ),
+    originalDangerSignsPresent: v.boolean(),
+    originalDangerSigns: v.array(v.string()),
+    originalNote: v.optional(v.string()),
+    safetyEvaluationId: v.optional(v.id('safetyEvaluations')),
+    createdAt: v.number(),
+  })
+    .index('by_checkInId', ['checkInId'])
     .index('by_patientId_and_createdAt', ['patientId', 'createdAt']),
 
   // 8. Daily Exertion & Activity Exposures
