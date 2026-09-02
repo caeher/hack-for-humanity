@@ -510,16 +510,16 @@ export function FormShowcase() {
               <div className="p-5 rounded-2xl border border-border bg-card space-y-3">
                 <span className="font-mono text-xs font-bold text-primary">9. ProgressField</span>
                 <ProgressField
-                  label="Pain Rating (0 - 10)"
+                  label="Headache Severity (0 - 6)"
                   min={0}
-                  max={10}
+                  max={6}
                   step={1}
-                  defaultValue={3}
-                  minLabel="No Pain"
-                  maxLabel="Severe"
+                  defaultValue={2}
+                  minLabel="None (0)"
+                  maxLabel="Severe (6)"
                   size={globalSize}
                   status={globalStatus}
-                  hint="Visual fill slider with live score readout"
+                  hint="Visual Likert slider with live rating readout"
                 />
               </div>
             </div>
@@ -540,9 +540,9 @@ export function FormShowcase() {
                   variant={globalVariant}
                   status={globalStatus}
                   options={[
-                    { label: 'Orthopedic Surgery', value: 'ortho' },
-                    { label: 'Physical Therapy', value: 'pt' },
-                    { label: 'Sports Medicine', value: 'sports' },
+                    { label: 'Concussion & Brain Injury Clinic', value: 'concussion' },
+                    { label: 'Neurology & Persistent Symptoms', value: 'neurology' },
+                    { label: 'Sports Medicine Pacing', value: 'sports' },
                   ]}
                   hint="Styled select with chevron indicator"
                 />
@@ -553,12 +553,12 @@ export function FormShowcase() {
                 <span className="font-mono text-xs font-bold text-primary">11. MultiSelectField</span>
                 <MultiSelectField
                   label="Assigned Clinical Tags"
-                  defaultValue={['acl', 'post-op']}
+                  defaultValue={['concussion', 'active-pacing']}
                   options={[
-                    { label: 'ACL Protocol', value: 'acl' },
-                    { label: 'Post-Operative', value: 'post-op' },
+                    { label: 'Concussion Protocol', value: 'concussion' },
+                    { label: 'Active Pacing', value: 'active-pacing' },
                     { label: 'High Adherence', value: 'adherence' },
-                    { label: 'Medication Review', value: 'meds' },
+                    { label: 'Return-to-Learn', value: 'rtl' },
                   ]}
                   size={globalSize}
                   variant={globalVariant}
@@ -572,12 +572,12 @@ export function FormShowcase() {
                 <span className="font-mono text-xs font-bold text-primary">12. ComboboxField</span>
                 <ComboboxField
                   label="Search Diagnosis"
-                  defaultValue="acl"
+                  defaultValue="tbi"
                   options={[
-                    { label: 'ACL Reconstruction', value: 'acl', description: 'Knee ligament surgery' },
-                    { label: 'Total Knee Arthroplasty', value: 'knee', description: 'Joint replacement' },
-                    { label: 'Rotator Cuff Repair', value: 'shoulder', description: 'Shoulder tendon repair' },
-                    { label: 'Lumbar Decompression', value: 'spine', description: 'Spinal disc surgery' },
+                    { label: 'Acute Mild Traumatic Brain Injury', value: 'tbi', description: 'Sports collision / fall concussion' },
+                    { label: 'Persistent Post-Concussive Symptoms', value: 'ppcs', description: 'Symptom duration >4 weeks' },
+                    { label: 'Post-Traumatic Headache', value: 'headache', description: 'Tension/migraine phenotype' },
+                    { label: 'Vestibular / Ocular Dysfunction', value: 'vestibular', description: 'Dizziness and balance impairment' },
                   ]}
                   size={globalSize}
                   variant={globalVariant}
@@ -590,12 +590,12 @@ export function FormShowcase() {
               <div className="p-5 rounded-2xl border border-border bg-card space-y-3">
                 <span className="font-mono text-xs font-bold text-primary">13. CalendarField</span>
                 <CalendarField
-                  label="Surgery Date"
-                  defaultValue="2026-08-13"
+                  label="Incident Date"
+                  defaultValue="2026-08-19"
                   size={globalSize}
                   variant={globalVariant}
                   status={globalStatus}
-                  hint="Interactive calendar popover with quick presets"
+                  hint="Interactive calendar popover for injury/incident date"
                 />
               </div>
 
@@ -658,8 +658,8 @@ export function FormShowcase() {
               <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
                 <span className="font-mono text-xs font-bold text-primary">17. CheckboxField</span>
                 <CheckboxField
-                  label="Morning Mobility Exercises"
-                  description="Completed 12 knee flexion repetitions"
+                  label="Morning Cognitive Pacing"
+                  description="Completed 20-minute screen-free rest break"
                   defaultChecked={true}
                   size={globalSize}
                   status={globalStatus}

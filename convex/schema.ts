@@ -226,7 +226,9 @@ export default defineSchema({
       v.literal('sleep_hygiene'),
       v.literal('medication'),
       v.literal('check_in'),
-      v.literal('appointment')
+      v.literal('appointment'),
+      v.literal('education'),
+      v.literal('accommodations')
     ),
     targetTime: v.optional(v.string()),
     completed: v.boolean(),

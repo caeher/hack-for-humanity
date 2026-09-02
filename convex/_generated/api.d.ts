@@ -15,6 +15,7 @@ import type * as checkIns from "../checkIns.js";
 import type * as consent from "../consent.js";
 import type * as encounters from "../encounters.js";
 import type * as messages from "../messages.js";
+import type * as migrations from "../migrations.js";
 import type * as patients from "../patients.js";
 import type * as recoveryTrends from "../recoveryTrends.js";
 import type * as seed from "../seed.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   consent: typeof consent;
   encounters: typeof encounters;
   messages: typeof messages;
+  migrations: typeof migrations;
   patients: typeof patients;
   recoveryTrends: typeof recoveryTrends;
   seed: typeof seed;
