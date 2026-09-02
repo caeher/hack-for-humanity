@@ -95,18 +95,18 @@ const RED_FLAG_TEXT_PATTERNS = [
 // Diagnostic intent patterns for AI guardrail
 const AI_DIAGNOSTIC_PATTERNS = [
   /\bdiagnos\w*\b/i,
-  /\b(do\s+i\s+have\s+(a\s+)?(concussion|tbi|brain\s+damage|bleed)|is\s+this\s+(a\s+)?concussion|what\s+(stage|grade)\s+is\s+my\s+concussion|what\s+stage\s+of\s+concussion|post[- ]?concussion\s+syndrome|skull\s+fracture|how\s+bad\s+is\s+my\s+(concussion|brain)|give\s+me\s+a\s+diagnosis)\b/i,
+  /\b(do\s+i\s+have\s+(a\s+)?(concussion|tbi|brain\s+damage|bleed)|does\s+(my\s+)?(child|son|daughter|kid)\s+have\s+(a\s+)?concussion|is\s+this\s+(a\s+)?concussion|what\s+(stage|grade)\s+is\s+(my\s+)?concussion|what\s+stage\s+of\s+concussion|post[- ]?concussion\s+syndrome|skull\s+fracture|how\s+bad\s+is\s+my\s+(concussion|brain)|give\s+me\s+a\s+diagnosis)\b/i,
 ]
 
 // Prescription & medication intent patterns for AI guardrail
 const AI_PRESCRIPTION_PATTERNS = [
   /\bprescrib\w*\b/i,
-  /\b(how\s+much\s+(ibuprofen|advil|tylenol|acetaminophen|motrin|aspirin|aleve|naproxen|medication|painkiller)|what\s+dosage\s+of|how\s+many\s+mg\s+of|what\s+medicine\s+should\s+i\s+take|can\s+i\s+take\s+\d+\s*mg|what\s+drugs?\s+(cure|treat)|sleeping\s+pills?\s+for\s+concussion)\b/i,
+  /\b(how\s+much\s+(ibuprofen|advil|tylenol|acetaminophen|motrin|aspirin|aleve|naproxen|medication|painkiller)|what\s+dosage\s+of|how\s+many\s+mg\s+of|what\s+medicine\s+should\s+i\s+take|can\s+i\s+take\s+\d+\s*mg|can\s+i\s+give\s+.{0,30}(tylenol|ibuprofen|advil|acetaminophen|medication)|what\s+drugs?\s+(cure|treat)|sleeping\s+pills?\s+for\s+concussion)\b/i,
 ]
 
 // Clearance & return to play/work/drive intent patterns for AI guardrail
 const AI_CLEARANCE_PATTERNS = [
-  /\b(can\s+i\s+play|can\s+i\s+return\s+to|am\s+i\s+cleared|cleared\s+to\s+(play|drive|work|sport|contact)|clearance\s+certificate|clear\s+me\s+for|can\s+i\s+drive\s+tomorrow|can\s+i\s+spar|can\s+i\s+box|can\s+i\s+practice)\b/i,
+  /\b(can\s+i\s+play|can\s+i\s+return\s+to|can\s+.+\s+return\s+to|how\s+long\s+before\s+.+\s+can\s+return|am\s+i\s+cleared|cleared\s+to\s+(play|drive|work|sport|contact)|clearance\s+certificate|clear\s+me\s+for|can\s+i\s+drive\s+tomorrow|can\s+i\s+spar|can\s+i\s+box|can\s+i\s+practice)\b/i,
 ]
 
 // Danger sign dismissal / override patterns for AI guardrail

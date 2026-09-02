@@ -698,7 +698,88 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
-  // 19. Clerk webhook delivery ledger (idempotency + observability, no PII)
+  // 19. AI governance configuration (kill switch, cost limits, feature flags)
+  aiGovernanceConfig: defineTable({
+    scope: v.union(v.literal('global'), v.literal('org')),
+    orgId: v.optional(v.id('organizations')),
+    globalKillSwitch: v.boolean(),
+    featureKillSwitches: v.object({
+      nlp: v.boolean(),
+      rag: v.boolean(),
+      insights: v.boolean(),
+      all: v.boolean(),
+    }),
+    dailyCostLimitCents: v.number(),
+    currentDailyCostCents: v.number(),
+    costResetDate: v.string(),
+    updatedByUserId: v.id('users'),
+    updatedAt: v.number(),
+  })
+    .index('by_scope', ['scope'])
+    .index('by_orgId', ['orgId']),
+
+  // 20. AI model/provider change approvals (requires re-evaluation)
+  aiModelApprovals: defineTable({
+    providerId: v.string(),
+    modelId: v.string(),
+    evaluationDatasetVersion: v.string(),
+    evaluationRunId: v.optional(v.id('aiEvaluationRuns')),
+    approvedByUserId: v.id('users'),
+    approvedAt: v.number(),
+    expiresAt: v.number(),
+    notes: v.optional(v.string()),
+    status: v.union(v.literal('active'), v.literal('expired'), v.literal('revoked')),
+  })
+    .index('by_providerId_and_modelId', ['providerId', 'modelId'])
+    .index('by_status', ['status']),
+
+  // 21. AI evaluation run results (release gate audit trail)
+  aiEvaluationRuns: defineTable({
+    datasetVersion: v.string(),
+    totalCases: v.number(),
+    passedCases: v.number(),
+    failedCases: v.number(),
+    metrics: v.object({
+      safetyRefusalRate: v.number(),
+      privacyNoPiiSent: v.number(),
+      groundednessCitationValid: v.number(),
+      injectionBlockedRate: v.number(),
+      exfiltrationBlockedRate: v.number(),
+      biasNeutralLanguage: v.number(),
+    }),
+    releaseBlocked: v.boolean(),
+    criticalFailures: v.array(v.string()),
+    runByUserId: v.optional(v.id('users')),
+    runAt: v.number(),
+  })
+    .index('by_datasetVersion', ['datasetVersion'])
+    .index('by_runAt', ['runAt']),
+
+  // 22. AI request audit log (no prompts, no PII — metadata only)
+  aiRequestAudit: defineTable({
+    requestId: v.string(),
+    ctxSessionId: v.string(),
+    orgId: v.optional(v.id('organizations')),
+    feature: v.union(
+      v.literal('nlp'),
+      v.literal('rag'),
+      v.literal('insights'),
+      v.literal('all')
+    ),
+    outcome: v.string(),
+    providerId: v.optional(v.string()),
+    modelId: v.optional(v.string()),
+    latencyMs: v.optional(v.number()),
+    tokenCount: v.optional(v.number()),
+    promptFingerprint: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_requestId', ['requestId'])
+    .index('by_orgId_and_createdAt', ['orgId', 'createdAt'])
+    .index('by_outcome', ['outcome'])
+    .index('by_createdAt', ['createdAt']),
+
+  // 23. Clerk webhook delivery ledger (idempotency + observability, no PII)
   clerkWebhookEvents: defineTable({
     eventId: v.string(),
     eventType: v.string(),

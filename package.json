@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "ai:eval": "vitest run evaluations/ lib/ai/",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "verify:routes": "node scripts/verify-routes-from-manifest.mjs",
