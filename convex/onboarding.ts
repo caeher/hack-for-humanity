@@ -34,7 +34,7 @@ function resolveNextRoute(
   if (trackingRelationship === 'caregiver' && userRole === 'caregiver') {
     return '/caregiver/dashboard'
   }
-  return '/patient/check-in'
+  return '/patient/assessment'
 }
 
 function generateDisplayId(): string {

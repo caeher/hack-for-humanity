@@ -11,6 +11,7 @@
 import type * as activityExposures from "../activityExposures.js";
 import type * as alerts from "../alerts.js";
 import type * as auditLogs from "../auditLogs.js";
+import type * as baseline from "../baseline.js";
 import type * as carePlans from "../carePlans.js";
 import type * as checkIns from "../checkIns.js";
 import type * as clerkReconciliation from "../clerkReconciliation.js";
@@ -20,6 +21,7 @@ import type * as consent from "../consent.js";
 import type * as encounters from "../encounters.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_baselineLogic from "../lib/baselineLogic.js";
 import type * as lib_businessLogic from "../lib/businessLogic.js";
 import type * as lib_clerkIssuer from "../lib/clerkIssuer.js";
 import type * as lib_clerkWebhookHandlers from "../lib/clerkWebhookHandlers.js";
@@ -47,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   activityExposures: typeof activityExposures;
   alerts: typeof alerts;
   auditLogs: typeof auditLogs;
+  baseline: typeof baseline;
   carePlans: typeof carePlans;
   checkIns: typeof checkIns;
   clerkReconciliation: typeof clerkReconciliation;
@@ -56,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   encounters: typeof encounters;
   http: typeof http;
   "lib/auth": typeof lib_auth;
+  "lib/baselineLogic": typeof lib_baselineLogic;
   "lib/businessLogic": typeof lib_businessLogic;
   "lib/clerkIssuer": typeof lib_clerkIssuer;
   "lib/clerkWebhookHandlers": typeof lib_clerkWebhookHandlers;

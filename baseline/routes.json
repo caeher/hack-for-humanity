@@ -17,6 +17,7 @@
     "/clinician/patients/[id]",
     "/clinician/reports",
     "/onboarding",
+    "/patient/assessment",
     "/patient/check-in",
     "/patient/dashboard",
     "/patient/insights",

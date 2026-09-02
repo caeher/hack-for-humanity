@@ -11,7 +11,7 @@
  * - Fail-safe defaults on incomplete or conflicting data.
  */
 
-import { ConcussionSymptoms } from './businessLogic'
+import { ConcussionSymptoms, validateConcussionSymptoms } from './businessLogic'
 import {
   EscalationPath,
   EvidenceSource,
@@ -393,10 +393,10 @@ export function evaluateSafety(context: SafetyEvaluationContext): SafetyEvaluati
     const dangerMatches = evaluateDangerSigns(context.dangerSigns)
     matchedRules.push(...dangerMatches)
 
-    if (context.contextType === 'onboarding') {
+    if (context.contextType === 'onboarding' || context.contextType === 'baseline') {
       matchedRules.push({
         ...SAFETY_RULES['RULE-ONBOARDING-ACUTE-RED-FLAG'],
-        matchedEvidenceSummary: `onboardingDangerSigns: ${context.dangerSigns.length} selected`,
+        matchedEvidenceSummary: `${context.contextType}DangerSigns: ${context.dangerSigns.length} selected`,
       })
     }
   }
@@ -410,10 +410,13 @@ export function evaluateSafety(context: SafetyEvaluationContext): SafetyEvaluati
     )
     matchedRules.push(...triageMatches)
 
-    if (context.contextType === 'onboarding' && context.symptomTotal >= 35) {
+    if (
+      (context.contextType === 'onboarding' || context.contextType === 'baseline') &&
+      context.symptomTotal >= 35
+    ) {
       matchedRules.push({
         ...SAFETY_RULES['RULE-ONBOARDING-HIGH-INITIAL-BURDEN'],
-        matchedEvidenceSummary: `onboardingSymptomTotal: ${context.symptomTotal} (threshold: >= 35)`,
+        matchedEvidenceSummary: `${context.contextType}SymptomTotal: ${context.symptomTotal} (threshold: >= 35)`,
       })
     }
   }
@@ -588,5 +591,26 @@ export function evaluateOnboarding(
     symptomTotal: total,
     dangerSigns,
     daysSinceInjury,
+  })
+}
+
+/**
+ * Convenience helper for initial recovery baseline assessment screening.
+ */
+export function evaluateBaseline(
+  symptoms: ConcussionSymptoms,
+  dangerSigns: string[] = [],
+  daysSinceInjury?: number,
+  incidentContext?: string
+): SafetyEvaluationResult {
+  const symptomTotal = validateConcussionSymptoms(symptoms)
+
+  return evaluateSafety({
+    contextType: 'baseline',
+    symptoms,
+    symptomTotal,
+    dangerSigns,
+    daysSinceInjury,
+    note: incidentContext,
   })
 }

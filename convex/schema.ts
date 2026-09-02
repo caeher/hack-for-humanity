@@ -96,6 +96,7 @@ export default defineSchema({
       })
     ),
     onboardingCompletedAt: v.optional(v.number()),
+    baselineCompletedAt: v.optional(v.number()),
     status: v.union(v.literal('Active'), v.literal('Discharged'), v.literal('Inactive')),
     notes: v.optional(v.string()),
     createdAt: v.number(),
@@ -414,7 +415,95 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
-  // 17. Clerk webhook delivery ledger (idempotency + observability, no PII)
+  // 17. Versioned initial recovery baselines tied to a recovery episode
+  recoveryBaselines: defineTable({
+    patientId: v.id('patients'),
+    episodeId: v.id('recoveryEpisodes'),
+    orgId: v.id('organizations'),
+    version: v.number(),
+    isCurrent: v.boolean(),
+    supersededAt: v.optional(v.number()),
+    incidentDate: v.string(),
+    incidentContext: v.string(),
+    careReceived: v.optional(v.string()),
+    diagnosisStatus: v.union(v.literal('yes'), v.literal('no'), v.literal('unsure')),
+    symptoms: v.object({
+      headache: v.number(),
+      dizziness: v.number(),
+      nausea: v.number(),
+      lightSensitivity: v.number(),
+      noiseSensitivity: v.number(),
+      fatigue: v.number(),
+      concentration: v.number(),
+      sleepDifficulty: v.number(),
+    }),
+    symptomTotal: v.number(),
+    sleepHours: v.optional(v.number()),
+    schoolWorkDemand: v.optional(v.number()),
+    physicalActivityLevel: v.optional(v.number()),
+    cognitiveActivityLevel: v.optional(v.number()),
+    screenTolerance: v.optional(v.number()),
+    skippedFields: v.array(
+      v.object({
+        fieldId: v.string(),
+        reason: v.string(),
+      })
+    ),
+    dangerSignsPresent: v.boolean(),
+    dangerSigns: v.array(v.string()),
+    completionDurationMs: v.number(),
+    submittedByUserId: v.id('users'),
+    createdAt: v.number(),
+  })
+    .index('by_episodeId', ['episodeId'])
+    .index('by_episodeId_and_version', ['episodeId', 'version'])
+    .index('by_patientId', ['patientId'])
+    .index('by_patientId_and_isCurrent', ['patientId', 'isCurrent'])
+    .index('by_episodeId_and_isCurrent', ['episodeId', 'isCurrent']),
+
+  // 18. Resumable initial recovery assessment drafts
+  baselineAssessmentDrafts: defineTable({
+    userId: v.id('users'),
+    patientId: v.id('patients'),
+    episodeId: v.id('recoveryEpisodes'),
+    step: v.number(),
+    startedAt: v.number(),
+    incidentDate: v.optional(v.string()),
+    incidentContext: v.optional(v.string()),
+    careReceived: v.optional(v.string()),
+    diagnosisStatus: v.optional(
+      v.union(v.literal('yes'), v.literal('no'), v.literal('unsure'))
+    ),
+    symptoms: v.optional(
+      v.object({
+        headache: v.optional(v.number()),
+        dizziness: v.optional(v.number()),
+        nausea: v.optional(v.number()),
+        lightSensitivity: v.optional(v.number()),
+        noiseSensitivity: v.optional(v.number()),
+        fatigue: v.optional(v.number()),
+        concentration: v.optional(v.number()),
+        sleepDifficulty: v.optional(v.number()),
+      })
+    ),
+    sleepHours: v.optional(v.number()),
+    schoolWorkDemand: v.optional(v.number()),
+    physicalActivityLevel: v.optional(v.number()),
+    cognitiveActivityLevel: v.optional(v.number()),
+    screenTolerance: v.optional(v.number()),
+    skippedFields: v.optional(
+      v.array(
+        v.object({
+          fieldId: v.string(),
+          reason: v.string(),
+        })
+      )
+    ),
+    dangerSigns: v.optional(v.array(v.string())),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  // 19. Clerk webhook delivery ledger (idempotency + observability, no PII)
   clerkWebhookEvents: defineTable({
     eventId: v.string(),
     eventType: v.string(),

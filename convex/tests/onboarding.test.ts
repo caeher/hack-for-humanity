@@ -72,7 +72,7 @@ describe('Recovery onboarding', () => {
       limitationsAcknowledged: true,
     })
 
-    expect(result.nextRoute).toBe('/patient/check-in')
+    expect(result.nextRoute).toBe('/patient/assessment')
 
     const patient = await t.withIdentity(newPatientIdentity).query(api.patients.getMePatient, {})
     expect(patient).not.toBeNull()
