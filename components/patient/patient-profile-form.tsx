@@ -14,6 +14,7 @@ import {
   WEARABLE_SYNC_COPY,
 } from '@/lib/reminderPreferences'
 import { isE2ETestMode } from '@/lib/e2e'
+import { CaregiverAccessSection } from '@/components/patient/caregiver-access-section'
 
 function PatientProfileFormDemo() {
   const [profileForm, setProfileForm] = useState({
@@ -329,6 +330,8 @@ function PatientProfileFormLive() {
           )}
         </Card>
       </div>
+
+      {patient?._id && <CaregiverAccessSection patientId={patient._id} />}
     </div>
   )
 }

@@ -90,6 +90,7 @@ export const consentScopeValidator = v.union(
 )
 
 export const consentStatusValidator = v.union(
+  v.literal('pending'),
   v.literal('active'),
   v.literal('revoked'),
   v.literal('expired')
@@ -588,8 +589,49 @@ export const consentGrantDocValidator = v.object({
   status: consentStatusValidator,
   grantedAt: v.number(),
   expiresAt: v.optional(v.number()),
+  invitedAt: v.optional(v.number()),
+  acceptedAt: v.optional(v.number()),
+  invitedByUserId: v.optional(v.id('users')),
   revokedAt: v.optional(v.number()),
   revokedByUserId: v.optional(v.id('users')),
+})
+
+export const restrictedSectionValidator = v.object({
+  section: v.string(),
+  reason: v.string(),
+  requiredScope: v.optional(consentScopeValidator),
+})
+
+export const consentGrantWithGranteeValidator = v.object({
+  grant: consentGrantDocValidator,
+  granteeName: v.string(),
+  granteeEmail: v.string(),
+})
+
+export const pendingInvitationValidator = v.object({
+  grant: consentGrantDocValidator,
+  patientDisplayId: v.string(),
+  patientName: v.string(),
+  inviterName: v.optional(v.string()),
+})
+
+export const accessNotificationDocValidator = v.object({
+  _id: v.id('accessNotifications'),
+  _creationTime: v.number(),
+  recipientUserId: v.id('users'),
+  patientId: v.optional(v.id('patients')),
+  consentGrantId: v.optional(v.id('consentGrants')),
+  type: v.union(
+    v.literal('consent_invited'),
+    v.literal('consent_accepted'),
+    v.literal('consent_granted'),
+    v.literal('consent_updated'),
+    v.literal('consent_revoked')
+  ),
+  title: v.string(),
+  message: v.string(),
+  readAt: v.optional(v.number()),
+  createdAt: v.number(),
 })
 
 export const checkInDocValidator = v.object({
@@ -1137,6 +1179,38 @@ export const dashboardSafetyEscalationValidator = v.object({
   evaluationId: v.id('safetyEvaluations'),
   createdAt: v.number(),
   requiresAcknowledgement: v.boolean(),
+})
+
+export const caregiverSupportSummaryValidator = v.object({
+  dataSource: v.literal('live'),
+  patientId: v.id('patients'),
+  displayId: v.string(),
+  patientName: v.string(),
+  relationship: v.optional(v.string()),
+  scopes: v.array(consentScopeValidator),
+  expiresAt: v.optional(v.number()),
+  restrictedSections: v.array(restrictedSectionValidator),
+  hasCheckInToday: v.union(v.boolean(), v.null()),
+  latestSymptomTotal: v.union(v.number(), v.null()),
+  latestCheckInDate: v.union(v.string(), v.null()),
+  latestCheckInUpdatedAt: v.union(v.number(), v.null()),
+  latestSymptomProvenance: v.union(provenanceMetadataValidator, v.null()),
+  chartPoints: v.union(v.array(dashboardChartPointValidator), v.null()),
+  trendSummaryText: v.union(v.string(), v.null()),
+  carePlanTasks: v.union(v.array(carePlanDocValidator), v.null()),
+  reminders: v.union(v.array(planReminderDocValidator), v.null()),
+  safetyStatus: v.union(
+    v.object({
+      headline: v.string(),
+      guidance: v.string(),
+      requiresAcknowledgement: v.boolean(),
+    }),
+    v.null()
+  ),
+  nextAppointmentLabel: v.union(v.string(), v.null()),
+  canLogProxy: v.boolean(),
+  canSendMessages: v.boolean(),
+  canViewMessages: v.boolean(),
 })
 
 export const dashboardSummaryValidator = v.object({

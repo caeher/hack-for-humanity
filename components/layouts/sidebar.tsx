@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { nav, roles, Role } from '@/lib/cri-data'
 import { cn } from '@/lib/utils'
+import { CaregiverDynamicNav } from './caregiver-dynamic-nav'
 
 const iconMap: Record<string, React.ElementType> = {
   Overview: LayoutDashboard,
@@ -44,6 +45,39 @@ export interface SidebarProps {
   role: Role
   open: boolean
   onClose: () => void
+}
+
+function SidebarLink({
+  href,
+  label,
+  pathname,
+  onClose,
+  matchPrefix,
+}: {
+  href: string
+  label: string
+  pathname: string
+  onClose: () => void
+  matchPrefix?: boolean
+}) {
+  const Icon = iconMap[label] || ChevronRight
+  const active = matchPrefix ? pathname.startsWith(href) : pathname === href
+
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={cn(
+        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+        active
+          ? 'bg-foreground text-background font-semibold'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      )}
+    >
+      <Icon className="size-4 shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
+  )
 }
 
 export function Sidebar({ role, open, onClose }: SidebarProps) {
@@ -74,35 +108,54 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
         </div>
 
         <div className="mt-5 flex flex-col gap-1">
-          {roleNav.map(item => {
-            const Icon = iconMap[item.label] || ChevronRight
-            const active =
-              pathname === item.href ||
-              (item.label === 'Patients' && pathname.startsWith('/clinician/patients'))
-
-            return (
-              <Link
+          {role === 'caregiver' ? (
+            <>
+              {roleNav
+                .filter(item => item.label === 'Overview')
+                .map(item => (
+                  <SidebarLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    pathname={pathname}
+                    onClose={onClose}
+                  />
+                ))}
+              <CaregiverDynamicNav pathname={pathname} onClose={onClose} />
+              {roleNav
+                .filter(item => item.label === 'Messages')
+                .map(item => (
+                  <SidebarLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    pathname={pathname}
+                    onClose={onClose}
+                  />
+                ))}
+            </>
+          ) : (
+            roleNav.map(item => (
+              <SidebarLink
                 key={item.href}
                 href={item.href}
-                onClick={onClose}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-foreground text-background font-semibold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <Icon className="size-4 shrink-0" />
-                <span>{item.label}</span>
-              </Link>
-            )
-          })}
+                label={item.label}
+                pathname={pathname}
+                onClose={onClose}
+                matchPrefix={item.label === 'Patients'}
+              />
+            ))
+          )}
         </div>
 
         <div className="mt-auto rounded-lg border border-border bg-background p-3">
-          <p className="text-xs font-semibold text-foreground">Prototype environment</p>
+          <p className="text-xs font-semibold text-foreground">
+            {role === 'caregiver' ? 'Consent-based access' : 'Prototype environment'}
+          </p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Data shown is simulated and not medical advice.
+            {role === 'caregiver'
+              ? 'Caregivers only see recovery information explicitly shared by each patient.'
+              : 'Data shown is simulated and not medical advice.'}
           </p>
         </div>
       </div>
