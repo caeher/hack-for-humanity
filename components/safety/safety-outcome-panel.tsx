@@ -23,6 +23,8 @@ import {
 } from '@/lib/safety/copy'
 import { getEmergencyGuidance, type EmergencyRegion } from '@/lib/safety/emergency'
 import { ESCALATION_PRESENTATION } from '@/lib/safety/presentation'
+import { buildSafetyProvenance } from '@/lib/provenance'
+import { ExplanationView } from '@/components/explanation'
 
 export type SafetyOutcomeSource = 'backend' | 'client_fallback'
 
@@ -37,6 +39,7 @@ export interface SafetyOutcomePanelProps {
   onAcknowledge?: () => void | Promise<void>
   onReviewAnswers?: () => void
   showRoutineCompletion?: boolean
+  showExplanation?: boolean
 }
 
 function SeverityIcon({
@@ -89,9 +92,11 @@ export function SafetyOutcomePanel({
   onAcknowledge,
   onReviewAnswers,
   showRoutineCompletion = true,
+  showExplanation = true,
 }: SafetyOutcomePanelProps) {
   const outcomeState = resolveSafetyOutcomeState(safetyResult.status, safetyResult.failSafeApplied)
   const copy = getSafetyOutcomeCopy(outcomeState, audience)
+  const safetyProvenance = buildSafetyProvenance({ safetyResult, symptomTotal })
   const region = emergencyRegion ?? 'unknown'
   const emergency = getEmergencyGuidance(region)
   const escalationAction = getEscalationAction(safetyResult.primaryEscalation, region)
@@ -286,6 +291,17 @@ export function SafetyOutcomePanel({
           )}
         </div>
       </Card>
+
+      {showExplanation ? (
+        <div className="mt-6">
+          <ExplanationView
+            provenance={safetyProvenance}
+            title="Safety rule provenance"
+            compact
+            id="safety-explanation"
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

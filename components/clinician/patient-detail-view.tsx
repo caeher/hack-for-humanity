@@ -7,6 +7,8 @@ import { PageHeader } from '@/components/layouts/page-header'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { TrendChart } from '@/components/dashboard/trend-chart'
 import { InsightCard } from '@/components/dashboard/insight-card'
+import { ExplanationView } from '@/components/explanation'
+import { buildPatternInsightProvenance } from '@/lib/provenance'
 import { ClinicalEncounterModal } from './clinical-encounter-modal'
 
 export interface PatientDetailViewProps {
@@ -15,6 +17,22 @@ export interface PatientDetailViewProps {
 
 export function PatientDetailView({ id = 'P-1042' }: PatientDetailViewProps) {
   const [showNoteModal, setShowNoteModal] = useState(false)
+  const insightProvenance = buildPatternInsightProvenance({
+    title: 'Shorter sleep observed alongside higher next-day headache ratings',
+    description:
+      'On 4 of 6 nights with less than 7 hours of sleep, the next check-in included a higher headache rating.',
+    patternType: 'short_sleep_lagged_headache',
+    status: 'available',
+    confidence: 'moderate',
+    sampleCount: 6,
+    matchCount: 4,
+    inputDateRangeStart: '2026-08-01',
+    inputDateRangeEnd: '2026-08-31',
+    algorithmVersion: '1.0.0',
+    effectDirection: 'positive',
+    checkInCount: 12,
+    exposureCount: 10,
+  })
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,8 +62,14 @@ export function PatientDetailView({ id = 'P-1042' }: PatientDetailViewProps) {
             <TrendChart clinical />
           </div>
         </Card>
-        <InsightCard />
+        <InsightCard provenance={insightProvenance} />
       </div>
+      <ExplanationView
+        provenance={insightProvenance}
+        title="Clinician insight provenance"
+        compact
+        id="clinician-insight-explanation"
+      />
       <Card className="p-6">
         <h2 className="font-semibold text-foreground">Recent check-ins</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">

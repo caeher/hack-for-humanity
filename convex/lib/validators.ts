@@ -164,6 +164,67 @@ export const trendReadinessValidator = v.union(
   v.literal('sufficient')
 )
 
+export const provenanceSourceKindValidator = v.union(
+  v.literal('patient_report'),
+  v.literal('symptom_total'),
+  v.literal('computed_trend'),
+  v.literal('pattern_insight'),
+  v.literal('safety_outcome'),
+  v.literal('clinician_content'),
+  v.literal('ai_generated')
+)
+
+export const provenanceConfidenceStateValidator = v.union(
+  v.literal('high'),
+  v.literal('moderate'),
+  v.literal('low'),
+  v.literal('insufficient'),
+  v.literal('not_applicable')
+)
+
+export const provenanceSourceRecordValidator = v.object({
+  label: v.string(),
+  recordType: v.string(),
+  recordId: v.optional(v.string()),
+  date: v.optional(v.string()),
+  visible: v.boolean(),
+})
+
+export const provenanceEvidenceReferenceValidator = v.object({
+  label: v.string(),
+  citation: v.optional(v.string()),
+  authority: v.optional(v.string()),
+  ruleId: v.optional(v.string()),
+  version: v.optional(v.string()),
+})
+
+export const provenanceContributingCategoryValidator = v.object({
+  label: v.string(),
+  rating: v.union(v.number(), v.null()),
+  visible: v.boolean(),
+})
+
+export const provenanceMetadataValidator = v.object({
+  schemaVersion: v.string(),
+  sourceKind: provenanceSourceKindValidator,
+  sourceKindLabel: v.string(),
+  plainLanguageRationale: v.string(),
+  technicalDetail: v.optional(v.string()),
+  dateRangeStart: v.union(v.string(), v.null()),
+  dateRangeEnd: v.union(v.string(), v.null()),
+  methodName: v.string(),
+  methodVersion: v.string(),
+  confidence: provenanceConfidenceStateValidator,
+  confidenceExplanation: v.string(),
+  sourceRecords: v.array(provenanceSourceRecordValidator),
+  evidenceReferences: v.array(provenanceEvidenceReferenceValidator),
+  contributingCategories: v.optional(v.array(provenanceContributingCategoryValidator)),
+  recomputedFromAmendment: v.optional(v.boolean()),
+  amendmentNote: v.optional(v.string()),
+  nonDiagnosticDisclaimer: v.string(),
+  restrictedDetailCount: v.optional(v.number()),
+})
+
 export const trendSummaryValidator = v.object({
   methodologyVersion: methodologyVersionValidator,
   readiness: trendReadinessValidator,
@@ -181,6 +242,7 @@ export const trendSummaryValidator = v.object({
   summaryText: v.string(),
   disclaimerText: v.string(),
   insufficientReason: v.union(v.string(), v.null()),
+  provenance: provenanceMetadataValidator,
 })
 
 export const trackingRelationshipValidator = v.union(
@@ -891,6 +953,7 @@ export const dashboardInsightValidator = v.object({
   footer: v.string(),
   generatedAt: v.union(v.string(), v.null()),
   sourceRecordCount: v.number(),
+  provenance: provenanceMetadataValidator,
 })
 
 export const dashboardSafetyEscalationValidator = v.object({
@@ -916,6 +979,7 @@ export const dashboardSummaryValidator = v.object({
   latestSymptomTotal: v.union(v.number(), v.null()),
   latestHeadacheRating: v.union(v.number(), v.null()),
   latestCheckInUpdatedAt: v.union(v.number(), v.null()),
+  latestSymptomProvenance: v.union(provenanceMetadataValidator, v.null()),
   trendSummary: trendSummaryValidator,
   chartPoints: v.array(dashboardChartPointValidator),
   checkInConsistency: dashboardCheckInConsistencyValidator,
@@ -1044,6 +1108,7 @@ export const patternEvidenceValidator = v.object({
   description: v.string(),
   footer: v.string(),
   suppressedReason: v.union(v.string(), v.null()),
+  provenance: provenanceMetadataValidator,
 })
 
 export const patternDetectionResultValidator = v.object({

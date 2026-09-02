@@ -39,6 +39,11 @@ import {
   SYMPTOM_METHODOLOGY_VERSION,
 } from '@/lib/symptomMethodology'
 import {
+  buildPatternInsightProvenance,
+  buildTrendProvenance,
+} from '@/lib/provenance'
+import { ExplanationView } from '@/components/explanation'
+import {
   formatCheckInConsistencyValue,
   formatEncounterDateTime,
   formatGreetingDate,
@@ -168,6 +173,26 @@ function CheckInCallToAction() {
 
 function PatientDashboardDemo() {
   const demoTrend = computeDescriptiveTrend(demoTrendPoints)
+  const demoTrendProvenance = buildTrendProvenance({
+    trend: demoTrend,
+    sourceCheckInDates: demoTrendPoints.map(point => point.date),
+  })
+  const demoInsightProvenance = buildPatternInsightProvenance({
+    title: 'Shorter sleep observed alongside higher next-day headache ratings',
+    description:
+      'On 4 of 6 nights with less than 7 hours of sleep, the next check-in included a higher headache rating.',
+    patternType: 'short_sleep_lagged_headache',
+    status: 'available',
+    confidence: 'moderate',
+    sampleCount: 6,
+    matchCount: 4,
+    inputDateRangeStart: '2026-08-25',
+    inputDateRangeEnd: '2026-09-01',
+    algorithmVersion: '1.0.0',
+    effectDirection: 'positive',
+    checkInCount: 12,
+    exposureCount: 10,
+  })
   const latestTotal = recoveryTrend[recoveryTrend.length - 1]?.symptomBurden ?? 15
 
   return (
@@ -205,6 +230,13 @@ function PatientDashboardDemo() {
           <TrendChart />
           <p className="mt-3 text-xs leading-5 text-muted-foreground">{demoTrend.summaryText}</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{demoTrend.disclaimerText}</p>
+          <ExplanationView
+            provenance={demoTrendProvenance}
+            title="How this trend was calculated"
+            compact
+            className="mt-4 border-0 bg-muted/20 shadow-none"
+            id="demo-trend-explanation"
+          />
         </Card>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -229,9 +261,25 @@ function PatientDashboardDemo() {
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <TodayPlan mode="demo" />
-        <InsightCard footer="BASED ON 12 CHECK-INS · SIMULATED DATA" />
+        <InsightCard
+          footer="BASED ON 12 CHECK-INS · SIMULATED DATA"
+          provenance={demoInsightProvenance}
+        />
       </div>
-      <SymptomMethodologyPanel compact />
+      <SymptomMethodologyPanel
+        compact
+        contributingRatings={[
+          { dimensionId: 'headache', label: 'Headache', rating: 2 },
+          { dimensionId: 'dizziness', label: 'Dizziness', rating: 1 },
+          { dimensionId: 'nausea', label: 'Nausea', rating: 0 },
+          { dimensionId: 'lightSensitivity', label: 'Light sensitivity', rating: 1 },
+          { dimensionId: 'noiseSensitivity', label: 'Noise sensitivity', rating: 0 },
+          { dimensionId: 'fatigue', label: 'Fatigue', rating: 3 },
+          { dimensionId: 'concentration', label: 'Concentration difficulty', rating: 2 },
+          { dimensionId: 'sleepDifficulty', label: 'Sleep difficulty', rating: 1 },
+        ]}
+        checkInDate="2026-09-01"
+      />
     </div>
   )
 }
@@ -332,6 +380,13 @@ function PatientDashboardLive() {
           <TrendChart data={chartData} />
           <p className="mt-3 text-xs leading-5 text-muted-foreground">{trend.summaryText}</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{trend.disclaimerText}</p>
+          <ExplanationView
+            provenance={trend.provenance}
+            title="How this trend was calculated"
+            compact
+            className="mt-4 border-0 bg-muted/20 shadow-none"
+            id="live-trend-explanation"
+          />
         </Card>
       </div>
 
@@ -413,11 +468,19 @@ function PatientDashboardLive() {
             title={summary.insight.title}
             description={summary.insight.description}
             footer={summary.insight.footer}
+            provenance={summary.insight.provenance}
           />
         )}
       </div>
 
-      <SymptomMethodologyPanel compact />
+      {summary.latestSymptomProvenance ? (
+        <SymptomMethodologyPanel
+          compact
+          provenance={summary.latestSymptomProvenance}
+        />
+      ) : (
+        <SymptomMethodologyPanel compact />
+      )}
     </div>
   )
 }

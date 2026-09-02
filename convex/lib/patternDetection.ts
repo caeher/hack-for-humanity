@@ -6,6 +6,7 @@
  */
 
 import { addDaysToIsoDate, compareIsoDates } from './checkInHistoryLogic'
+import { attachPatternProvenance, buildPatternInsightProvenance, type ProvenanceMetadata } from './provenance'
 import { TREND_REQUIREMENTS } from './symptomMethodology'
 
 export const PATTERN_DETECTION_VERSION = '1.0.0' as const
@@ -75,7 +76,7 @@ export interface ExposureObservation {
   cognitiveMinutes: number
 }
 
-export interface PatternEvidence {
+export interface InternalPatternEvidence {
   patternType: PatternType
   status: PatternStatus
   effectDirection: EffectDirection | null
@@ -90,6 +91,10 @@ export interface PatternEvidence {
   description: string
   footer: string
   suppressedReason: string | null
+}
+
+export interface PatternEvidence extends InternalPatternEvidence {
+  provenance: ProvenanceMetadata
 }
 
 export interface PatternDetectionInput {
@@ -209,7 +214,7 @@ function buildInsufficientPattern(
   checkInCount: number,
   sampleCount: number,
   dateRange: { start: string | null; end: string | null }
-): PatternEvidence {
+): InternalPatternEvidence {
   return {
     patternType,
     status: 'insufficient',
@@ -233,7 +238,7 @@ function detectShortSleepLaggedHeadache(
   exposures: ExposureObservation[],
   today: string,
   checkInCount: number
-): PatternEvidence {
+): InternalPatternEvidence {
   const patternType: PatternType = 'short_sleep_lagged_headache'
   const checkInsByDate = new Map(checkIns.map(entry => [entry.date, entry]))
   const sortedExposures = [...exposures].sort((a, b) => compareIsoDates(a.date, b.date))
@@ -345,7 +350,7 @@ function buildCorrelationPattern(args: {
   insufficientDescription: string
   availableTitle: string
   minAbsRho?: number
-}): PatternEvidence {
+}): InternalPatternEvidence {
   const {
     patternType,
     pairs,
@@ -472,7 +477,7 @@ function detectHighScreenHeadache(
   checkIns: CheckInObservation[],
   exposures: ExposureObservation[],
   checkInCount: number
-): PatternEvidence {
+): InternalPatternEvidence {
   const pairs = pairSameDayExposureSymptom(
     checkIns,
     exposures,
@@ -497,7 +502,7 @@ function detectHighPhysicalSymptoms(
   checkIns: CheckInObservation[],
   exposures: ExposureObservation[],
   checkInCount: number
-): PatternEvidence {
+): InternalPatternEvidence {
   const pairs = pairSameDayExposureSymptom(
     checkIns,
     exposures,
@@ -522,7 +527,7 @@ function detectHighCognitiveConcentration(
   checkIns: CheckInObservation[],
   exposures: ExposureObservation[],
   checkInCount: number
-): PatternEvidence {
+): InternalPatternEvidence {
   const pairs = pairSameDayExposureSymptom(
     checkIns,
     exposures,
@@ -548,7 +553,7 @@ function detectLowerPhysicalLowerDizziness(
   checkIns: CheckInObservation[],
   exposures: ExposureObservation[],
   checkInCount: number
-): PatternEvidence {
+): InternalPatternEvidence {
   const pairs = pairSameDayExposureSymptom(
     checkIns,
     exposures,
@@ -578,13 +583,18 @@ export function detectLongitudinalPatterns(input: PatternDetectionInput): Patter
   const checkIns = filterByWindow(input.checkIns, input.today, windowDays)
   const exposures = filterByWindow(input.exposures, input.today, windowDays)
 
-  const patterns: PatternEvidence[] = [
+  const rawPatterns = [
     detectShortSleepLaggedHeadache(checkIns, exposures, input.today, checkIns.length),
     detectHighScreenHeadache(checkIns, exposures, checkIns.length),
     detectHighPhysicalSymptoms(checkIns, exposures, checkIns.length),
     detectHighCognitiveConcentration(checkIns, exposures, checkIns.length),
     detectLowerPhysicalLowerDizziness(checkIns, exposures, checkIns.length),
   ]
+
+  const patterns: PatternEvidence[] = rawPatterns.map(pattern => ({
+    ...pattern,
+    provenance: attachPatternProvenance(pattern, checkIns.length, exposures.length),
+  }))
 
   const availablePatterns = patterns.filter(pattern => pattern.status === 'available')
   const primaryInsight =
@@ -617,6 +627,7 @@ export function toDashboardInsight(
   footer: string
   generatedAt: string | null
   sourceRecordCount: number
+  provenance: ProvenanceMetadata
 } {
   const primary = result.primaryInsight
   if (!primary) {
@@ -632,6 +643,22 @@ export function toDashboardInsight(
         footer: `BASED ON ${result.checkInCount} CHECK-INS · LIVE DATA`,
         generatedAt: result.computedAt,
         sourceRecordCount: result.checkInCount,
+        provenance: buildPatternInsightProvenance({
+          title: 'More check-ins needed for pattern observations',
+          description:
+            'CRI needs additional complete check-ins before describing temporal associations in your recovery data.',
+          patternType: 'insufficient_data',
+          status: 'insufficient',
+          confidence: null,
+          sampleCount: 0,
+          matchCount: 0,
+          inputDateRangeStart: null,
+          inputDateRangeEnd: null,
+          algorithmVersion: result.algorithmVersion,
+          effectDirection: null,
+          checkInCount: result.checkInCount,
+          exposureCount: result.exposureCount,
+        }),
       }
     }
     return {
@@ -641,6 +668,7 @@ export function toDashboardInsight(
       footer: fallback.footer,
       generatedAt: result.computedAt,
       sourceRecordCount: result.checkInCount,
+      provenance: fallback.provenance,
     }
   }
 
@@ -651,6 +679,7 @@ export function toDashboardInsight(
     footer: primary.footer,
     generatedAt: result.computedAt,
     sourceRecordCount: result.checkInCount,
+    provenance: primary.provenance,
   }
 }
 
