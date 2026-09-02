@@ -37,6 +37,7 @@ import {
   type CheckInSafetyStatus,
 } from '@/lib/checkInHistory'
 import { METHODOLOGY_COPY } from '@/lib/symptomMethodology'
+import { isE2ETestMode } from '@/lib/e2e'
 
 const activityImpactOptions = [
   { value: 'none', label: 'No activity today' },
@@ -292,7 +293,14 @@ function CheckInCorrectionDialog({
   )
 }
 
-export function CheckInHistory({ patientId, episodeId, timeZone, className }: CheckInHistoryProps) {
+export function CheckInHistory(props: CheckInHistoryProps) {
+  if (isE2ETestMode) {
+    return <CheckInHistoryDemo className={props.className} />
+  }
+  return <CheckInHistoryLive {...props} />
+}
+
+function CheckInHistoryLive({ patientId, episodeId, timeZone, className }: CheckInHistoryProps) {
   const [retryKey, setRetryKey] = useState(0)
 
   return (
@@ -308,6 +316,55 @@ export function CheckInHistory({ patientId, episodeId, timeZone, className }: Ch
         className={className}
       />
     </CheckInHistoryErrorBoundary>
+  )
+}
+
+function CheckInHistoryDemo({ className }: { className?: string }) {
+  return (
+    <Card className={cn('p-6', className)}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-semibold text-foreground">Daily check-in history</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Newest first. Missing days are shown as gaps — not as zero symptoms.
+          </p>
+        </div>
+        <Badge tone="neutral">
+          <ClipboardList className="mr-1 size-3" />
+          {METHODOLOGY_COPY.metricShortName}
+        </Badge>
+      </div>
+      <ul className="mt-5 flex flex-col gap-3">
+        <li className="rounded-xl border border-border bg-card px-4 py-3 warm-shadow">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Mon, Sep 1, 2026</p>
+              <p className="mt-1 font-mono text-xs text-muted-foreground">
+                Submitted Sep 1, 2026, 8:42 AM · Patient (Maya Chen)
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge tone="good">Routine</Badge>
+              <Badge tone="good">Complete</Badge>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-foreground">
+            {METHODOLOGY_COPY.metricShortName}: <span className="font-semibold">15/48</span>
+          </p>
+        </li>
+        <li className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Sun, Aug 31, 2026</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                No check-in recorded · not counted as zero symptoms
+              </p>
+            </div>
+            <Badge tone="neutral">Missed day</Badge>
+          </div>
+        </li>
+      </ul>
+    </Card>
   )
 }
 
