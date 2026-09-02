@@ -780,7 +780,8 @@ export default defineSchema({
       v.literal('consent_revoke'),
       v.literal('auth_failure'),
       v.literal('safety_notification'),
-      v.literal('safety_acknowledgement')
+      v.literal('safety_acknowledgement'),
+      v.literal('report_generate')
     ),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
@@ -1114,6 +1115,77 @@ export default defineSchema({
   })
     .index('by_eventId', ['eventId'])
     .index('by_status_and_receivedAt', ['status', 'receivedAt']),
+
+  // 25. Versioned concussion recovery reports (audited snapshots)
+  recoveryReports: defineTable({
+    patientId: v.id('patients'),
+    episodeId: v.optional(v.id('recoveryEpisodes')),
+    orgId: v.id('organizations'),
+    reportVersion: v.string(),
+    contentHash: v.string(),
+    rangeStart: v.string(),
+    rangeEnd: v.string(),
+    rangeKey: v.union(
+      v.literal('7'),
+      v.literal('14'),
+      v.literal('30'),
+      v.literal('episode')
+    ),
+    dataCutoffAt: v.number(),
+    generatedAt: v.number(),
+    requestedByUserId: v.id('users'),
+    requestedByRole: v.string(),
+    requestedByName: v.string(),
+    consentScopesApplied: v.array(
+      v.union(
+        v.literal('view_symptoms'),
+        v.literal('view_trends'),
+        v.literal('view_plan'),
+        v.literal('log_proxy'),
+        v.literal('receive_alerts'),
+        v.literal('view_messages'),
+        v.literal('send_messages')
+      )
+    ),
+    methodologyVersions: v.object({
+      symptom: v.string(),
+      pattern: v.string(),
+      safety: v.string(),
+      provenanceSchema: v.string(),
+    }),
+    dataSource: v.union(v.literal('live'), v.literal('simulated')),
+    sectionsIncluded: v.array(v.string()),
+    sectionsOmitted: v.array(
+      v.object({
+        section: v.string(),
+        reason: v.string(),
+        requiredScope: v.optional(
+          v.union(
+            v.literal('view_symptoms'),
+            v.literal('view_trends'),
+            v.literal('view_plan'),
+            v.literal('log_proxy'),
+            v.literal('receive_alerts'),
+            v.literal('view_messages'),
+            v.literal('send_messages')
+          )
+        ),
+      })
+    ),
+    payload: v.any(),
+    sourceRecordRefs: v.array(
+      v.object({
+        recordType: v.string(),
+        recordId: v.string(),
+        date: v.optional(v.string()),
+      })
+    ),
+    status: v.union(v.literal('active'), v.literal('superseded')),
+    supersededByReportId: v.optional(v.id('recoveryReports')),
+  })
+    .index('by_patientId_and_generatedAt', ['patientId', 'generatedAt'])
+    .index('by_patientId_and_range', ['patientId', 'rangeStart', 'rangeEnd'])
+    .index('by_orgId_and_generatedAt', ['orgId', 'generatedAt']),
 })
 
 
