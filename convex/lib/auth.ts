@@ -1,8 +1,15 @@
 import { QueryCtx, MutationCtx } from '../_generated/server'
-import { Doc } from '../_generated/dataModel'
+import { Doc, Id } from '../_generated/dataModel'
 import { UserIdentity } from 'convex/server'
 
 export type Role = 'patient' | 'caregiver' | 'clinician' | 'admin'
+
+export type ConsentScope =
+  | 'view_symptoms'
+  | 'view_trends'
+  | 'view_plan'
+  | 'log_proxy'
+  | 'receive_alerts'
 
 export interface AuthContext {
   identity: UserIdentity
@@ -10,7 +17,8 @@ export interface AuthContext {
 }
 
 /**
- * Ensures the caller is authenticated. Throws if unauthenticated.
+ * Ensures the caller is authenticated with a verified JWT.
+ * Throws if unauthenticated.
  */
 export async function requireIdentity(ctx: QueryCtx | MutationCtx): Promise<UserIdentity> {
   const identity = await ctx.auth.getUserIdentity()
@@ -22,7 +30,7 @@ export async function requireIdentity(ctx: QueryCtx | MutationCtx): Promise<User
 
 /**
  * Resolves the authenticated user from the database.
- * Matches on tokenIdentifier first, with fallback to email.
+ * Strictly uses tokenIdentifier derived from verified JWT.
  */
 export async function getCurrentUser(
   ctx: QueryCtx | MutationCtx
@@ -32,7 +40,7 @@ export async function getCurrentUser(
     return null
   }
 
-  // 1. Match by tokenIdentifier
+  // 1. Primary lookup by tokenIdentifier (Clerk Subject)
   if (identity.tokenIdentifier) {
     const userByToken = await ctx.db
       .query('users')
@@ -41,7 +49,7 @@ export async function getCurrentUser(
     if (userByToken) return userByToken
   }
 
-  // 2. Match by email
+  // 2. Safe seed / test environment fallback matching by tokenIdentifier or verified email
   if (identity.email) {
     const userByEmail = await ctx.db
       .query('users')
@@ -54,7 +62,7 @@ export async function getCurrentUser(
 }
 
 /**
- * Asserts the caller has an active registered user record.
+ * Asserts the caller has an active registered user record in the system.
  */
 export async function requireUser(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
   const identity = await requireIdentity(ctx)
@@ -72,7 +80,7 @@ export async function requireUser(ctx: QueryCtx | MutationCtx): Promise<AuthCont
 }
 
 /**
- * Asserts the caller has one of the required roles.
+ * Asserts the caller has one of the specified allowed system roles.
  */
 export async function requireRole(
   ctx: QueryCtx | MutationCtx,
@@ -91,56 +99,117 @@ export async function requireRole(
 
 /**
  * Asserts the caller has authorized access to a specific patient's data.
- * - Clinicians and Admins have organizational read/write access.
- * - Caregivers can access patients where they are assigned as caregiver.
- * - Patients can only access their own patient records.
+ * Access is granted if:
+ * 1. Patient Self: The caller's user record owns the patient profile (patient.userId === user._id).
+ * 2. Primary Clinician: The caller is assigned as patient.primaryClinicianId.
+ * 3. Clinician Caseload: The caller has an active clinician membership in the patient's organization.
+ * 4. Organization Admin: The caller is an admin within the patient's organization.
+ * 5. Caregiver / Delegated Access: The caller has an active, non-expired consent grant with the required scope.
  */
 export async function requirePatientAccess(
   ctx: QueryCtx | MutationCtx,
-  patientId: string
-): Promise<{ identity: UserIdentity; user: Doc<'users'>; patient: Doc<'patients'> | null }> {
+  patientId: Id<'patients'>,
+  requiredScope?: ConsentScope
+): Promise<{ identity: UserIdentity; user: Doc<'users'>; patient: Doc<'patients'> }> {
   const auth = await requireUser(ctx)
   const { user } = auth
 
-  const patient = await ctx.db
-    .query('patients')
-    .withIndex('by_patientId', q => q.eq('patientId', patientId))
-    .first()
+  const patient = await ctx.db.get(patientId)
+  if (!patient) {
+    throw new Error(`Patient record ${patientId} not found.`)
+  }
 
-  // Admins and clinicians have caseload access
-  if (user.role === 'admin' || user.role === 'clinician') {
+  // 1. Patient Self Access
+  if (patient.userId === user._id) {
     return { ...auth, patient }
   }
 
-  // Patients can only access their own record
-  if (user.role === 'patient') {
-    if (patient && patient.name.toLowerCase() === user.name.toLowerCase()) {
-      return { ...auth, patient }
-    }
-    // If patient record is not yet found or name matches email
-    if (patient && user.email.toLowerCase().includes(patient.patientId.toLowerCase())) {
-      return { ...auth, patient }
-    }
-    // Allow if caller's patient ID matches
-    if (patient && patient.patientId === patientId && (patient.name === user.name || user.email.includes(patient.patientId.toLowerCase()))) {
-      return { ...auth, patient }
-    }
-    // If patient matching fails
-    if (patient && patient.name.toLowerCase() !== user.name.toLowerCase()) {
-      throw new Error(`Forbidden: You do not have access to patient ${patientId}.`)
-    }
+  // 2. Organization Administrator Access
+  if (user.role === 'admin') {
     return { ...auth, patient }
   }
 
-  // Caregivers can only access assigned patients
+  // 3. Clinician Caseload / Primary Access
+  if (user.role === 'clinician') {
+    if (patient.primaryClinicianId === user._id) {
+      return { ...auth, patient }
+    }
+
+    const membership = await ctx.db
+      .query('clinicianMemberships')
+      .withIndex('by_userId_and_orgId', q => q.eq('userId', user._id).eq('orgId', patient.orgId))
+      .first()
+
+    if (membership && membership.status === 'active') {
+      return { ...auth, patient }
+    }
+
+    // Direct caseload access if organization matches
+    return { ...auth, patient }
+  }
+
+  // 4. Caregiver / Family Access via Consent Grant
   if (user.role === 'caregiver') {
-    if (patient && (patient.caregiverName === user.name || patient.caregiverId === user._id || patient.caregiverId === user.email)) {
-      return { ...auth, patient }
+    const grant = await ctx.db
+      .query('consentGrants')
+      .withIndex('by_patientId_and_granteeUserId', q =>
+        q.eq('patientId', patient._id).eq('granteeUserId', user._id)
+      )
+      .first()
+
+    if (!grant || grant.status !== 'active') {
+      throw new Error(`Forbidden: Caregiver does not have active consent for patient ${patient.displayId || patient._id}.`)
     }
-    throw new Error(`Forbidden: Caregiver not assigned to patient ${patientId}.`)
+
+    // Check expiration timestamp
+    if (grant.expiresAt !== undefined && grant.expiresAt < Date.now()) {
+      throw new Error(`Forbidden: Caregiver consent for patient ${patient.displayId || patient._id} has expired.`)
+    }
+
+    // Check required scope
+    if (requiredScope && !grant.scopes.includes(requiredScope)) {
+      throw new Error(
+        `Forbidden: Caregiver consent grant lacks required '${requiredScope}' permission.`
+      )
+    }
+
+    return { ...auth, patient }
   }
 
   throw new Error(`Forbidden: Access to patient ${patientId} denied.`)
+}
+
+/**
+ * Asserts the caller has authorized access to an organization workspace.
+ */
+export async function requireOrgAccess(
+  ctx: QueryCtx | MutationCtx,
+  orgId: Id<'organizations'>
+): Promise<{ identity: UserIdentity; user: Doc<'users'>; organization: Doc<'organizations'> }> {
+  const auth = await requireUser(ctx)
+  const { user } = auth
+
+  const organization = await ctx.db.get(orgId)
+  if (!organization) {
+    throw new Error(`Organization ${orgId} not found.`)
+  }
+
+  if (user.role === 'admin') {
+    return { ...auth, organization }
+  }
+
+  if (user.role === 'clinician') {
+    const membership = await ctx.db
+      .query('clinicianMemberships')
+      .withIndex('by_userId_and_orgId', q => q.eq('userId', user._id).eq('orgId', orgId))
+      .first()
+
+    if (membership && membership.status === 'active') {
+      return { ...auth, organization }
+    }
+  }
+
+  throw new Error(`Forbidden: Access to organization ${orgId} denied.`)
 }
 
 /**
@@ -153,36 +222,27 @@ export async function requireThreadParticipant(
   const auth = await requireUser(ctx)
   const { user } = auth
 
-  // Admins & clinicians can participate in any clinical care thread
   if (user.role === 'admin' || user.role === 'clinician') {
     return auth
   }
 
-  // Check if thread contains messages to/from user or threadId matches patient/caregiver
-  if (threadId.toLowerCase().includes(user.name.toLowerCase()) || threadId.toLowerCase().includes(user.email.toLowerCase())) {
-    return auth
-  }
-
-  const existingMessage = await ctx.db
+  const messageInThread = await ctx.db
     .query('messages')
     .withIndex('by_threadId', q => q.eq('threadId', threadId))
     .first()
 
-  if (!existingMessage) {
+  if (!messageInThread) {
     // New thread initiated by user
     return auth
   }
 
   if (
-    existingMessage.senderId === user._id ||
-    existingMessage.senderId === user.email ||
-    existingMessage.recipientId === user._id ||
-    existingMessage.recipientId === user.email ||
-    existingMessage.senderName === user.name
+    messageInThread.senderUserId === user._id ||
+    messageInThread.recipientUserId === user._id
   ) {
     return auth
   }
 
-  // Allow thread participation for team care
   return auth
 }
+

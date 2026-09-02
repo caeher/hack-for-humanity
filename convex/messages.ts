@@ -32,13 +32,15 @@ export const listByThread = query({
 
 /**
  * Send a message within a care team or patient thread.
- * Sender identity and role are derived securely server-side.
+ * Sender identity is derived securely server-side.
  */
 export const sendMessage = mutation({
   args: {
     threadId: v.string(),
     content: v.string(),
-    recipientId: v.optional(v.string()),
+    recipientUserId: v.optional(v.id('users')),
+    patientId: v.optional(v.id('patients')),
+    orgId: v.optional(v.id('organizations')),
   },
   returns: v.id('messages'),
   handler: async (ctx, args) => {
@@ -49,19 +51,14 @@ export const sendMessage = mutation({
     const validContent = validateStringLength(sanitizedContent, 'Message content', 1, 4000)
 
     const now = Date.now()
-    const timestamp = new Date(now).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
 
     return await ctx.db.insert('messages', {
       threadId: validThreadId,
-      senderId: user._id,
-      senderName: user.name,
-      senderRole: user.role,
-      recipientId: args.recipientId,
+      senderUserId: user._id,
+      recipientUserId: args.recipientUserId,
+      patientId: args.patientId,
+      orgId: args.orgId,
       content: validContent,
-      timestamp,
       createdAt: now,
       read: false,
     })
@@ -87,9 +84,10 @@ export const markRead = mutation({
       .take(100)
 
     for (const msg of unread) {
-      await ctx.db.patch('messages', msg._id, { read: true })
+      await ctx.db.patch(msg._id, { read: true })
     }
 
     return null
   },
 })
+
