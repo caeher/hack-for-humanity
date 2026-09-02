@@ -1,6 +1,12 @@
 import type { Doc } from '../_generated/dataModel'
 import { computeDaysSinceIncident } from './baselineLogic'
 import { addDaysToIsoDate, compareIsoDates } from './checkInHistoryLogic'
+import {
+  detectLongitudinalPatterns,
+  toDashboardInsight,
+  type CheckInObservation,
+  type ExposureObservation,
+} from './patternDetection'
 
 export interface ChartPoint {
   date: string
@@ -190,63 +196,41 @@ export function resolveSafetyEscalation(
 }
 
 export function deriveSleepHeadacheInsight(
-  checkIns: Array<{ date: string; symptoms: { headache: number } }>,
-  exposures: Array<{ date: string; sleepHours: number }>,
+  checkIns: Array<{ date: string; symptoms: { headache: number; dizziness: number; concentration: number }; symptomTotal: number }>,
+  exposures: Array<{
+    date: string
+    sleepHours: number
+    screenMinutes: number
+    physicalExertionScore: number
+    cognitiveMinutes: number
+  }>,
   today: string
 ): DashboardInsight {
-  const checkInsByDate = new Map(checkIns.map(entry => [entry.date, entry]))
-  const sortedExposures = [...exposures].sort((a, b) => compareIsoDates(a.date, b.date))
+  const checkInObservations: CheckInObservation[] = checkIns.map(checkIn => ({
+    date: checkIn.date,
+    symptomTotal: checkIn.symptomTotal,
+    symptoms: {
+      headache: checkIn.symptoms.headache,
+      dizziness: checkIn.symptoms.dizziness,
+      concentration: checkIn.symptoms.concentration,
+    },
+  }))
 
-  let nightsUnderSeven = 0
-  let matchedHigherHeadache = 0
+  const exposureObservations: ExposureObservation[] = exposures.map(exposure => ({
+    date: exposure.date,
+    sleepHours: exposure.sleepHours,
+    screenMinutes: exposure.screenMinutes,
+    physicalExertionScore: exposure.physicalExertionScore,
+    cognitiveMinutes: exposure.cognitiveMinutes,
+  }))
 
-  for (const exposure of sortedExposures) {
-    if (exposure.sleepHours >= 7) continue
-    nightsUnderSeven += 1
-    const nextDate = addDaysToIsoDate(exposure.date, 1)
-    if (compareIsoDates(nextDate, today) > 0) continue
-    const nextCheckIn = checkInsByDate.get(nextDate)
-    const sameDayCheckIn = checkInsByDate.get(exposure.date)
-    const baselineHeadache = sameDayCheckIn?.symptoms.headache
-    if (nextCheckIn && baselineHeadache !== undefined && nextCheckIn.symptoms.headache > baselineHeadache) {
-      matchedHigherHeadache += 1
-    }
-  }
+  const result = detectLongitudinalPatterns({
+    checkIns: checkInObservations,
+    exposures: exposureObservations,
+    today,
+  })
 
-  const sourceRecordCount = checkIns.length
-
-  if (nightsUnderSeven < 3 || sourceRecordCount < 5) {
-    return {
-      status: 'insufficient',
-      title: 'More check-ins needed for pattern observations',
-      description:
-        'CRI needs additional complete check-ins and sleep context before describing temporal associations between sleep and headache ratings.',
-      footer: `BASED ON ${sourceRecordCount} CHECK-INS · LIVE DATA`,
-      generatedAt: today,
-      sourceRecordCount,
-    }
-  }
-
-  if (matchedHigherHeadache < 2) {
-    return {
-      status: 'insufficient',
-      title: 'No consistent sleep–headache association yet',
-      description:
-        'Recent entries do not show a repeatable temporal association between shorter sleep and higher headache ratings.',
-      footer: `BASED ON ${sourceRecordCount} CHECK-INS · LIVE DATA`,
-      generatedAt: today,
-      sourceRecordCount,
-    }
-  }
-
-  return {
-    status: 'available',
-    title: 'Shorter sleep and higher headache ratings appeared together',
-    description: `On ${matchedHigherHeadache} of the last ${nightsUnderSeven} nights with less than 7 hours of sleep, the next check-in included a higher headache rating. This observation does not establish cause.`,
-    footer: `BASED ON ${sourceRecordCount} CHECK-INS · LIVE DATA · GENERATED ${today}`,
-    generatedAt: today,
-    sourceRecordCount,
-  }
+  return toDashboardInsight(result)
 }
 
 export function computeEpisodeDayNumber(incidentDate: string, today: string): number {

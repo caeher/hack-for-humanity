@@ -779,7 +779,43 @@ export default defineSchema({
     .index('by_outcome', ['outcome'])
     .index('by_createdAt', ['createdAt']),
 
-  // 23. Clerk webhook delivery ledger (idempotency + observability, no PII)
+  // 23. Versioned longitudinal pattern insights (transparent statistical associations)
+  patternInsights: defineTable({
+    patientId: v.id('patients'),
+    episodeId: v.optional(v.id('recoveryEpisodes')),
+    patternType: v.union(
+      v.literal('short_sleep_lagged_headache'),
+      v.literal('high_screen_same_day_headache'),
+      v.literal('high_physical_same_day_symptoms'),
+      v.literal('high_cognitive_concentration'),
+      v.literal('lower_physical_lower_dizziness')
+    ),
+    status: v.union(v.literal('available'), v.literal('insufficient'), v.literal('suppressed')),
+    effectDirection: v.optional(
+      v.union(v.literal('positive'), v.literal('negative'), v.literal('mixed'))
+    ),
+    strength: v.optional(v.number()),
+    confidence: v.optional(
+      v.union(v.literal('low'), v.literal('moderate'), v.literal('high'))
+    ),
+    sampleCount: v.number(),
+    matchCount: v.number(),
+    inputDateRangeStart: v.optional(v.string()),
+    inputDateRangeEnd: v.optional(v.string()),
+    algorithmVersion: v.string(),
+    title: v.string(),
+    description: v.string(),
+    footer: v.string(),
+    suppressedReason: v.optional(v.string()),
+    computedAt: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_patientId', ['patientId'])
+    .index('by_patientId_and_status', ['patientId', 'status'])
+    .index('by_episodeId', ['episodeId'])
+    .index('by_patientId_and_computedAt', ['patientId', 'computedAt']),
+
+  // 24. Clerk webhook delivery ledger (idempotency + observability, no PII)
   clerkWebhookEvents: defineTable({
     eventId: v.string(),
     eventType: v.string(),

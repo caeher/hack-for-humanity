@@ -1001,3 +1001,80 @@ export const recoveryTimelinePayloadValidator = v.object({
   summary: timelineSummaryValidator,
 })
 
+// --- Pattern Detection Validators ---
+
+export const patternTypeValidator = v.union(
+  v.literal('short_sleep_lagged_headache'),
+  v.literal('high_screen_same_day_headache'),
+  v.literal('high_physical_same_day_symptoms'),
+  v.literal('high_cognitive_concentration'),
+  v.literal('lower_physical_lower_dizziness')
+)
+
+export const patternStatusValidator = v.union(
+  v.literal('available'),
+  v.literal('insufficient'),
+  v.literal('suppressed')
+)
+
+export const effectDirectionValidator = v.union(
+  v.literal('positive'),
+  v.literal('negative'),
+  v.literal('mixed')
+)
+
+export const confidenceLevelValidator = v.union(
+  v.literal('low'),
+  v.literal('moderate'),
+  v.literal('high')
+)
+
+export const patternEvidenceValidator = v.object({
+  patternType: patternTypeValidator,
+  status: patternStatusValidator,
+  effectDirection: v.union(effectDirectionValidator, v.null()),
+  strength: v.union(v.number(), v.null()),
+  confidence: v.union(confidenceLevelValidator, v.null()),
+  sampleCount: v.number(),
+  matchCount: v.number(),
+  inputDateRangeStart: v.union(v.string(), v.null()),
+  inputDateRangeEnd: v.union(v.string(), v.null()),
+  algorithmVersion: v.string(),
+  title: v.string(),
+  description: v.string(),
+  footer: v.string(),
+  suppressedReason: v.union(v.string(), v.null()),
+})
+
+export const patternDetectionResultValidator = v.object({
+  algorithmVersion: v.string(),
+  patterns: v.array(patternEvidenceValidator),
+  primaryInsight: v.union(patternEvidenceValidator, v.null()),
+  checkInCount: v.number(),
+  exposureCount: v.number(),
+  computedAt: v.string(),
+})
+
+export const patternInsightDocValidator = v.object({
+  _id: v.id('patternInsights'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  patternType: patternTypeValidator,
+  status: patternStatusValidator,
+  effectDirection: v.optional(effectDirectionValidator),
+  strength: v.optional(v.number()),
+  confidence: v.optional(confidenceLevelValidator),
+  sampleCount: v.number(),
+  matchCount: v.number(),
+  inputDateRangeStart: v.optional(v.string()),
+  inputDateRangeEnd: v.optional(v.string()),
+  algorithmVersion: v.string(),
+  title: v.string(),
+  description: v.string(),
+  footer: v.string(),
+  suppressedReason: v.optional(v.string()),
+  computedAt: v.string(),
+  createdAt: v.number(),
+})
+

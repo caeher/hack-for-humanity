@@ -36,8 +36,8 @@ describe('patientDashboardLogic', () => {
 
   it('returns insufficient insight when data is sparse', () => {
     const insight = deriveSleepHeadacheInsight(
-      [{ date: '2026-08-30', symptoms: { headache: 2 } }],
-      [{ date: '2026-08-29', sleepHours: 5 }],
+      [{ date: '2026-08-30', symptoms: { headache: 2, dizziness: 1, concentration: 1 }, symptomTotal: 10 }],
+      [{ date: '2026-08-29', sleepHours: 5, screenMinutes: 0, physicalExertionScore: 0, cognitiveMinutes: 0 }],
       '2026-08-31'
     )
 

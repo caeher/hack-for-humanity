@@ -41,6 +41,7 @@ import type * as lib_validators from "../lib/validators.js";
 import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
 import type * as onboarding from "../onboarding.js";
+import type * as patternInsights from "../patternInsights.js";
 import type * as patientDashboard from "../patientDashboard.js";
 import type * as patients from "../patients.js";
 import type * as profilePreferences from "../profilePreferences.js";
@@ -92,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   messages: typeof messages;
   migrations: typeof migrations;
   onboarding: typeof onboarding;
+  patternInsights: typeof patternInsights;
   patientDashboard: typeof patientDashboard;
   patients: typeof patients;
   profilePreferences: typeof profilePreferences;
