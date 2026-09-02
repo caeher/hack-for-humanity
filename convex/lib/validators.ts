@@ -767,4 +767,62 @@ export const safetyRuleInfoValidator = v.object({
   userGuidance: userGuidanceValidator,
 })
 
+export const dashboardChartPointValidator = v.object({
+  date: v.string(),
+  dayLabel: v.string(),
+  symptomBurden: v.number(),
+  headache: v.number(),
+})
+
+export const dashboardCheckInConsistencyValidator = v.object({
+  recordedDays: v.number(),
+  eligibleDays: v.number(),
+  ratePercent: v.union(v.number(), v.null()),
+  detail: v.string(),
+})
+
+export const dashboardInsightValidator = v.object({
+  status: v.union(v.literal('available'), v.literal('insufficient')),
+  title: v.string(),
+  description: v.string(),
+  footer: v.string(),
+  generatedAt: v.union(v.string(), v.null()),
+  sourceRecordCount: v.number(),
+})
+
+export const dashboardSafetyEscalationValidator = v.object({
+  status: safetyStatusValidator,
+  headline: v.string(),
+  guidance: v.string(),
+  evaluationId: v.id('safetyEvaluations'),
+  createdAt: v.number(),
+  requiresAcknowledgement: v.boolean(),
+})
+
+export const dashboardSummaryValidator = v.object({
+  dataSource: v.literal('live'),
+  patientName: v.string(),
+  preferredName: v.optional(v.string()),
+  episodeId: v.union(v.id('recoveryEpisodes'), v.null()),
+  incidentDate: v.union(v.string(), v.null()),
+  injuryContext: v.union(v.string(), v.null()),
+  dayNumber: v.union(v.number(), v.null()),
+  today: v.string(),
+  hasCheckInToday: v.boolean(),
+  latestCheckInDate: v.union(v.string(), v.null()),
+  latestSymptomTotal: v.union(v.number(), v.null()),
+  latestHeadacheRating: v.union(v.number(), v.null()),
+  latestCheckInUpdatedAt: v.union(v.number(), v.null()),
+  trendSummary: trendSummaryValidator,
+  chartPoints: v.array(dashboardChartPointValidator),
+  checkInConsistency: dashboardCheckInConsistencyValidator,
+  sleepHours: v.union(v.number(), v.null()),
+  sleepQuality: v.union(v.number(), v.null()),
+  carePlanTasks: v.array(carePlanDocValidator),
+  nextEncounter: v.union(encounterDocValidator, v.null()),
+  nextEncounterClinicianName: v.union(v.string(), v.null()),
+  insight: dashboardInsightValidator,
+  safetyEscalation: v.union(dashboardSafetyEscalationValidator, v.null()),
+})
+
 
