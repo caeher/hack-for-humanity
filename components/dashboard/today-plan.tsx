@@ -30,27 +30,48 @@ const DEMO_TASKS: TodayPlanTask[] = [
   { title: 'Prepare questions for the next appointment', completed: false },
 ]
 
-export function TodayPlan({
+export function TodayPlan(props: TodayPlanProps) {
+  if (props.mode === 'live') {
+    return <TodayPlanLive {...props} />
+  }
+  return <TodayPlanDemo {...props} />
+}
+
+function TodayPlanDemo({
   tasks,
-  mode = 'demo',
   isLoading = false,
   emptyMessage,
 }: TodayPlanProps) {
   const [demoDone, setDemoDone] = useState([true, false, false])
+  const resolvedTasks = tasks ?? DEMO_TASKS
+
+  const handleToggle = (index: number) => {
+    setDemoDone(prev => prev.map((value, itemIndex) => (itemIndex === index ? !value : value)))
+  }
+
+  return (
+    <TodayPlanLayout
+      tasks={resolvedTasks}
+      completedStates={demoDone}
+      isLoading={isLoading}
+      emptyMessage={emptyMessage}
+      onToggle={handleToggle}
+      footer={<p className="mt-4 font-mono text-[10px] uppercase text-muted-foreground">Simulated plan data</p>}
+    />
+  )
+}
+
+function TodayPlanLive({
+  tasks = [],
+  isLoading = false,
+  emptyMessage,
+}: TodayPlanProps) {
   const toggleTask = useMutation(api.carePlans.toggleTask)
   const [pendingTaskId, setPendingTaskId] = useState<Id<'carePlans'> | null>(null)
 
-  const resolvedTasks = tasks ?? DEMO_TASKS
-  const isDemo = mode === 'demo' || resolvedTasks.every(task => !task.id)
-
   const handleToggle = async (index: number) => {
-    const task = resolvedTasks[index]
-    if (!task) return
-
-    if (isDemo || !task.id) {
-      setDemoDone(prev => prev.map((value, itemIndex) => (itemIndex === index ? !value : value)))
-      return
-    }
+    const task = tasks[index]
+    if (!task?.id) return
 
     setPendingTaskId(task.id)
     try {
@@ -60,10 +81,35 @@ export function TodayPlan({
     }
   }
 
-  const completedStates = isDemo
-    ? demoDone
-    : resolvedTasks.map(task => task.completed)
+  return (
+    <TodayPlanLayout
+      tasks={tasks}
+      completedStates={tasks.map(task => task.completed)}
+      isLoading={isLoading}
+      emptyMessage={emptyMessage}
+      onToggle={index => void handleToggle(index)}
+      pendingTaskId={pendingTaskId}
+    />
+  )
+}
 
+function TodayPlanLayout({
+  tasks,
+  completedStates,
+  isLoading,
+  emptyMessage,
+  onToggle,
+  pendingTaskId,
+  footer,
+}: {
+  tasks: TodayPlanTask[]
+  completedStates: boolean[]
+  isLoading?: boolean
+  emptyMessage?: string
+  onToggle: (index: number) => void
+  pendingTaskId?: Id<'carePlans'> | null
+  footer?: React.ReactNode
+}) {
   const remaining = completedStates.filter(done => !done).length
 
   if (isLoading) {
@@ -79,7 +125,7 @@ export function TodayPlan({
     )
   }
 
-  if (resolvedTasks.length === 0) {
+  if (tasks.length === 0) {
     return (
       <Card className="p-6">
         <div className="mb-5 flex items-center justify-between">
@@ -108,7 +154,7 @@ export function TodayPlan({
         <div>
           <h2 className="font-semibold text-foreground">Today&apos;s recovery plan</h2>
           <p className="text-sm text-muted-foreground">
-            {remaining} of {resolvedTasks.length} activities remaining
+            {remaining} of {tasks.length} activities remaining
           </p>
         </div>
         <Link
@@ -119,7 +165,7 @@ export function TodayPlan({
         </Link>
       </div>
       <div className="flex flex-col gap-2">
-        {resolvedTasks.map((task, index) => {
+        {tasks.map((task, index) => {
           const checked = completedStates[index] ?? false
           const isPending = task.id !== undefined && pendingTaskId === task.id
           const label = task.targetTime ? `${task.title} · ${task.targetTime}` : task.title
@@ -127,7 +173,7 @@ export function TodayPlan({
           return (
             <div
               key={task.id ?? task.title}
-              onClick={() => void handleToggle(index)}
+              onClick={() => onToggle(index)}
               className="flex items-center gap-3 rounded-lg border border-border p-3 text-left hover:bg-muted transition-colors cursor-pointer select-none"
             >
               {isPending ? (
@@ -135,7 +181,7 @@ export function TodayPlan({
               ) : (
                 <Checkbox
                   checked={checked}
-                  onCheckedChange={() => void handleToggle(index)}
+                  onCheckedChange={() => onToggle(index)}
                   className="size-5"
                 />
               )}
@@ -150,9 +196,7 @@ export function TodayPlan({
           )
         })}
       </div>
-      {mode === 'demo' && (
-        <p className="mt-4 font-mono text-[10px] uppercase text-muted-foreground">Simulated plan data</p>
-      )}
+      {footer}
     </Card>
   )
 }
