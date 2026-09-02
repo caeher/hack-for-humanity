@@ -117,6 +117,52 @@ export const symptomsObjectValidator = v.object({
   sleepDifficulty: v.number(),
 })
 
+export const trackingRelationshipValidator = v.union(
+  v.literal('patient'),
+  v.literal('caregiver'),
+  v.literal('professional')
+)
+
+export const diagnosisStatusValidator = v.union(
+  v.literal('yes'),
+  v.literal('no'),
+  v.literal('unsure')
+)
+
+export const ageBandValidator = v.union(
+  v.literal('13-17'),
+  v.literal('18-24'),
+  v.literal('25-39'),
+  v.literal('40-54'),
+  v.literal('55-plus')
+)
+
+export const communicationPreferencesValidator = v.object({
+  emailReminders: v.boolean(),
+  smsReminders: v.boolean(),
+  weeklySummary: v.boolean(),
+})
+
+export const onboardingDraftPayloadValidator = v.object({
+  step: v.number(),
+  trackingRelationship: v.optional(trackingRelationshipValidator),
+  preferredName: v.optional(v.string()),
+  ageBand: v.optional(ageBandValidator),
+  incidentDate: v.optional(v.string()),
+  timeZone: v.optional(v.string()),
+  diagnosisStatus: v.optional(diagnosisStatusValidator),
+  communicationPreferences: v.optional(communicationPreferencesValidator),
+  consentAcknowledged: v.optional(v.boolean()),
+  privacyAcknowledged: v.optional(v.boolean()),
+  limitationsAcknowledged: v.optional(v.boolean()),
+})
+
+export const onboardingStatusValidator = v.object({
+  completed: v.boolean(),
+  hasDraft: v.boolean(),
+  nextRoute: v.optional(v.string()),
+})
+
 // --- Document Validators ---
 
 export const orgDocValidator = v.object({
@@ -178,6 +224,12 @@ export const patientDocValidator = v.object({
   displayId: v.string(),
   dateOfBirth: v.optional(v.string()),
   preferredName: v.optional(v.string()),
+  ageBand: v.optional(ageBandValidator),
+  timeZone: v.optional(v.string()),
+  trackingRelationship: v.optional(trackingRelationshipValidator),
+  diagnosisStatus: v.optional(diagnosisStatusValidator),
+  communicationPreferences: v.optional(communicationPreferencesValidator),
+  onboardingCompletedAt: v.optional(v.number()),
   status: patientStatusValidator,
   notes: v.optional(v.string()),
   createdAt: v.number(),
