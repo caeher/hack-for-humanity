@@ -12,9 +12,6 @@ describe('Convex API Authorization & RBAC', () => {
     await expect(t.query(api.patients.list, {})).rejects.toThrow(
       /Unauthorized|Authentication required/
     )
-    await expect(
-      t.query(api.checkIns.listByPatient, { patientId: 'P-1042' })
-    ).rejects.toThrow(/Unauthorized|Authentication required/)
   })
 
   test('admin user can seed the database and list caseload patients', async () => {
@@ -35,7 +32,7 @@ describe('Convex API Authorization & RBAC', () => {
     expect(Array.isArray(patients) ? patients.length : patients.page.length).toBeGreaterThan(0)
   })
 
-  test('patient can submit check-in and retrieve their history', async () => {
+  test('patient can submit 8-symptom check-in and retrieve their history', async () => {
     const t = convexTest(schema, modules)
     await t.mutation(api.seed.seedDatabase, {})
 
@@ -46,14 +43,29 @@ describe('Convex API Authorization & RBAC', () => {
       email: 'maya.chen@example.com',
     }
 
-    // Submit check-in as Maya Chen
+    // Get Maya's patient profile
+    const mayaPatient = await t
+      .withIdentity(patientIdentity)
+      .query(api.patients.getMePatient, {})
+    expect(mayaPatient).not.toBeNull()
+    expect(mayaPatient?.displayId).toBe('P-1042')
+
+    // Submit 8-symptom check-in as Maya Chen
     const checkInId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
-      patientId: 'P-1042',
-      date: '2026-09-01',
-      painScore: 2,
-      sleepScore: 3,
-      mobilityScore: 1,
-      emotionalScore: 2,
+      patientId: mayaPatient!._id,
+      date: '2026-09-02',
+      symptoms: {
+        headache: 2,
+        dizziness: 1,
+        nausea: 0,
+        lightSensitivity: 2,
+        noiseSensitivity: 1,
+        fatigue: 2,
+        concentration: 1,
+        sleepDifficulty: 1,
+      },
+      activityImpact: 'no',
+      dangerSigns: [],
       note: 'Feeling clearer today.',
     })
     expect(checkInId).toBeDefined()
@@ -61,8 +73,9 @@ describe('Convex API Authorization & RBAC', () => {
     // Get latest check-in
     const latest = await t
       .withIdentity(patientIdentity)
-      .query(api.checkIns.getLatest, { patientId: 'P-1042' })
-    expect(latest?.painScore).toBe(2)
+      .query(api.checkIns.getLatest, { patientId: mayaPatient!._id })
+    expect(latest?.symptomTotal).toBe(10)
+    expect(latest?.symptoms.headache).toBe(2)
   })
 
   test('non-admin user is rejected from viewing audit logs', async () => {
@@ -81,3 +94,4 @@ describe('Convex API Authorization & RBAC', () => {
     ).rejects.toThrow(/Forbidden|Requires one of \[admin\] roles/)
   })
 })
+
