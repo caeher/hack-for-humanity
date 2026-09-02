@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Activity, ArrowRight, HeartPulse, ShieldCheck, Sparkles, Stethoscope, Users } from 'lucide-react'
+import { WorkspaceButton } from '@/components/auth'
 import { Show, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs'
 
 const portals = [
@@ -57,12 +58,7 @@ export default function Page() {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
-            <Link
-              href="/patient/dashboard"
-              className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Open workspace
-            </Link>
+            <WorkspaceButton />
             <UserButton />
           </Show>
         </div>

@@ -135,6 +135,7 @@ export const userDocValidator = v.object({
   _id: v.id('users'),
   _creationTime: v.number(),
   tokenIdentifier: v.string(),
+  clerkId: v.optional(v.string()),
   name: v.string(),
   email: v.string(),
   role: roleValidator,
@@ -142,6 +143,14 @@ export const userDocValidator = v.object({
   phone: v.optional(v.string()),
   lastActive: v.optional(v.string()),
   createdAt: v.number(),
+})
+
+export const syncUserResultValidator = v.object({
+  user: userDocValidator,
+  isNew: v.boolean(),
+  role: roleValidator,
+  status: userStatusValidator,
+  authorizedHome: v.string(),
 })
 
 export const membershipDocValidator = v.object({
