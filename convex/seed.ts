@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 import { mutation } from './_generated/server'
+import { seedEducationCorpusIfMissing } from './lib/educationLogic'
 import { SYMPTOM_METHODOLOGY_VERSION } from './lib/symptomMethodology'
 
 export const seedDatabase = mutation({
@@ -1903,6 +1904,8 @@ export const seedDatabase = mutation({
         await ctx.db.insert('auditLogs', log)
       }
     }
+
+    await seedEducationCorpusIfMissing(ctx)
 
     return {
       success: true,

@@ -1229,6 +1229,36 @@ export default defineSchema({
     .index('by_patientId_and_generatedAt', ['patientId', 'generatedAt'])
     .index('by_patientId_and_range', ['patientId', 'rangeStart', 'rangeEnd'])
     .index('by_orgId_and_generatedAt', ['orgId', 'generatedAt']),
+
+  // 24. Versioned education corpus metadata (environment-isolated)
+  educationCorpusVersions: defineTable({
+    versionId: v.string(),
+    environment: v.string(),
+    effectiveDate: v.string(),
+    status: v.union(v.literal('active'), v.literal('archived')),
+    chunkCount: v.number(),
+    createdAt: v.number(),
+  })
+    .index('by_versionId_and_environment', ['versionId', 'environment'])
+    .index('by_environment_and_status', ['environment', 'status']),
+
+  // 25. Approved education corpus chunks with citation metadata
+  educationCorpusChunks: defineTable({
+    corpusVersionId: v.id('educationCorpusVersions'),
+    chunkId: v.string(),
+    sourceTitle: v.string(),
+    sourceAuthority: v.string(),
+    section: v.string(),
+    effectiveDate: v.string(),
+    text: v.string(),
+    keywords: v.array(v.string()),
+  })
+    .index('by_corpusVersionId', ['corpusVersionId'])
+    .index('by_corpusVersionId_and_chunkId', ['corpusVersionId', 'chunkId'])
+    .searchIndex('search_text', {
+      searchField: 'text',
+      filterFields: ['corpusVersionId'],
+    }),
 })
 
 
