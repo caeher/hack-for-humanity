@@ -1,12 +1,25 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { AlertTriangle, Check, PhoneCall } from 'lucide-react'
+import { useMutation, useQuery } from 'convex/react'
+import { AlertTriangle, Check, Loader2, PhoneCall } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PageHeader } from '@/components/layouts/page-header'
 import { ProgressField, RadioGroupField, TextareaField } from '@/components/forms'
+import { api } from '@/convex/_generated/api'
+import {
+  clearCheckInDraft,
+  readCheckInDraft,
+  writeCheckInDraft,
+} from '@/lib/checkInDraft'
+import { DANGER_SIGN_OPTIONS, mapDangerSignIdsToCdcLabels } from '@/lib/dangerSigns'
+import { isE2ETestMode } from '@/lib/e2e'
+import {
+  computeAnsweredSymptomTotal,
+  isCompleteSymptomInventory,
+} from '@/lib/symptomTotals'
 
 const symptomQuestions = [
   {
@@ -51,31 +64,111 @@ const symptomQuestions = [
   },
 ] as const
 
-const dangerSigns = [
-  { id: 'worsening-headache', label: 'A headache that is getting worse and does not go away' },
-  { id: 'repeated-vomiting', label: 'Repeated vomiting' },
-  { id: 'seizure', label: 'A seizure or convulsion' },
-  { id: 'slurred-speech', label: 'Slurred speech or unusual behavior' },
-  { id: 'confusion', label: 'Increasing confusion, restlessness, or agitation' },
-  { id: 'weakness', label: 'Weakness, numbness, or decreased coordination' },
-  { id: 'unequal-pupils', label: 'One pupil larger than the other' },
-  { id: 'cannot-wake', label: 'Extreme drowsiness, loss of consciousness, or difficulty waking up' },
-] as const
+const symptomIds = symptomQuestions.map(question => question.id)
 
-export function CheckInFlow() {
+type SubmissionState =
+  | { status: 'idle' }
+  | { status: 'submitting' }
+  | { status: 'success' }
+  | { status: 'error'; message: string }
+
+interface CheckInFormState {
+  answers: Record<string, number>
+  activityImpact: string
+  selectedDangerSigns: string[]
+  note: string
+}
+
+interface CheckInFlowViewProps {
+  mode: 'demo' | 'persisted'
+  patientId?: string
+  onFinish?: (form: CheckInFormState) => Promise<boolean>
+  isSubmitting?: boolean
+  submitError?: string | null
+  savedSuccessfully?: boolean
+}
+
+function getLocalDateString(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function buildSymptomsPayload(answers: Record<string, number>) {
+  return {
+    headache: answers.headache ?? 0,
+    dizziness: answers.dizziness ?? 0,
+    nausea: answers.nausea ?? 0,
+    lightSensitivity: answers.lightSensitivity ?? 0,
+    noiseSensitivity: answers.noiseSensitivity ?? 0,
+    fatigue: answers.fatigue ?? 0,
+    concentration: answers.concentration ?? 0,
+    sleepDifficulty: answers.sleepDifficulty ?? 0,
+  }
+}
+
+function CheckInFlowView({
+  mode,
+  patientId,
+  onFinish,
+  isSubmitting = false,
+  submitError = null,
+  savedSuccessfully = false,
+}: CheckInFlowViewProps) {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [activityImpact, setActivityImpact] = useState('not-sure')
   const [selectedDangerSigns, setSelectedDangerSigns] = useState<string[]>([])
   const [note, setNote] = useState('')
+  const [draftLoaded, setDraftLoaded] = useState(mode === 'demo')
 
   const safetyStep = symptomQuestions.length
   const totalSteps = symptomQuestions.length + 1
-  const symptomTotal = useMemo(
-    () => Object.values(answers).reduce((sum, rating) => sum + rating, 0),
-    [answers]
-  )
+  const symptomTotal = useMemo(() => computeAnsweredSymptomTotal(answers), [answers])
   const hasDangerSign = selectedDangerSigns.length > 0
+  const isDemoSession = mode === 'demo'
+
+  useEffect(() => {
+    if (!patientId || draftLoaded) return
+
+    const draft = readCheckInDraft(patientId)
+    if (draft) {
+      setStep(draft.step)
+      setAnswers(draft.answers)
+      setActivityImpact(draft.activityImpact)
+      setSelectedDangerSigns(draft.selectedDangerSigns)
+      setNote(draft.note)
+    }
+    setDraftLoaded(true)
+  }, [draftLoaded, patientId])
+
+  useEffect(() => {
+    if (!patientId || !draftLoaded) return
+
+    writeCheckInDraft(patientId, {
+      version: 1,
+      step,
+      answers,
+      activityImpact,
+      selectedDangerSigns,
+      note,
+      updatedAt: Date.now(),
+    })
+  }, [activityImpact, answers, draftLoaded, note, patientId, selectedDangerSigns, step])
+
+  const handleFinish = async () => {
+    if (onFinish) {
+      const saved = await onFinish({
+        answers,
+        activityImpact,
+        selectedDangerSigns,
+        note,
+      })
+      if (!saved) return
+    }
+    setStep(totalSteps)
+  }
 
   if (step >= totalSteps && hasDangerSign) {
     return (
@@ -96,9 +189,15 @@ export function CheckInFlow() {
             United States, call your local emergency number.
           </p>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            This prototype cannot determine whether you have an emergency and does not replace a
-            medical evaluation.
+            This app cannot determine whether you have an emergency and does not replace a medical
+            evaluation.
           </p>
+          {!isDemoSession && savedSuccessfully && (
+            <p className="mt-3 max-w-xl text-sm leading-6 text-foreground">
+              Your responses were saved so your care team can review them. This does not replace
+              emergency medical care.
+            </p>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
             <a
               href="tel:911"
@@ -127,7 +226,7 @@ export function CheckInFlow() {
             <Check className="size-6" />
           </div>
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground">
-            Demo check-in complete
+            {isDemoSession ? 'Demo check-in complete' : 'Check-in complete'}
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
             Today&apos;s patient-reported symptom total is {symptomTotal} out of 48. This simple total
@@ -135,8 +234,9 @@ export function CheckInFlow() {
             decision.
           </p>
           <p className="mx-auto mt-3 max-w-md text-xs leading-5 text-muted-foreground">
-            The prototype keeps these responses only for this demo session. They have not been sent
-            to a clinician or saved to the backend.
+            {isDemoSession
+              ? 'The prototype keeps these responses only for this demo session. They have not been sent to a clinician or saved to the backend.'
+              : 'Your check-in was saved to your recovery record. Symptom totals are descriptive only and do not indicate recovery or clearance.'}
           </p>
           <Link
             href="/patient/dashboard"
@@ -167,9 +267,16 @@ export function CheckInFlow() {
             </div>
           )}
 
+          {submitError && (
+            <div className="rounded-lg border border-destructive bg-destructive/5 p-4" role="alert">
+              <p className="font-semibold text-destructive">Could not save check-in</p>
+              <p className="mt-1 text-sm leading-6 text-foreground">{submitError}</p>
+            </div>
+          )}
+
           <fieldset className="space-y-3">
             <legend className="text-sm font-semibold text-foreground">Danger signs</legend>
-            {dangerSigns.map(sign => {
+            {DANGER_SIGN_OPTIONS.map(sign => {
               const checked = selectedDangerSigns.includes(sign.id)
               return (
                 <label
@@ -213,27 +320,38 @@ export function CheckInFlow() {
             autoResize
             showCount
             maxLength={250}
-            hint="This note remains in the current demo session and is not sent to a clinician."
+            hint={
+              isDemoSession
+                ? 'This note remains in the current demo session and is not sent to a clinician.'
+                : 'Saved with your check-in for your care team when you finish.'
+            }
           />
 
           <div className="flex justify-between border-t border-border pt-4">
             <button
               type="button"
               onClick={() => setStep(step - 1)}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              disabled={isSubmitting}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors disabled:opacity-40"
             >
               Back
             </button>
             <button
               type="button"
-              onClick={() => setStep(step + 1)}
-              className={`rounded-lg px-5 py-2 text-sm font-semibold transition-colors ${
+              onClick={() => void handleFinish()}
+              disabled={isSubmitting}
+              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-colors disabled:opacity-70 ${
                 hasDangerSign
                   ? 'bg-destructive text-white hover:opacity-90'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
             >
-              {hasDangerSign ? 'View urgent guidance' : 'Finish check-in'}
+              {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              {isSubmitting
+                ? 'Saving check-in...'
+                : hasDangerSign
+                  ? 'View urgent guidance'
+                  : 'Finish check-in'}
             </button>
           </div>
         </Card>
@@ -277,7 +395,10 @@ export function CheckInFlow() {
           </button>
           <button
             type="button"
-            onClick={() => setStep(step + 1)}
+            onClick={() => {
+              setAnswers(current => ({ ...current, [question.id]: value }))
+              setStep(step + 1)
+            }}
             className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             Continue
@@ -286,4 +407,105 @@ export function CheckInFlow() {
       </Card>
     </div>
   )
+}
+
+/** Session-only flow for smoke tests and unauthenticated demo browsing. */
+export function CheckInFlowSession() {
+  return <CheckInFlowView mode="demo" />
+}
+
+function CheckInFlowPersisted() {
+  const patient = useQuery(api.patients.getMePatient)
+  const submitCheckIn = useMutation(api.checkIns.submitCheckIn)
+  const [submission, setSubmission] = useState<SubmissionState>({ status: 'idle' })
+
+  const persistCheckIn = useCallback(
+    async (form: CheckInFormState): Promise<boolean> => {
+      if (!patient) {
+        setSubmission({
+          status: 'error',
+          message: 'Sign in and complete onboarding before saving a check-in.',
+        })
+        return false
+      }
+
+      if (!isCompleteSymptomInventory(form.answers, symptomIds)) {
+        setSubmission({
+          status: 'error',
+          message: 'Rate all eight symptoms before finishing your check-in.',
+        })
+        return false
+      }
+
+      setSubmission({ status: 'submitting' })
+
+      try {
+        await submitCheckIn({
+          patientId: patient._id,
+          date: getLocalDateString(),
+          symptoms: buildSymptomsPayload(form.answers),
+          activityImpact: form.activityImpact as 'yes' | 'no' | 'not-sure' | 'none',
+          dangerSigns: mapDangerSignIdsToCdcLabels(form.selectedDangerSigns),
+          note: form.note.trim() ? form.note.trim() : undefined,
+        })
+
+        clearCheckInDraft(patient._id)
+        setSubmission({ status: 'success' })
+        return true
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'We could not save your check-in. Please try again.'
+        setSubmission({ status: 'error', message })
+        return false
+      }
+    },
+    [patient, submitCheckIn]
+  )
+
+  if (patient === undefined) {
+    return (
+      <div
+        className="mx-auto flex max-w-2xl flex-col items-center justify-center p-12 text-center"
+        aria-busy="true"
+        aria-label="Loading recovery profile"
+      >
+        <Loader2 className="size-8 animate-spin text-primary" />
+        <p className="mt-4 text-sm text-muted-foreground">Loading your recovery profile...</p>
+      </div>
+    )
+  }
+
+  if (patient === null) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <Card className="p-8 text-center">
+          <h1 className="text-2xl font-semibold text-foreground">Complete onboarding first</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            We could not find a patient profile for your account. Finish onboarding before saving
+            daily check-ins.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <CheckInFlowView
+      mode="persisted"
+      patientId={patient._id}
+      onFinish={persistCheckIn}
+      isSubmitting={submission.status === 'submitting'}
+      submitError={submission.status === 'error' ? submission.message : null}
+      savedSuccessfully={submission.status === 'success'}
+    />
+  )
+}
+
+export function CheckInFlow() {
+  if (isE2ETestMode) {
+    return <CheckInFlowSession />
+  }
+  return <CheckInFlowPersisted />
 }

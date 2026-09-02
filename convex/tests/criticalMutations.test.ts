@@ -52,6 +52,14 @@ describe('Critical mutation authorization & validation matrix', () => {
     })
     expect(checkInId).toBeDefined()
 
+    const duplicateId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+      patientId: patient!._id,
+      date: '2026-09-04',
+      symptoms: validSymptoms,
+      activityImpact: 'none',
+    })
+    expect(duplicateId).toBe(checkInId)
+
     await expect(
       t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
         patientId: patient!._id,

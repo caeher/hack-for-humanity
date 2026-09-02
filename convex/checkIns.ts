@@ -78,6 +78,18 @@ export const submitCheckIn = mutation({
     const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
     const validDate = validateDateString(args.date, 'Check-in date')
+
+    const existingForDate = await ctx.db
+      .query('checkIns')
+      .withIndex('by_patientId_and_date', q =>
+        q.eq('patientId', args.patientId).eq('date', validDate)
+      )
+      .first()
+
+    if (existingForDate) {
+      return existingForDate._id
+    }
+
     const symptomTotal = validateConcussionSymptoms(args.symptoms)
 
     const sanitizedNote = args.note ? sanitizeInput(args.note) : undefined
@@ -114,9 +126,20 @@ export const submitCheckIn = mutation({
       }
     )
 
+    let episodeId = args.episodeId
+    if (!episodeId) {
+      const activeEpisode = await ctx.db
+        .query('recoveryEpisodes')
+        .withIndex('by_patientId_and_status', q =>
+          q.eq('patientId', args.patientId).eq('status', 'active')
+        )
+        .first()
+      episodeId = activeEpisode?._id
+    }
+
     const checkInId = await ctx.db.insert('checkIns', {
       patientId: args.patientId,
-      episodeId: args.episodeId,
+      episodeId,
       submittedByUserId: user._id,
       date: validDate,
       symptoms: args.symptoms,
@@ -152,7 +175,7 @@ export const submitCheckIn = mutation({
       const alertSeverity = safetyResult.highestSeverity === 'emergency' ? 'High' : 'High'
       await ctx.db.insert('alerts', {
         patientId: args.patientId,
-        episodeId: args.episodeId,
+        episodeId,
         orgId: patient.orgId,
         detail: `[Safety Engine v${safetyResult.ruleEngineVersion}] ${topRule?.name || 'Clinical safety event'}: ${topRule?.matchedEvidenceSummary || 'High risk detected'}`,
         severity: alertSeverity,
