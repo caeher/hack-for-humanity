@@ -70,6 +70,12 @@ test.describe('gateway and denied-access scenarios', () => {
     await expect(page.getByText(/does not diagnose/i).first()).toBeVisible()
   })
 
+  test('initial assessment page explains non-diagnostic baseline', async ({ page }) => {
+    await page.goto('/patient/assessment')
+    await expect(page.getByText(/capture your starting symptom baseline/i).first()).toBeVisible()
+    await expect(page.getByText(/does not diagnose concussion/i).first()).toBeVisible()
+  })
+
   test('profile keeps wearable sync in disabled planned state', async ({ page }) => {
     await page.goto('/patient/profile')
     await expect(page.getByText(/wearable data sync \(planned\)/i)).toBeVisible()
@@ -77,6 +83,6 @@ test.describe('gateway and denied-access scenarios', () => {
   })
 })
 
-test('route baseline count matches expected 23 application routes', async () => {
-  expect(baseline.routes).toHaveLength(23)
+test('route baseline count matches expected 24 application routes', async () => {
+  expect(baseline.routes).toHaveLength(24)
 })

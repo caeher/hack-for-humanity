@@ -163,6 +163,75 @@ export const onboardingStatusValidator = v.object({
   nextRoute: v.optional(v.string()),
 })
 
+export const partialSymptomsValidator = v.object({
+  headache: v.optional(v.number()),
+  dizziness: v.optional(v.number()),
+  nausea: v.optional(v.number()),
+  lightSensitivity: v.optional(v.number()),
+  noiseSensitivity: v.optional(v.number()),
+  fatigue: v.optional(v.number()),
+  concentration: v.optional(v.number()),
+  sleepDifficulty: v.optional(v.number()),
+})
+
+export const skippedFieldValidator = v.object({
+  fieldId: v.string(),
+  reason: v.string(),
+})
+
+export const baselineAssessmentDraftPayloadValidator = v.object({
+  step: v.number(),
+  startedAt: v.optional(v.number()),
+  incidentDate: v.optional(v.string()),
+  incidentContext: v.optional(v.string()),
+  careReceived: v.optional(v.string()),
+  diagnosisStatus: v.optional(diagnosisStatusValidator),
+  symptoms: v.optional(partialSymptomsValidator),
+  sleepHours: v.optional(v.number()),
+  schoolWorkDemand: v.optional(v.number()),
+  physicalActivityLevel: v.optional(v.number()),
+  cognitiveActivityLevel: v.optional(v.number()),
+  screenTolerance: v.optional(v.number()),
+  skippedFields: v.optional(v.array(skippedFieldValidator)),
+  dangerSigns: v.optional(v.array(v.string())),
+})
+
+export const baselineStatusValidator = v.object({
+  completed: v.boolean(),
+  hasDraft: v.boolean(),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  currentBaselineVersion: v.optional(v.number()),
+  nextRoute: v.optional(v.string()),
+})
+
+export const recoveryBaselineDocValidator = v.object({
+  _id: v.id('recoveryBaselines'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.id('recoveryEpisodes'),
+  orgId: v.id('organizations'),
+  version: v.number(),
+  isCurrent: v.boolean(),
+  supersededAt: v.optional(v.number()),
+  incidentDate: v.string(),
+  incidentContext: v.string(),
+  careReceived: v.optional(v.string()),
+  diagnosisStatus: diagnosisStatusValidator,
+  symptoms: symptomsObjectValidator,
+  symptomTotal: v.number(),
+  sleepHours: v.optional(v.number()),
+  schoolWorkDemand: v.optional(v.number()),
+  physicalActivityLevel: v.optional(v.number()),
+  cognitiveActivityLevel: v.optional(v.number()),
+  screenTolerance: v.optional(v.number()),
+  skippedFields: v.array(skippedFieldValidator),
+  dangerSignsPresent: v.boolean(),
+  dangerSigns: v.array(v.string()),
+  completionDurationMs: v.number(),
+  submittedByUserId: v.id('users'),
+  createdAt: v.number(),
+})
+
 // --- Document Validators ---
 
 export const orgDocValidator = v.object({
@@ -230,6 +299,7 @@ export const patientDocValidator = v.object({
   diagnosisStatus: v.optional(diagnosisStatusValidator),
   communicationPreferences: v.optional(communicationPreferencesValidator),
   onboardingCompletedAt: v.optional(v.number()),
+  baselineCompletedAt: v.optional(v.number()),
   status: patientStatusValidator,
   notes: v.optional(v.string()),
   createdAt: v.number(),
@@ -472,6 +542,13 @@ export const safetyEvaluationResultValidator = v.object({
   failSafeApplied: v.boolean(),
   ruleEngineVersion: v.string(),
   evaluatedAt: v.number(),
+})
+
+export const baselineSubmitResultValidator = v.object({
+  baselineId: v.optional(v.id('recoveryBaselines')),
+  blocked: v.boolean(),
+  safetyResult: safetyEvaluationResultValidator,
+  nextRoute: v.string(),
 })
 
 export const safetyRuleInfoValidator = v.object({

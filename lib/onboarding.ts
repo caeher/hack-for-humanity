@@ -100,5 +100,5 @@ export function getPostOnboardingRoute(
   if (trackingRelationship === 'caregiver' && userRole === 'caregiver') {
     return '/caregiver/dashboard'
   }
-  return '/patient/check-in'
+  return '/patient/assessment'
 }
