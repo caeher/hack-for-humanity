@@ -20,6 +20,7 @@
     "/patient/assessment",
     "/patient/check-in",
     "/patient/dashboard",
+    "/patient/education",
     "/patient/insights",
     "/patient/messages",
     "/patient/plan",

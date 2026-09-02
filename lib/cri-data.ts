@@ -44,6 +44,7 @@ export const nav: Record<Role, { label: string; href: string }[]> = {
     { label: 'Daily check-in', href: '/patient/check-in' },
     { label: 'Recovery', href: '/patient/recovery' },
     { label: 'Insights', href: '/patient/insights' },
+    { label: 'Education', href: '/patient/education' },
     { label: 'Care plan', href: '/patient/plan' },
     { label: 'Messages', href: '/patient/messages' },
     { label: 'Reports', href: '/patient/reports' },
