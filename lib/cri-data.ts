@@ -7,6 +7,11 @@ export const roles: Record<Role, { label: string; home: string }> = {
   admin: { label: 'Organization', home: '/admin/dashboard' },
 }
 
+export function getAuthorizedHome(role?: Role | string | null): string {
+  if (!role) return '/'
+  return roles[role as Role]?.home || '/'
+}
+
 export const recoveryTrend = [
   { day: 'Aug 25', symptomBurden: 27, headache: 5 },
   { day: 'Aug 26', symptomBurden: 25, headache: 5 },

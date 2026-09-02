@@ -20,6 +20,7 @@ export default defineSchema({
   // 2. Identity & User Accounts (Synced from Clerk via tokenIdentifier)
   users: defineTable({
     tokenIdentifier: v.string(),
+    clerkId: v.optional(v.string()),
     name: v.string(),
     email: v.string(),
     role: v.union(
@@ -34,6 +35,7 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_tokenIdentifier', ['tokenIdentifier'])
+    .index('by_clerkId', ['clerkId'])
     .index('by_email', ['email'])
     .index('by_role', ['role'])
     .index('by_status', ['status'])

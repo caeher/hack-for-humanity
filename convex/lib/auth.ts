@@ -30,7 +30,7 @@ export async function requireIdentity(ctx: QueryCtx | MutationCtx): Promise<User
 
 /**
  * Resolves the authenticated user from the database.
- * Strictly uses tokenIdentifier derived from verified JWT.
+ * Uses tokenIdentifier, clerkId (subject), or verified email.
  */
 export async function getCurrentUser(
   ctx: QueryCtx | MutationCtx
@@ -40,7 +40,7 @@ export async function getCurrentUser(
     return null
   }
 
-  // 1. Primary lookup by tokenIdentifier (Clerk Subject)
+  // 1. Primary lookup by tokenIdentifier (canonical Clerk Subject URI)
   if (identity.tokenIdentifier) {
     const userByToken = await ctx.db
       .query('users')
@@ -49,7 +49,16 @@ export async function getCurrentUser(
     if (userByToken) return userByToken
   }
 
-  // 2. Safe seed / test environment fallback matching by tokenIdentifier or verified email
+  // 2. Secondary lookup by Clerk user ID / subject
+  if (identity.subject) {
+    const userByClerkId = await ctx.db
+      .query('users')
+      .withIndex('by_clerkId', q => q.eq('clerkId', identity.subject))
+      .first()
+    if (userByClerkId) return userByClerkId
+  }
+
+  // 3. Fallback matching by verified email (e.g. for invited users or seeded fixtures)
   if (identity.email) {
     const userByEmail = await ctx.db
       .query('users')
@@ -95,6 +104,34 @@ export async function requireRole(
   }
 
   return auth
+}
+
+/**
+ * Asserts the caller is an Organization Administrator.
+ */
+export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
+  return await requireRole(ctx, ['admin'])
+}
+
+/**
+ * Asserts the caller is a Clinician or Organization Administrator.
+ */
+export async function requireClinician(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
+  return await requireRole(ctx, ['clinician', 'admin'])
+}
+
+/**
+ * Asserts the caller is a Patient.
+ */
+export async function requirePatient(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
+  return await requireRole(ctx, ['patient'])
+}
+
+/**
+ * Asserts the caller is a Caregiver.
+ */
+export async function requireCaregiver(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
+  return await requireRole(ctx, ['caregiver'])
 }
 
 /**
