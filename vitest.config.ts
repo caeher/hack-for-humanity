@@ -54,6 +54,10 @@ export default defineConfig({
           include: ['components/**/*.test.tsx'],
           environment: 'happy-dom',
           setupFiles: ['./vitest.setup.ts'],
+          env: {
+            NEXT_PUBLIC_E2E_TEST_MODE: 'false',
+            E2E_TEST_MODE: 'false',
+          },
         },
       },
     ],
