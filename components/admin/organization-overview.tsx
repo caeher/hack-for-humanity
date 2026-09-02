@@ -4,6 +4,7 @@ import React from 'react'
 import { useQuery } from 'convex/react'
 import { Activity, AlertTriangle, HeartPulse, Users } from 'lucide-react'
 import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import type { Id } from '@/convex/_generated/dataModel'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +15,31 @@ export interface OrganizationOverviewProps {
   isCohorts?: boolean
 }
 
-export function OrganizationOverview({ isCohorts = false }: OrganizationOverviewProps) {
+function OrganizationOverviewDemo({ isCohorts = false }: OrganizationOverviewProps) {
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="[E2E demo shell] Oak Valley Health"
+        title={isCohorts ? 'Cohort outcomes' : 'Organization overview'}
+        description="Prototype aggregate recovery dashboard — simulated operational metrics only."
+      />
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard label="Enrolled patients" value="42" detail="Demo recovery cohort" icon={Users} />
+        <StatCard label="Engagement" value="86%" detail="Daily check-in rate" icon={Activity} />
+        <StatCard label="Active alerts" value="3" detail="Organization triage queue" icon={HeartPulse} />
+        <StatCard label="Escalations" value="2.1%" detail="High-severity rate" icon={AlertTriangle} />
+      </div>
+      <Card className="p-6">
+        <h2 className="font-semibold text-foreground">Recovery pathway distribution (demo)</h2>
+        <p className="text-sm text-muted-foreground mt-2">
+          Aggregate symptom tracking metrics — not individual patient health data.
+        </p>
+      </Card>
+    </div>
+  )
+}
+
+function OrganizationOverviewLive({ isCohorts = false }: OrganizationOverviewProps) {
   const org = useQuery(api.organizations.getMyOrganization, {})
   const metrics = useQuery(
     api.organizations.getAggregateMetrics,
@@ -129,4 +154,11 @@ export function OrganizationOverview({ isCohorts = false }: OrganizationOverview
       </div>
     </div>
   )
+}
+
+export function OrganizationOverview({ isCohorts = false }: OrganizationOverviewProps) {
+  if (isE2ETestMode) {
+    return <OrganizationOverviewDemo isCohorts={isCohorts} />
+  }
+  return <OrganizationOverviewLive isCohorts={isCohorts} />
 }

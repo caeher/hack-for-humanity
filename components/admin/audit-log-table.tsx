@@ -3,6 +3,7 @@
 import React from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import { Card } from '@/components/ui/card'
 import {
   Table,
@@ -24,6 +25,27 @@ function formatTimestamp(ms: number): string {
 }
 
 export function AuditLogTable() {
+  if (isE2ETestMode) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          eyebrow="Governance"
+          title="Audit log"
+          description="[E2E demo shell] Traceable record of administrative and recovery workspace events."
+        />
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">
+            Demo audit events for role changes, recovery report access, and consent updates.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
+  return <AuditLogTableLive />
+}
+
+function AuditLogTableLive() {
   const org = useQuery(api.organizations.getMyOrganization, {})
   const logs = useQuery(
     api.auditLogs.listRecent,

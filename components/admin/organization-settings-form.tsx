@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { Building, Mail } from 'lucide-react'
 import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layouts/page-header'
 import {
@@ -37,6 +38,27 @@ const LOCALE_OPTIONS = [
 ]
 
 export function OrganizationSettingsForm() {
+  if (isE2ETestMode) {
+    return (
+      <div className="flex flex-col gap-6 p-6">
+        <PageHeader
+          eyebrow="[E2E demo shell] Administration"
+          title="Organization settings"
+          description="Prototype organization governance configuration — not connected to live data in CI."
+        />
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">
+            Demo settings form for recovery program policies, locale, and feature flags.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
+  return <OrganizationSettingsFormLive />
+}
+
+function OrganizationSettingsFormLive() {
   const org = useQuery(api.organizations.getMyOrganization, {})
   const settings = useQuery(
     api.organizations.getSettings,

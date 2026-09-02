@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { User, Mail } from 'lucide-react'
 import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import type { Id } from '@/convex/_generated/dataModel'
 import {
   Dialog,
@@ -49,6 +50,11 @@ export function UserInviteModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isE2ETestMode) {
+      onSuccess?.()
+      onClose()
+      return
+    }
     setSubmitting(true)
     setError(null)
     try {

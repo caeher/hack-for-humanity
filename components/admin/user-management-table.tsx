@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { MoreHorizontal, UserPlus } from 'lucide-react'
 import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import type { Id } from '@/convex/_generated/dataModel'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -42,7 +43,23 @@ function statusTone(status: string): 'good' | 'warn' | 'bad' | undefined {
   return undefined
 }
 
-export function UserManagementTable({ orgId, onInvite }: UserManagementTableProps) {
+function UserManagementTableDemo({ onInvite }: Pick<UserManagementTableProps, 'onInvite'>) {
+  return (
+    <Card className="p-6">
+      <h2 className="font-semibold text-foreground">Users & roles</h2>
+      <p className="text-sm text-muted-foreground mt-2">
+        [E2E demo shell] Organization user provisioning and recovery workspace access management.
+      </p>
+      {onInvite && (
+        <Button size="sm" className="mt-4" onClick={onInvite}>
+          <UserPlus className="size-3.5" /> Invite user
+        </Button>
+      )}
+    </Card>
+  )
+}
+
+function UserManagementTableLive({ orgId, onInvite }: UserManagementTableProps) {
   const users = useQuery(api.orgProvisioning.listOrgUsers, { orgId })
   const invitations = useQuery(api.orgProvisioning.listInvitations, { orgId })
 
@@ -317,4 +334,11 @@ export function UserManagementTable({ orgId, onInvite }: UserManagementTableProp
       )}
     </div>
   )
+}
+
+export function UserManagementTable({ orgId, onInvite }: UserManagementTableProps) {
+  if (isE2ETestMode) {
+    return <UserManagementTableDemo onInvite={onInvite} />
+  }
+  return <UserManagementTableLive orgId={orgId} onInvite={onInvite} />
 }
