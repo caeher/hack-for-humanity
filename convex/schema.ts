@@ -4,6 +4,7 @@ import { v } from 'convex/values'
 export default defineSchema({
   // 1. Multi-tenant Organization & Clinic Workspaces
   organizations: defineTable({
+    clerkId: v.optional(v.string()),
     name: v.string(),
     slug: v.string(),
     retentionPolicyDays: v.number(),
@@ -12,9 +13,11 @@ export default defineSchema({
     cohortCapacity: v.optional(v.number()),
     accentColor: v.optional(v.string()),
     activePathways: v.optional(v.array(v.string())),
+    clerkUpdatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index('by_slug', ['slug'])
+    .index('by_clerkId', ['clerkId'])
     .index('by_createdAt', ['createdAt']),
 
   // 2. Identity & User Accounts (Synced from Clerk via tokenIdentifier)
@@ -32,6 +35,7 @@ export default defineSchema({
     status: v.union(v.literal('Active'), v.literal('Invited'), v.literal('Suspended')),
     phone: v.optional(v.string()),
     lastActive: v.optional(v.string()),
+    clerkUpdatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index('by_tokenIdentifier', ['tokenIdentifier'])
@@ -350,6 +354,24 @@ export default defineSchema({
     .index('by_status', ['status'])
     .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
     .index('by_createdAt', ['createdAt']),
+
+  // 16. Clerk webhook delivery ledger (idempotency + observability, no PII)
+  clerkWebhookEvents: defineTable({
+    eventId: v.string(),
+    eventType: v.string(),
+    status: v.union(
+      v.literal('processed'),
+      v.literal('failed'),
+      v.literal('ignored'),
+      v.literal('skipped_duplicate')
+    ),
+    errorCode: v.optional(v.string()),
+    receivedAt: v.number(),
+    processedAt: v.optional(v.number()),
+    attemptCount: v.number(),
+  })
+    .index('by_eventId', ['eventId'])
+    .index('by_status_and_receivedAt', ['status', 'receivedAt']),
 })
 
 

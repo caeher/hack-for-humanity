@@ -122,6 +122,7 @@ export const symptomsObjectValidator = v.object({
 export const orgDocValidator = v.object({
   _id: v.id('organizations'),
   _creationTime: v.number(),
+  clerkId: v.optional(v.string()),
   name: v.string(),
   slug: v.string(),
   retentionPolicyDays: v.number(),
@@ -130,6 +131,7 @@ export const orgDocValidator = v.object({
   cohortCapacity: v.optional(v.number()),
   accentColor: v.optional(v.string()),
   activePathways: v.optional(v.array(v.string())),
+  clerkUpdatedAt: v.optional(v.number()),
   createdAt: v.number(),
 })
 
@@ -144,6 +146,7 @@ export const userDocValidator = v.object({
   status: userStatusValidator,
   phone: v.optional(v.string()),
   lastActive: v.optional(v.string()),
+  clerkUpdatedAt: v.optional(v.number()),
   createdAt: v.number(),
 })
 
