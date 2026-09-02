@@ -19,11 +19,13 @@ import {
   DatetimeField,
   TextareaField,
   TextField,
+  UploadField,
 } from '@/components/forms'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
 import { DataSourceBadge } from './data-source-badge'
 import { cn } from '@/lib/utils'
+import { useClinicalAttachmentUpload } from '@/lib/useClinicalAttachmentUpload'
 
 const DIAGNOSIS_OPTIONS = [
   { label: 'Clinician-diagnosed concussion', value: 'diagnosed-concussion' },
@@ -66,7 +68,8 @@ export function ClinicalEncounterModal({
   const saveDraft = useMutation(api.encounters.saveDraft)
   const finalizeEncounter = useMutation(api.encounters.finalizeEncounter)
   const amendEncounter = useMutation(api.encounters.amendEncounter)
-  const registerAttachment = useMutation(api.encounters.registerAttachmentMetadata)
+  const getDownloadUrl = useMutation(api.attachments.getDownloadUrl)
+  const { items: uploadItems, liveMessage, uploadFile } = useClinicalAttachmentUpload()
 
   const encounterDetail = useQuery(
     api.encounters.getById,
@@ -87,7 +90,7 @@ export function ClinicalEncounterModal({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [amending, setAmending] = useState(mode === 'amend')
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -129,17 +132,6 @@ export function ClinicalEncounterModal({
         notes: form.notes,
       })
       setDraftId(id)
-
-      for (const file of pendingFiles) {
-        await registerAttachment({
-          patientId,
-          encounterId: id,
-          fileName: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          sizeBytes: file.size,
-        })
-      }
-      setPendingFiles([])
       setSaveState('saved')
     } catch (error) {
       setSaveState('error')
@@ -152,8 +144,6 @@ export function ClinicalEncounterModal({
     patientId,
     draftId,
     form,
-    pendingFiles,
-    registerAttachment,
   ])
 
   useEffect(() => {
@@ -167,9 +157,51 @@ export function ClinicalEncounterModal({
     }
   }, [form, canEdit, isAmendMode, persistDraft])
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
-    setPendingFiles(prev => [...prev, ...files])
+  const ensureDraftId = useCallback(async (): Promise<Id<'clinicalEncounters'> | null> => {
+    if (draftId) return draftId
+    try {
+      const id = await saveDraft({
+        patientId,
+        encounterId: undefined,
+        encounterType: form.encounterType as 'in-person' | 'telehealth' | 'asynchronous',
+        diagnosis: form.diagnosis,
+        datetime: form.datetime,
+        clinicalSummary: form.clinicalSummary,
+        notes: form.notes,
+      })
+      setDraftId(id)
+      return id
+    } catch (error) {
+      setAttachmentError(error instanceof Error ? error.message : 'Save the draft before uploading.')
+      return null
+    }
+  }, [draftId, form, patientId, saveDraft])
+
+  const handleFilesSelected = async (files: File[]) => {
+    if (!attachmentPolicy || files.length === 0) return
+    setAttachmentError(null)
+
+    const encounterForUpload = await ensureDraftId()
+    if (!encounterForUpload) return
+
+    for (const file of files) {
+      await uploadFile({
+        patientId,
+        encounterId: encounterForUpload,
+        contextType: 'encounter',
+        file,
+      })
+    }
+  }
+
+  const handleDownload = async (attachmentId: Id<'encounterAttachmentMetadata'>) => {
+    setAttachmentError(null)
+    try {
+      const result = await getDownloadUrl({ attachmentId })
+      window.open(result.downloadUrl, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      setAttachmentError(error instanceof Error ? error.message : 'Download failed.')
+    }
   }
 
   const handleFinalize = async () => {
@@ -314,40 +346,142 @@ export function ClinicalEncounterModal({
             ) : null}
 
             {canEdit && attachmentPolicy ? (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Attach documentation
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  {attachmentPolicy.malwareScanPlan} Max{' '}
-                  {attachmentPolicy.maxSizeBytes / (1024 * 1024)} MB. Allowed:{' '}
-                  {attachmentPolicy.allowedExtensions.join(', ')}. No public URLs are exposed.
-                </p>
-                <input
-                  type="file"
+              <div className="space-y-3">
+                <UploadField
+                  label="Attach documentation"
+                  hint={`${attachmentPolicy.malwareScanPlan} Max ${attachmentPolicy.maxSizeBytes / (1024 * 1024)} MB per file.`}
                   accept={attachmentPolicy.allowedExtensions.join(',')}
                   multiple
-                  onChange={handleFileChange}
-                  className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                  maxFiles={attachmentPolicy.maxFilesPerEncounter}
+                  maxSizeMB={attachmentPolicy.maxSizeBytes / (1024 * 1024)}
+                  onFilesChange={files => void handleFilesSelected(files)}
                 />
-                {pendingFiles.length > 0 ? (
-                  <ul className="text-xs text-muted-foreground">
-                    {pendingFiles.map(file => (
-                      <li key={file.name}>
-                        {file.name} ({Math.round(file.size / 1024)} KB) — pending scan
+
+                <div aria-live="polite" aria-atomic="true" className="sr-only">
+                  {liveMessage}
+                </div>
+
+                {uploadItems.length > 0 ? (
+                  <ul className="space-y-2" aria-label="Upload progress">
+                    {uploadItems.map(item => (
+                      <li
+                        key={item.localId}
+                        className="rounded-lg border border-border bg-card px-3 py-2 text-xs"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate font-medium text-foreground">{item.fileName}</span>
+                          <Badge
+                            tone={
+                              item.state === 'error'
+                                ? 'bad'
+                                : item.state === 'complete'
+                                  ? 'good'
+                                  : 'neutral'
+                            }
+                          >
+                            {item.state === 'uploading'
+                              ? `Uploading ${item.progress}%`
+                              : item.state === 'scanning'
+                                ? 'Scanning'
+                                : item.state}
+                          </Badge>
+                        </div>
+                        {item.state === 'uploading' ? (
+                          <progress
+                            className="mt-2 h-1.5 w-full"
+                            max={100}
+                            value={item.progress}
+                            aria-label={`Upload progress for ${item.fileName}`}
+                          />
+                        ) : null}
+                        {item.error ? (
+                          <p className="mt-1 text-destructive" role="alert">
+                            {item.error}
+                          </p>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
                 ) : null}
-                {encounterDetail?.attachments.map(att => (
-                  <div
-                    key={att._id}
-                    className="flex items-center gap-2 text-xs text-muted-foreground"
-                  >
-                    <Badge tone="neutral">{att.scanStatus}</Badge>
-                    {att.fileName} ({Math.round(att.sizeBytes / 1024)} KB)
-                  </div>
-                ))}
+
+                {encounterDetail?.attachments.length ? (
+                  <ul className="space-y-2" aria-label="Saved attachments">
+                    {encounterDetail.attachments
+                      .filter(att => att.lifecycleStatus !== 'deleted')
+                      .map(att => (
+                        <li
+                          key={att._id}
+                          className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+                        >
+                          <Badge
+                            tone={
+                              att.scanStatus === 'clean'
+                                ? 'good'
+                                : att.scanStatus === 'quarantined'
+                                  ? 'bad'
+                                  : 'neutral'
+                            }
+                          >
+                            {att.scanStatus}
+                          </Badge>
+                          <span>
+                            {att.fileName} ({Math.round(att.sizeBytes / 1024)} KB)
+                          </span>
+                          {att.scanStatus === 'clean' && att.lifecycleStatus === 'active' ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void handleDownload(att._id)}
+                            >
+                              Download
+                            </Button>
+                          ) : att.scanStatus === 'quarantined' ? (
+                            <span className="text-destructive">Unavailable — quarantined</span>
+                          ) : null}
+                        </li>
+                      ))}
+                  </ul>
+                ) : null}
+
+                {attachmentError ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {attachmentError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!canEdit && encounterDetail?.attachments.length ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Attachments</p>
+                <ul className="space-y-2" aria-label="Encounter attachments">
+                  {encounterDetail.attachments
+                    .filter(att => att.lifecycleStatus !== 'deleted')
+                    .map(att => (
+                      <li
+                        key={att._id}
+                        className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
+                      >
+                        <Badge tone={att.scanStatus === 'clean' ? 'good' : 'neutral'}>
+                          {att.scanStatus}
+                        </Badge>
+                        <span>
+                          {att.fileName} ({Math.round(att.sizeBytes / 1024)} KB)
+                        </span>
+                        {att.scanStatus === 'clean' && att.lifecycleStatus === 'active' ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleDownload(att._id)}
+                          >
+                            Download
+                          </Button>
+                        ) : null}
+                      </li>
+                    ))}
+                </ul>
               </div>
             ) : null}
 

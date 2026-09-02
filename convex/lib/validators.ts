@@ -158,6 +158,18 @@ export const attachmentScanStatusValidator = v.union(
   v.literal('failed')
 )
 
+export const attachmentLifecycleStatusValidator = v.union(
+  v.literal('pending_upload'),
+  v.literal('active'),
+  v.literal('deleted'),
+  v.literal('failed_upload')
+)
+
+export const attachmentContextTypeValidator = v.union(
+  v.literal('encounter'),
+  v.literal('message')
+)
+
 export const carePlanCategoryValidator = v.union(
   v.literal('cognitive_pacing'),
   v.literal('physical_activity'),
@@ -768,7 +780,9 @@ export const encounterAmendmentDocValidator = v.object({
 export const encounterAttachmentMetadataValidator = v.object({
   _id: v.id('encounterAttachmentMetadata'),
   _creationTime: v.number(),
+  contextType: attachmentContextTypeValidator,
   encounterId: v.optional(v.id('clinicalEncounters')),
+  messageId: v.optional(v.id('messages')),
   patientId: v.id('patients'),
   orgId: v.id('organizations'),
   uploadedByUserId: v.id('users'),
@@ -776,9 +790,15 @@ export const encounterAttachmentMetadataValidator = v.object({
   mimeType: v.string(),
   sizeBytes: v.number(),
   storageId: v.optional(v.id('_storage')),
+  lifecycleStatus: attachmentLifecycleStatusValidator,
   scanStatus: attachmentScanStatusValidator,
+  quarantineReason: v.optional(v.string()),
   authorizationScope: v.string(),
+  uploadExpiresAt: v.optional(v.number()),
+  scannedAt: v.optional(v.number()),
+  deletedAt: v.optional(v.number()),
   createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
 })
 
 export const encounterWithAmendmentsValidator = v.object({
@@ -793,9 +813,25 @@ export const attachmentPolicyValidator = v.object({
   allowedExtensions: v.array(v.string()),
   maxSizeBytes: v.number(),
   maxFilesPerEncounter: v.number(),
+  maxFilesPerMessage: v.number(),
+  downloadUrlTtlSeconds: v.number(),
   malwareScanPlan: v.string(),
   storageStatus: v.string(),
+  storageBackend: v.string(),
   authorizationRequired: v.boolean(),
+})
+
+export const attachmentUploadUrlResultValidator = v.object({
+  attachmentId: v.id('encounterAttachmentMetadata'),
+  uploadUrl: v.string(),
+  uploadExpiresAt: v.number(),
+})
+
+export const attachmentDownloadUrlResultValidator = v.object({
+  downloadUrl: v.string(),
+  expiresInSeconds: v.number(),
+  fileName: v.string(),
+  mimeType: v.string(),
 })
 
 export const carePlanDocValidator = v.object({

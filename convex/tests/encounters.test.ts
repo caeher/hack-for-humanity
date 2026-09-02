@@ -150,7 +150,7 @@ describe('encounter lifecycle', () => {
 
     const policy = await t.query(api.encounters.getAttachmentPolicy, {})
     expect(policy.authorizationRequired).toBe(true)
-    expect(policy.storageStatus).toBe('metadata_only')
+    expect(policy.storageStatus).toBe('convex_storage')
   })
 
   test('patients without clinical assignment cannot access encounters', async () => {
