@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 import { mutation } from './_generated/server'
+import { SYMPTOM_METHODOLOGY_VERSION } from './lib/symptomMethodology'
 
 export const seedDatabase = mutation({
   args: {
@@ -660,6 +661,7 @@ export const seedDatabase = mutation({
           date: item.date,
           symptoms: item.symptoms,
           symptomTotal: total,
+          methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
           activityImpact: item.activityImpact,
           dangerSignsPresent: item.dangerSignsPresent,
           dangerSigns: item.dangerSigns,
@@ -854,6 +856,7 @@ export const seedDatabase = mutation({
           date: item.date,
           symptoms: item.symptoms,
           symptomTotal: total,
+          methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
           activityImpact: item.activityImpact,
           dangerSignsPresent: item.dangerSignsPresent,
           dangerSigns: item.dangerSigns,
@@ -1047,6 +1050,7 @@ export const seedDatabase = mutation({
           date: item.date,
           symptoms: item.symptoms,
           symptomTotal: total,
+          methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
           activityImpact: item.activityImpact,
           dangerSignsPresent: item.dangerSignsPresent,
           dangerSigns: item.dangerSigns,
@@ -1145,6 +1149,7 @@ export const seedDatabase = mutation({
           date: item.date,
           symptoms: item.symptoms,
           symptomTotal: total,
+          methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
           activityImpact: item.activityImpact,
           dangerSignsPresent: item.dangerSignsPresent,
           dangerSigns: item.dangerSigns,
@@ -1202,6 +1207,7 @@ export const seedDatabase = mutation({
           date: t.date,
           dayLabel: t.dayLabel,
           symptomTotal: t.symptomTotal,
+          methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
           headacheRating: t.headacheRating,
           sleepQuality: t.sleepQuality,
           createdAt: Date.now(),

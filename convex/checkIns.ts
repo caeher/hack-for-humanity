@@ -15,6 +15,7 @@ import {
 } from './lib/businessLogic'
 import { evaluateCheckIn, LongitudinalRecord } from './lib/safetyEngine'
 import { attemptCareTeamNotification } from './lib/safetyFollowUp'
+import { SYMPTOM_METHODOLOGY_VERSION } from './lib/symptomMethodology'
 
 /**
  * List historical check-ins for a patient in reverse-chronological order.
@@ -176,6 +177,7 @@ export const submitCheckIn = mutation({
       date: validDate,
       symptoms: args.symptoms,
       symptomTotal,
+      methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
       activityImpact: args.activityImpact,
       dangerSignsPresent,
       dangerSigns: dangerSignsList,
