@@ -10,7 +10,7 @@ import {
 import { requireIdentity, requireRole, getCurrentUser } from './lib/auth'
 import { validateEmail, validateStringLength } from './lib/businessLogic'
 
-const roleHomes: Record<string, string> = {
+    const roleHomes: Record<string, string> = {
   patient: '/patient/dashboard',
   caregiver: '/caregiver/dashboard',
   clinician: '/clinician/dashboard',
@@ -177,21 +177,7 @@ export const syncCurrentUser = mutation({
 
     const newUser = (await ctx.db.get(newUserId))!
 
-    // Resolve default organization to associate initial patient profile
-    const defaultOrg = await ctx.db.query('organizations').first()
-    if (defaultOrg) {
-      const displayId = `P-${Math.floor(1000 + Math.random() * 9000)}`
-      await ctx.db.insert('patients', {
-        userId: newUser._id,
-        orgId: defaultOrg._id,
-        displayId,
-        preferredName: resolvedName.split(' ')[0],
-        status: 'Active',
-        notes: 'Self-registered patient recovery profile.',
-        createdAt: now,
-      })
-    }
-
+    // Recovery profile is created during onboarding completion — not at sign-up.
     // Record audit trail
     await ctx.db.insert('auditLogs', {
       actorUserId: newUser._id,
@@ -208,7 +194,7 @@ export const syncCurrentUser = mutation({
       isNew: true,
       role: newUser.role,
       status: newUser.status,
-      authorizedHome: '/patient/dashboard',
+      authorizedHome: '/onboarding',
     }
   },
 })

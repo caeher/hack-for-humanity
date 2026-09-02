@@ -30,6 +30,7 @@ import type * as lib_safetyRules from "../lib/safetyRules.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
+import type * as onboarding from "../onboarding.js";
 import type * as patients from "../patients.js";
 import type * as recoveryTrends from "../recoveryTrends.js";
 import type * as safety from "../safety.js";
@@ -65,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   "lib/validators": typeof lib_validators;
   messages: typeof messages;
   migrations: typeof migrations;
+  onboarding: typeof onboarding;
   patients: typeof patients;
   recoveryTrends: typeof recoveryTrends;
   safety: typeof safety;

@@ -72,6 +72,30 @@ export default defineSchema({
     displayId: v.string(), // e.g. "P-1042" for search and UI display
     dateOfBirth: v.optional(v.string()),
     preferredName: v.optional(v.string()),
+    ageBand: v.optional(
+      v.union(
+        v.literal('13-17'),
+        v.literal('18-24'),
+        v.literal('25-39'),
+        v.literal('40-54'),
+        v.literal('55-plus')
+      )
+    ),
+    timeZone: v.optional(v.string()),
+    trackingRelationship: v.optional(
+      v.union(v.literal('patient'), v.literal('caregiver'), v.literal('professional'))
+    ),
+    diagnosisStatus: v.optional(
+      v.union(v.literal('yes'), v.literal('no'), v.literal('unsure'))
+    ),
+    communicationPreferences: v.optional(
+      v.object({
+        emailReminders: v.boolean(),
+        smsReminders: v.boolean(),
+        weeklySummary: v.boolean(),
+      })
+    ),
+    onboardingCompletedAt: v.optional(v.number()),
     status: v.union(v.literal('Active'), v.literal('Discharged'), v.literal('Inactive')),
     notes: v.optional(v.string()),
     createdAt: v.number(),
@@ -355,7 +379,42 @@ export default defineSchema({
     .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
     .index('by_createdAt', ['createdAt']),
 
-  // 16. Clerk webhook delivery ledger (idempotency + observability, no PII)
+  // 16. Resumable recovery onboarding drafts (server-side progress persistence)
+  onboardingDrafts: defineTable({
+    userId: v.id('users'),
+    step: v.number(),
+    trackingRelationship: v.optional(
+      v.union(v.literal('patient'), v.literal('caregiver'), v.literal('professional'))
+    ),
+    preferredName: v.optional(v.string()),
+    ageBand: v.optional(
+      v.union(
+        v.literal('13-17'),
+        v.literal('18-24'),
+        v.literal('25-39'),
+        v.literal('40-54'),
+        v.literal('55-plus')
+      )
+    ),
+    incidentDate: v.optional(v.string()),
+    timeZone: v.optional(v.string()),
+    diagnosisStatus: v.optional(
+      v.union(v.literal('yes'), v.literal('no'), v.literal('unsure'))
+    ),
+    communicationPreferences: v.optional(
+      v.object({
+        emailReminders: v.boolean(),
+        smsReminders: v.boolean(),
+        weeklySummary: v.boolean(),
+      })
+    ),
+    consentAcknowledged: v.optional(v.boolean()),
+    privacyAcknowledged: v.optional(v.boolean()),
+    limitationsAcknowledged: v.optional(v.boolean()),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  // 17. Clerk webhook delivery ledger (idempotency + observability, no PII)
   clerkWebhookEvents: defineTable({
     eventId: v.string(),
     eventType: v.string(),

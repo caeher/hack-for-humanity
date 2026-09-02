@@ -15,7 +15,7 @@ describe('Convex API Authorization & RBAC', () => {
   })
 
   describe('Clerk Identity Synchronization & Lifecycle', () => {
-    test('brand new Clerk user self-registers and auto-provisions patient profile', async () => {
+    test('brand new Clerk user self-registers and is routed to onboarding', async () => {
       const t = convexTest(schema, modules)
       await t.mutation(api.seed.seedDatabase, {})
 
@@ -34,17 +34,15 @@ describe('Convex API Authorization & RBAC', () => {
       expect(syncResult.isNew).toBe(true)
       expect(syncResult.role).toBe('patient')
       expect(syncResult.status).toBe('Active')
-      expect(syncResult.authorizedHome).toBe('/patient/dashboard')
+      expect(syncResult.authorizedHome).toBe('/onboarding')
       expect(syncResult.user.tokenIdentifier).toBe(newClerkIdentity.tokenIdentifier)
       expect(syncResult.user.clerkId).toBe('user_new_123')
 
-      // Verify patient profile was auto-provisioned
+      // Recovery profile is created during onboarding — not at sign-up
       const patientProfile = await t
         .withIdentity(newClerkIdentity)
         .query(api.patients.getMePatient, {})
-      expect(patientProfile).not.toBeNull()
-      expect(patientProfile?.preferredName).toBe('Alex')
-      expect(patientProfile?.status).toBe('Active')
+      expect(patientProfile).toBeNull()
     })
 
     test('invited user claims pending invitation on first sign-in with matching email', async () => {
