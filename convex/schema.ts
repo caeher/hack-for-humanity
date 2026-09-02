@@ -178,7 +178,8 @@ export default defineSchema({
     .index('by_orgId', ['orgId'])
     .index('by_displayId', ['displayId'])
     .index('by_primaryClinicianId', ['primaryClinicianId'])
-    .index('by_orgId_and_status', ['orgId', 'status']),
+    .index('by_orgId_and_status', ['orgId', 'status'])
+    .index('by_orgId_and_displayId', ['orgId', 'displayId']),
 
   // 5. Longitudinal Concussion Recovery Episodes
   recoveryEpisodes: defineTable({
@@ -509,10 +510,90 @@ export default defineSchema({
     orgId: v.id('organizations'),
     detail: v.string(),
     severity: v.union(v.literal('High'), v.literal('Medium'), v.literal('Low')),
-    status: v.union(v.literal('active'), v.literal('acknowledged'), v.literal('resolved')),
+    status: v.union(
+      v.literal('active'),
+      v.literal('acknowledged'),
+      v.literal('resolved'),
+      v.literal('snoozed')
+    ),
+    alertSource: v.optional(
+      v.union(
+        v.literal('safety_engine'),
+        v.literal('missed_check_in'),
+        v.literal('trend_rule')
+      )
+    ),
+    ruleCode: v.optional(v.string()),
+    safetyEvaluationId: v.optional(v.id('safetyEvaluations')),
+    provenance: v.optional(
+      v.object({
+        schemaVersion: v.string(),
+        sourceKind: v.union(
+          v.literal('patient_report'),
+          v.literal('symptom_total'),
+          v.literal('computed_trend'),
+          v.literal('pattern_insight'),
+          v.literal('safety_outcome'),
+          v.literal('clinician_content'),
+          v.literal('ai_generated')
+        ),
+        sourceKindLabel: v.string(),
+        plainLanguageRationale: v.string(),
+        technicalDetail: v.optional(v.string()),
+        dateRangeStart: v.union(v.string(), v.null()),
+        dateRangeEnd: v.union(v.string(), v.null()),
+        methodName: v.string(),
+        methodVersion: v.string(),
+        confidence: v.union(
+          v.literal('high'),
+          v.literal('moderate'),
+          v.literal('low'),
+          v.literal('insufficient'),
+          v.literal('not_applicable')
+        ),
+        confidenceExplanation: v.string(),
+        sourceRecords: v.array(
+          v.object({
+            label: v.string(),
+            recordType: v.string(),
+            recordId: v.optional(v.string()),
+            date: v.optional(v.string()),
+            visible: v.boolean(),
+          })
+        ),
+        evidenceReferences: v.array(
+          v.object({
+            label: v.string(),
+            citation: v.optional(v.string()),
+            authority: v.optional(v.string()),
+            ruleId: v.optional(v.string()),
+            version: v.optional(v.string()),
+          })
+        ),
+        contributingCategories: v.optional(
+          v.array(
+            v.object({
+              label: v.string(),
+              rating: v.union(v.number(), v.null()),
+              visible: v.boolean(),
+            })
+          )
+        ),
+        recomputedFromAmendment: v.optional(v.boolean()),
+        amendmentNote: v.optional(v.string()),
+        nonDiagnosticDisclaimer: v.string(),
+        restrictedDetailCount: v.optional(v.number()),
+      })
+    ),
     dangerSigns: v.optional(v.array(v.string())),
+    assignedToUserId: v.optional(v.id('users')),
+    snoozedUntil: v.optional(v.number()),
+    snoozeReason: v.optional(v.string()),
     acknowledgedByUserId: v.optional(v.id('users')),
+    acknowledgedAt: v.optional(v.number()),
     resolvedByUserId: v.optional(v.id('users')),
+    resolvedAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index('by_orgId', ['orgId'])
@@ -520,7 +601,9 @@ export default defineSchema({
     .index('by_status', ['status'])
     .index('by_severity', ['severity'])
     .index('by_status_and_severity', ['status', 'severity'])
-    .index('by_orgId_and_status', ['orgId', 'status']),
+    .index('by_orgId_and_status', ['orgId', 'status'])
+    .index('by_orgId_and_createdAt', ['orgId', 'createdAt'])
+    .index('by_orgId_and_assignedToUserId', ['orgId', 'assignedToUserId']),
 
   // 13. Secure Multi-Party Care Team Messaging
   messages: defineTable({

@@ -359,13 +359,15 @@ export const amendCheckIn = mutation({
       createdAt: now,
     })
 
-    await attemptCareTeamNotification(ctx, {
+    const notification = await attemptCareTeamNotification(ctx, {
       patient,
       episodeId: checkIn.episodeId,
       safetyResult,
       dangerSigns: dangerSignsList,
       actorUserId: user._id,
       actorRole: user.role,
+      symptomTotal,
+      safetyEvaluationId,
       now,
     })
 
@@ -557,16 +559,6 @@ export const submitCheckIn = mutation({
       createdAt: now,
     })
 
-    const notification = await attemptCareTeamNotification(ctx, {
-      patient,
-      episodeId,
-      safetyResult,
-      dangerSigns: dangerSignsList,
-      actorUserId: user._id,
-      actorRole: user.role,
-      now,
-    })
-
     const safetyEvaluationId = await ctx.db.insert('safetyEvaluations', {
       patientId: args.patientId,
       orgId: patient.orgId,
@@ -582,10 +574,26 @@ export const submitCheckIn = mutation({
       blockedActions: safetyResult.blockedActions,
       failSafeApplied: safetyResult.failSafeApplied,
       targetResourceId: checkInId,
+      followUpState: 'pending_acknowledgement',
+      createdAt: now,
+    })
+
+    const notification = await attemptCareTeamNotification(ctx, {
+      patient,
+      episodeId,
+      safetyResult,
+      dangerSigns: dangerSignsList,
+      actorUserId: user._id,
+      actorRole: user.role,
+      symptomTotal,
+      safetyEvaluationId,
+      now,
+    })
+
+    await ctx.db.patch(safetyEvaluationId, {
       followUpState: notification.followUpState,
       notificationAttemptedAt: now,
       notificationOutcome: notification.outcome,
-      createdAt: now,
     })
 
     await ctx.db.insert('auditLogs', {

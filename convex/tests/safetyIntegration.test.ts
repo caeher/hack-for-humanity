@@ -113,10 +113,11 @@ describe('Safety Engine Convex Integration & Persistence', () => {
     // Verify clinical alert was generated in alerts table
     const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {
       severity: 'High',
+      paginationOpts: { numItems: 20, cursor: null },
     })
-    const alertList = Array.isArray(alerts) ? alerts : alerts.page
+    const alertList = alerts.page
     expect(alertList.length).toBeGreaterThan(0)
-    expect(alertList.some(a => a.detail.includes('Safety Engine'))).toBe(true)
+    expect(alertList.some(a => a.alert.detail.includes('Safety Engine'))).toBe(true)
   })
 
   test('getRuleRegistry returns versioned active rules with governance citations', async () => {

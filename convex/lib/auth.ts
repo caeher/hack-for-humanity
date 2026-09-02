@@ -181,8 +181,7 @@ export async function requirePatientAccess(
       return { ...auth, patient }
     }
 
-    // Direct caseload access if organization matches
-    return { ...auth, patient }
+    throw new Error(`Forbidden: Clinician is not assigned to patient ${patient.displayId}'s organization.`)
   }
 
   // 4. Caregiver / Family Access via Consent Grant

@@ -25,12 +25,14 @@ describe('Synthetic Concussion Seed Dataset & Determinism (Issue #7)', () => {
 
     const usersFirst = await t.withIdentity(adminIdentity).query(api.users.list, {})
     const patientsFirst = await t.withIdentity(adminIdentity).query(api.patients.list, {})
-    const alertsFirst = await t.withIdentity(adminIdentity).query(api.alerts.list, {})
+    const alertsFirst = await t.withIdentity(adminIdentity).query(api.alerts.list, {
+      paginationOpts: { numItems: 50, cursor: null },
+    })
     const auditLogsFirst = await t.withIdentity(adminIdentity).query(api.auditLogs.listRecent, {})
 
     const usersCount1 = Array.isArray(usersFirst) ? usersFirst.length : usersFirst.page.length
     const patientsCount1 = Array.isArray(patientsFirst) ? patientsFirst.length : patientsFirst.page.length
-    const alertsCount1 = Array.isArray(alertsFirst) ? alertsFirst.length : alertsFirst.page.length
+    const alertsCount1 = alertsFirst.page.length
     const auditCount1 = Array.isArray(auditLogsFirst) ? auditLogsFirst.length : auditLogsFirst.page.length
 
     expect(usersCount1).toBeGreaterThanOrEqual(11) // admin, 2 clinicians, 6 patients, 2 caregivers
@@ -42,12 +44,14 @@ describe('Synthetic Concussion Seed Dataset & Determinism (Issue #7)', () => {
 
     const usersSecond = await t.withIdentity(adminIdentity).query(api.users.list, {})
     const patientsSecond = await t.withIdentity(adminIdentity).query(api.patients.list, {})
-    const alertsSecond = await t.withIdentity(adminIdentity).query(api.alerts.list, {})
+    const alertsSecond = await t.withIdentity(adminIdentity).query(api.alerts.list, {
+      paginationOpts: { numItems: 50, cursor: null },
+    })
     const auditLogsSecond = await t.withIdentity(adminIdentity).query(api.auditLogs.listRecent, {})
 
     const usersCount2 = Array.isArray(usersSecond) ? usersSecond.length : usersSecond.page.length
     const patientsCount2 = Array.isArray(patientsSecond) ? patientsSecond.length : patientsSecond.page.length
-    const alertsCount2 = Array.isArray(alertsSecond) ? alertsSecond.length : alertsSecond.page.length
+    const alertsCount2 = alertsSecond.page.length
     const auditCount2 = Array.isArray(auditLogsSecond) ? auditLogsSecond.length : auditLogsSecond.page.length
 
     // Exact count matching proves strict idempotency
@@ -214,15 +218,17 @@ describe('Synthetic Concussion Seed Dataset & Determinism (Issue #7)', () => {
     expect(james).toBeDefined()
 
     // Clinician reviews alerts and verifies High severity Tier 1 safety trigger
-    const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {})
-    const alertList = Array.isArray(alerts) ? alerts : alerts.page
+    const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {
+      paginationOpts: { numItems: 50, cursor: null },
+    })
+    const alertList = alerts.page
 
-    const jamesAlert = alertList.find(a => a.patientId === james!._id)
+    const jamesAlert = alertList.find(a => a.alert.patientId === james!._id)
     expect(jamesAlert).toBeDefined()
-    expect(jamesAlert?.severity).toBe('High')
-    expect(jamesAlert?.status).toBe('active')
-    expect(jamesAlert?.dangerSigns).toContain('Repeated vomiting or nausea')
-    expect(jamesAlert?.dangerSigns).toContain(
+    expect(jamesAlert?.alert.severity).toBe('High')
+    expect(jamesAlert?.alert.status).toBe('active')
+    expect(jamesAlert?.alert.dangerSigns).toContain('Repeated vomiting or nausea')
+    expect(jamesAlert?.alert.dangerSigns).toContain(
       'Extreme drowsiness, loss of consciousness, or inability to wake up'
     )
   })

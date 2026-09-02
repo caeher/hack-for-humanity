@@ -84,18 +84,20 @@ describe('Critical mutation authorization & validation matrix', () => {
     const t = convexTest(schema, modules)
     await t.mutation(api.seed.seedDatabase, {})
 
-    const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {})
-    const list = Array.isArray(alerts) ? alerts : alerts.page
-    const active = list.find(a => a.status === 'active')
+    const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {
+      paginationOpts: { numItems: 20, cursor: null },
+    })
+    const list = alerts.page
+    const active = list.find(a => a.alert.status === 'active')
     expect(active).toBeDefined()
 
     await t.withIdentity(clinicianIdentity).mutation(api.alerts.acknowledgeAlert, {
-      alertId: active!._id,
+      alertId: active!.alert._id,
     })
 
     await expect(
       t.withIdentity(patientIdentity).mutation(api.alerts.acknowledgeAlert, {
-        alertId: active!._id,
+        alertId: active!.alert._id,
       })
     ).rejects.toThrow()
   })
