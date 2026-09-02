@@ -64,6 +64,7 @@ The application serves four primary personas via route groups:
 │   └── ...                     # Reactive queries, mutations and actions
 ├── docs/                       # Project documentation
 │   ├── base.md                 # Concussion Recovery Intelligence product vision and safety boundaries
+│   ├── CLINICAL_SCOPE_AND_SAFETY.md # Clinical scope, safety boundaries, evidence governance & PR review checklist
 │   ├── concussion-demo-review.md # Current demo baseline, PR #39 summary, and GitHub backlog
 │   └── frontend-design-specs.md  # Detailed frontend design system specifications
 ├── lib/
