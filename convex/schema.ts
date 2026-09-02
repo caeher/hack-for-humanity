@@ -212,7 +212,9 @@ export default defineSchema({
         v.literal('view_trends'),
         v.literal('view_plan'),
         v.literal('log_proxy'),
-        v.literal('receive_alerts')
+        v.literal('receive_alerts'),
+        v.literal('view_messages'),
+        v.literal('send_messages')
       )
     ),
     relationship: v.optional(v.string()),
@@ -606,6 +608,24 @@ export default defineSchema({
     .index('by_orgId_and_assignedToUserId', ['orgId', 'assignedToUserId']),
 
   // 13. Secure Multi-Party Care Team Messaging
+  messageThreads: defineTable({
+    externalThreadId: v.string(),
+    patientId: v.id('patients'),
+    episodeId: v.id('recoveryEpisodes'),
+    orgId: v.id('organizations'),
+    title: v.string(),
+    status: v.union(v.literal('active'), v.literal('archived')),
+    lastMessageAt: v.number(),
+    lastMessagePreview: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_externalThreadId', ['externalThreadId'])
+    .index('by_patientId', ['patientId'])
+    .index('by_orgId', ['orgId'])
+    .index('by_episodeId', ['episodeId'])
+    .index('by_patientId_and_status', ['patientId', 'status'])
+    .index('by_orgId_and_lastMessageAt', ['orgId', 'lastMessageAt']),
+
   messages: defineTable({
     threadId: v.string(),
     senderUserId: v.id('users'),
@@ -613,6 +633,26 @@ export default defineSchema({
     patientId: v.optional(v.id('patients')),
     orgId: v.optional(v.id('organizations')),
     content: v.string(),
+    clientMessageId: v.optional(v.string()),
+    safetyStatus: v.optional(
+      v.union(
+        v.literal('safe'),
+        v.literal('warning'),
+        v.literal('review'),
+        v.literal('elevated'),
+        v.literal('emergency')
+      )
+    ),
+    safetySeverity: v.optional(
+      v.union(
+        v.literal('emergency'),
+        v.literal('high'),
+        v.literal('medium'),
+        v.literal('low'),
+        v.literal('info'),
+        v.literal('none')
+      )
+    ),
     createdAt: v.number(),
     read: v.boolean(),
   })
@@ -620,7 +660,18 @@ export default defineSchema({
     .index('by_senderUserId', ['senderUserId'])
     .index('by_patientId', ['patientId'])
     .index('by_threadId_and_createdAt', ['threadId', 'createdAt'])
-    .index('by_threadId_and_read', ['threadId', 'read']),
+    .index('by_threadId_and_read', ['threadId', 'read'])
+    .index('by_threadId_and_clientMessageId', ['threadId', 'clientMessageId']),
+
+  messageReadReceipts: defineTable({
+    messageId: v.id('messages'),
+    threadId: v.string(),
+    userId: v.id('users'),
+    readAt: v.number(),
+  })
+    .index('by_threadId_and_userId', ['threadId', 'userId'])
+    .index('by_messageId_and_userId', ['messageId', 'userId'])
+    .index('by_userId', ['userId']),
 
   // 14. Immutable Security, Compliance & Access Audit Logs
   auditLogs: defineTable({

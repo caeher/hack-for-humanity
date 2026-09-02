@@ -84,7 +84,9 @@ export const consentScopeValidator = v.union(
   v.literal('view_trends'),
   v.literal('view_plan'),
   v.literal('log_proxy'),
-  v.literal('receive_alerts')
+  v.literal('receive_alerts'),
+  v.literal('view_messages'),
+  v.literal('send_messages')
 )
 
 export const consentStatusValidator = v.union(
@@ -799,8 +801,53 @@ export const messageDocValidator = v.object({
   patientId: v.optional(v.id('patients')),
   orgId: v.optional(v.id('organizations')),
   content: v.string(),
+  clientMessageId: v.optional(v.string()),
+  safetyStatus: v.optional(
+    v.union(
+      v.literal('safe'),
+      v.literal('warning'),
+      v.literal('review'),
+      v.literal('elevated'),
+      v.literal('emergency')
+    )
+  ),
+  safetySeverity: v.optional(
+    v.union(
+      v.literal('emergency'),
+      v.literal('high'),
+      v.literal('medium'),
+      v.literal('low'),
+      v.literal('info'),
+      v.literal('none')
+    )
+  ),
   createdAt: v.number(),
   read: v.boolean(),
+})
+
+export const messageThreadDocValidator = v.object({
+  _id: v.id('messageThreads'),
+  _creationTime: v.number(),
+  externalThreadId: v.string(),
+  patientId: v.id('patients'),
+  episodeId: v.id('recoveryEpisodes'),
+  orgId: v.id('organizations'),
+  title: v.string(),
+  status: v.union(v.literal('active'), v.literal('archived')),
+  lastMessageAt: v.number(),
+  lastMessagePreview: v.optional(v.string()),
+  createdAt: v.number(),
+})
+
+export const messageThreadSummaryValidator = v.object({
+  threadId: v.string(),
+  title: v.string(),
+  patientId: v.id('patients'),
+  patientDisplayId: v.string(),
+  lastMessageAt: v.number(),
+  lastMessagePreview: v.optional(v.string()),
+  unreadCount: v.number(),
+  status: v.union(v.literal('active'), v.literal('archived')),
 })
 
 export const auditLogDocValidator = v.object({
@@ -846,6 +893,43 @@ export const safetySeverityValidator = v.union(
   v.literal('info'),
   v.literal('none')
 )
+
+export const messageSafetyGuidanceValidator = v.object({
+  status: safetyStatusValidator,
+  highestSeverity: safetySeverityValidator,
+  primaryEscalation: v.string(),
+  userGuidance: v.string(),
+  isEmergency: v.boolean(),
+})
+
+export const sendMessageResultValidator = v.object({
+  messageId: v.id('messages'),
+  clientMessageId: v.optional(v.string()),
+  isDuplicate: v.boolean(),
+  safetyGuidance: v.optional(messageSafetyGuidanceValidator),
+})
+
+export const messageWithSenderValidator = v.object({
+  _id: v.id('messages'),
+  _creationTime: v.number(),
+  threadId: v.string(),
+  senderUserId: v.id('users'),
+  senderName: v.string(),
+  senderRole: v.string(),
+  content: v.string(),
+  clientMessageId: v.optional(v.string()),
+  safetyStatus: v.optional(
+    v.union(
+      v.literal('safe'),
+      v.literal('warning'),
+      v.literal('review'),
+      v.literal('elevated'),
+      v.literal('emergency')
+    )
+  ),
+  createdAt: v.number(),
+  isMine: v.boolean(),
+})
 
 export const followUpStateValidator = v.union(
   v.literal('pending_acknowledgement'),

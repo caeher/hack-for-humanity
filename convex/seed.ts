@@ -509,7 +509,14 @@ export const seedDatabase = mutation({
         patientId: mayaPatient._id,
         granteeUserId: davidUser._id,
         granteeRole: 'caregiver' as const,
-        scopes: ['view_symptoms', 'view_trends', 'view_plan', 'receive_alerts'] as const,
+        scopes: [
+          'view_symptoms',
+          'view_trends',
+          'view_plan',
+          'receive_alerts',
+          'view_messages',
+          'send_messages',
+        ] as const,
         relationship: 'Spouse',
         status: 'active' as const,
         grantedAt: Date.now() - 86400000 * 12,
@@ -519,7 +526,15 @@ export const seedDatabase = mutation({
         patientId: leoPatient._id,
         granteeUserId: sarahUser._id,
         granteeRole: 'caregiver' as const,
-        scopes: ['view_symptoms', 'view_trends', 'view_plan', 'log_proxy', 'receive_alerts'] as const,
+        scopes: [
+          'view_symptoms',
+          'view_trends',
+          'view_plan',
+          'log_proxy',
+          'receive_alerts',
+          'view_messages',
+          'send_messages',
+        ] as const,
         relationship: 'Parent / Guardian',
         status: 'active' as const,
         grantedAt: Date.now() - 86400000 * 10,
@@ -1671,7 +1686,58 @@ export const seedDatabase = mutation({
       }
     }
 
-    // 12. Seed Messages
+    // 12. Seed Message Threads
+    const messageThreadsData = [
+      {
+        externalThreadId: 'thread_maya_careteam',
+        patientId: mayaPatient._id,
+        episodeId: mayaEpisode._id,
+        orgId: org._id,
+        title: 'Concussion care team',
+        status: 'active' as const,
+        lastMessageAt: Date.now() - 3600000 * 5,
+        lastMessagePreview:
+          '[SIMULATED DEMO] Dr. Brooks, Maya rested well yesterday afternoon and did not report any dizziness after dinner.',
+        createdAt: Date.now() - 86400000 * 14,
+      },
+      {
+        externalThreadId: 'thread_leo_careteam',
+        patientId: leoPatient._id,
+        episodeId: leoEpisode._id,
+        orgId: org._id,
+        title: 'Return-to-learn care team',
+        status: 'active' as const,
+        lastMessageAt: Date.now() - 86400000 * 1,
+        lastMessagePreview:
+          '[SIMULATED DEMO] Thank you Dr. Vance. Leo completed his half day today and wore his sunglasses during the sunny commute home.',
+        createdAt: Date.now() - 86400000 * 12,
+      },
+      {
+        externalThreadId: 'thread_daniel_careteam',
+        patientId: danielPatient._id,
+        episodeId: danielEpisode._id,
+        orgId: org._id,
+        title: 'Concussion care team',
+        status: 'active' as const,
+        lastMessageAt: Date.now() - 3600000 * 8,
+        lastMessagePreview:
+          '[SIMULATED DEMO] Daniel, we noticed a temporary symptom increase on your check-in following extended screen time.',
+        createdAt: Date.now() - 86400000 * 10,
+      },
+    ]
+
+    for (const thread of messageThreadsData) {
+      const existing = await ctx.db
+        .query('messageThreads')
+        .withIndex('by_externalThreadId', q => q.eq('externalThreadId', thread.externalThreadId))
+        .first()
+
+      if (!existing) {
+        await ctx.db.insert('messageThreads', thread)
+      }
+    }
+
+    // 13. Seed Messages
     const messagesData = [
       // Thread 1: Maya Chen Care Team
       {
