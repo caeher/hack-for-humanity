@@ -220,6 +220,15 @@ export const seedDatabase = mutation({
           smsReminders: false,
           weeklySummary: true,
         },
+        accessibilityPreferences: {
+          largeText: false,
+          highContrast: false,
+          reducedMotion: false,
+        },
+        quietHours: {
+          start: '21:00',
+          end: '08:00',
+        },
         onboardingCompletedAt: Date.now() - 86400000 * 14,
         baselineCompletedAt: Date.now() - 86400000 * 14,
         status: 'Active' as const,
@@ -1321,7 +1330,10 @@ export const seedDatabase = mutation({
         title: 'Morning 8-symptom check-in',
         category: 'check_in' as const,
         targetTime: '08:00 AM',
+        completionStatus: 'completed' as const,
         completed: true,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 12,
         createdAt: Date.now() - 86400000 * 2,
       },
@@ -1332,7 +1344,10 @@ export const seedDatabase = mutation({
         title: 'Cognitive rest & 20-min screen break interval',
         category: 'cognitive_pacing' as const,
         targetTime: '10:30 AM',
+        completionStatus: 'completed' as const,
         completed: true,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 12,
         createdAt: Date.now() - 86400000 * 2,
       },
@@ -1343,7 +1358,10 @@ export const seedDatabase = mutation({
         title: 'Light symptom-free walking (15 minutes)',
         category: 'physical_activity' as const,
         targetTime: '01:00 PM',
+        completionStatus: 'pending' as const,
         completed: false,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 12,
         createdAt: Date.now() - 86400000 * 2,
       },
@@ -1354,7 +1372,40 @@ export const seedDatabase = mutation({
         title: 'Evening symptom and sleep reflection',
         category: 'sleep_hygiene' as const,
         targetTime: '08:30 PM',
+        completionStatus: 'pending' as const,
         completed: false,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
+        dayNumber: 12,
+        createdAt: Date.now() - 86400000 * 2,
+      },
+      {
+        patientId: mayaPatient._id,
+        episodeId: mayaEpisode._id,
+        assignedByUserId: drBrooks._id,
+        title: 'Concussion follow-up appointment',
+        category: 'appointment' as const,
+        description: 'Bring symptom summary and questions for Dr. Brooks.',
+        targetTime: '10:30 AM',
+        scheduledDate: '2026-09-03',
+        completionStatus: 'pending' as const,
+        completed: false,
+        allowPatientCompletion: false,
+        isClinicianAuthored: true,
+        dayNumber: 12,
+        createdAt: Date.now() - 86400000 * 2,
+      },
+      {
+        patientId: mayaPatient._id,
+        episodeId: mayaEpisode._id,
+        assignedByUserId: drBrooks._id,
+        title: 'Review graded return-to-learn handout',
+        category: 'education' as const,
+        description: 'Clinician-provided education material — not a clearance decision.',
+        completionStatus: 'pending' as const,
+        completed: false,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 12,
         createdAt: Date.now() - 86400000 * 2,
       },
@@ -1366,7 +1417,10 @@ export const seedDatabase = mutation({
         title: 'Morning symptom check-in with caregiver',
         category: 'check_in' as const,
         targetTime: '07:30 AM',
+        completionStatus: 'completed' as const,
         completed: true,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 10,
         createdAt: Date.now() - 86400000 * 1,
       },
@@ -1377,7 +1431,10 @@ export const seedDatabase = mutation({
         title: 'Return-to-Learn Stage 3: Half-day classes with rest breaks',
         category: 'accommodations' as const,
         targetTime: '08:30 AM',
+        completionStatus: 'completed' as const,
         completed: true,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 10,
         createdAt: Date.now() - 86400000 * 1,
       },
@@ -1388,7 +1445,10 @@ export const seedDatabase = mutation({
         title: 'Printed study materials and low-stimulation hallway transit',
         category: 'accommodations' as const,
         targetTime: '11:00 AM',
+        completionStatus: 'completed' as const,
         completed: true,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 10,
         createdAt: Date.now() - 86400000 * 1,
       },
@@ -1399,7 +1459,10 @@ export const seedDatabase = mutation({
         title: 'Non-contact stationary cycling (10 min symptom-free)',
         category: 'physical_activity' as const,
         targetTime: '03:30 PM',
+        completionStatus: 'pending' as const,
         completed: false,
+        allowPatientCompletion: true,
+        isClinicianAuthored: true,
         dayNumber: 10,
         createdAt: Date.now() - 86400000 * 1,
       },
@@ -1414,6 +1477,44 @@ export const seedDatabase = mutation({
 
       if (!existing) {
         await ctx.db.insert('carePlans', task)
+      }
+    }
+
+    // 10b. Seed Plan Reminders
+    const planRemindersData = [
+      {
+        patientId: mayaPatient._id,
+        title: 'Morning symptom check-in',
+        channel: 'email' as const,
+        scheduledTime: '08:00',
+        timeZone: 'America/New_York',
+        status: 'active' as const,
+        createdByUserId: mayaUser._id,
+        createdByRole: 'patient' as const,
+        createdAt: Date.now() - 86400000 * 5,
+      },
+      {
+        patientId: mayaPatient._id,
+        title: 'Bring symptom summary to follow-up',
+        channel: 'email' as const,
+        scheduledTime: '09:00',
+        timeZone: 'America/New_York',
+        status: 'active' as const,
+        createdByUserId: mayaUser._id,
+        createdByRole: 'patient' as const,
+        createdAt: Date.now() - 86400000 * 3,
+      },
+    ]
+
+    for (const reminder of planRemindersData) {
+      const existing = await ctx.db
+        .query('planReminders')
+        .withIndex('by_patientId', q => q.eq('patientId', reminder.patientId))
+        .filter(q => q.eq(q.field('title'), reminder.title))
+        .first()
+
+      if (!existing) {
+        await ctx.db.insert('planReminders', reminder)
       }
     }
 

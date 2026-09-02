@@ -386,6 +386,8 @@ function PatientDashboardLive() {
             title: task.title,
             targetTime: task.targetTime,
             completed: task.completed,
+            completionStatus: task.completionStatus,
+            allowPatientCompletion: task.allowPatientCompletion,
           }))}
         />
         {summary.safetyEscalation ? (

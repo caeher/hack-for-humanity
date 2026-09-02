@@ -209,6 +209,48 @@ export const communicationPreferencesValidator = v.object({
   weeklySummary: v.boolean(),
 })
 
+export const accessibilityPreferencesValidator = v.object({
+  largeText: v.boolean(),
+  highContrast: v.boolean(),
+  reducedMotion: v.boolean(),
+})
+
+export const quietHoursValidator = v.object({
+  start: v.string(),
+  end: v.string(),
+})
+
+export const carePlanCompletionStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('completed'),
+  v.literal('skipped'),
+  v.literal('unable_to_complete')
+)
+
+export const carePlanEventTypeValidator = v.union(
+  v.literal('created'),
+  v.literal('updated'),
+  v.literal('completed'),
+  v.literal('skipped'),
+  v.literal('unable_to_complete'),
+  v.literal('reopened')
+)
+
+export const reminderChannelValidator = v.union(v.literal('email'), v.literal('sms'))
+
+export const reminderStatusValidator = v.union(
+  v.literal('active'),
+  v.literal('paused'),
+  v.literal('revoked')
+)
+
+export const reminderCreatorRoleValidator = v.union(
+  v.literal('patient'),
+  v.literal('caregiver'),
+  v.literal('clinician'),
+  v.literal('admin')
+)
+
 export const onboardingDraftPayloadValidator = v.object({
   step: v.number(),
   trackingRelationship: v.optional(trackingRelationshipValidator),
@@ -365,6 +407,9 @@ export const patientDocValidator = v.object({
   trackingRelationship: v.optional(trackingRelationshipValidator),
   diagnosisStatus: v.optional(diagnosisStatusValidator),
   communicationPreferences: v.optional(communicationPreferencesValidator),
+  accessibilityPreferences: v.optional(accessibilityPreferencesValidator),
+  quietHours: v.optional(quietHoursValidator),
+  notificationConsentRevokedAt: v.optional(v.number()),
   onboardingCompletedAt: v.optional(v.number()),
   baselineCompletedAt: v.optional(v.number()),
   status: patientStatusValidator,
@@ -511,13 +556,71 @@ export const carePlanDocValidator = v.object({
   episodeId: v.optional(v.id('recoveryEpisodes')),
   assignedByUserId: v.optional(v.id('users')),
   title: v.string(),
+  description: v.optional(v.string()),
   category: carePlanCategoryValidator,
+  medicationInstruction: v.optional(v.string()),
   targetTime: v.optional(v.string()),
+  scheduledDate: v.optional(v.string()),
+  completionStatus: carePlanCompletionStatusValidator,
+  statusNote: v.optional(v.string()),
   completed: v.boolean(),
   completedAt: v.optional(v.number()),
   completedByUserId: v.optional(v.id('users')),
+  allowPatientCompletion: v.boolean(),
+  isClinicianAuthored: v.boolean(),
   dayNumber: v.optional(v.number()),
   createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
+  updatedByUserId: v.optional(v.id('users')),
+})
+
+export const carePlanEventDocValidator = v.object({
+  _id: v.id('carePlanEvents'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  carePlanId: v.optional(v.id('carePlans')),
+  actorUserId: v.id('users'),
+  actorRole: v.string(),
+  eventType: carePlanEventTypeValidator,
+  summary: v.string(),
+  previousStatus: v.optional(v.string()),
+  newStatus: v.optional(v.string()),
+  createdAt: v.number(),
+})
+
+export const planReminderDocValidator = v.object({
+  _id: v.id('planReminders'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  carePlanId: v.optional(v.id('carePlans')),
+  title: v.string(),
+  channel: reminderChannelValidator,
+  scheduledTime: v.string(),
+  timeZone: v.string(),
+  status: reminderStatusValidator,
+  createdByUserId: v.id('users'),
+  createdByRole: reminderCreatorRoleValidator,
+  revokedAt: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
+})
+
+export const carePlanAdherenceSummaryValidator = v.object({
+  totalItems: v.number(),
+  completedCount: v.number(),
+  skippedCount: v.number(),
+  unableCount: v.number(),
+  pendingCount: v.number(),
+  neutralSummary: v.string(),
+})
+
+export const profilePreferencesValidator = v.object({
+  timeZone: v.optional(v.string()),
+  communicationPreferences: communicationPreferencesValidator,
+  accessibilityPreferences: accessibilityPreferencesValidator,
+  quietHours: quietHoursValidator,
+  notificationConsentRevokedAt: v.optional(v.number()),
+  wearableSyncStatus: v.literal('planned_disabled'),
 })
 
 export const alertDocValidator = v.object({

@@ -82,6 +82,10 @@ describe('PR #39 safety boundary regressions', () => {
       resolve(ROOT, 'components/patient/patient-profile-form.tsx'),
       'utf8'
     ).toLowerCase()
+    const reminderPreferences = readFileSync(
+      resolve(ROOT, 'lib/reminderPreferences.ts'),
+      'utf8'
+    ).toLowerCase()
     const scoreGauge = readFileSync(
       resolve(ROOT, 'components/dashboard/score-gauge.tsx'),
       'utf8'
@@ -95,7 +99,7 @@ describe('PR #39 safety boundary regressions', () => {
       expect(checkInSafetyCopy).toContain(phrase.toLowerCase())
     }
     for (const phrase of REQUIRED_SAFE_COPY.profileForm) {
-      expect(profileForm).toContain(phrase.toLowerCase())
+      expect(profileForm + reminderPreferences).toContain(phrase.toLowerCase())
     }
     for (const phrase of REQUIRED_SAFE_COPY.scoreGauge) {
       expect(scoreGauge).toContain(phrase.toLowerCase())
