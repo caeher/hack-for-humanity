@@ -18,6 +18,8 @@ import {
 import { SearchField } from '@/components/forms'
 import { api } from '@/convex/_generated/api'
 import { getLocalDateString } from '@/lib/checkInHistory'
+import { patients as demoPatients } from '@/lib/cri-data'
+import { isE2ETestMode } from '@/lib/e2e'
 import { cn } from '@/lib/utils'
 
 export interface PatientTableProps {
@@ -25,13 +27,73 @@ export interface PatientTableProps {
   className?: string
 }
 
-function attentionTone(attention: 'Routine' | 'Review' | 'Safety'): 'good' | 'warn' | 'bad' {
+function attentionTone(attention: string): 'good' | 'warn' | 'bad' {
   if (attention === 'Safety') return 'bad'
   if (attention === 'Review') return 'warn'
   return 'good'
 }
 
-export function PatientTable({ onAddPatient, className }: PatientTableProps) {
+function PatientTableDemo({ onAddPatient, className }: PatientTableProps) {
+  const [query, setQuery] = useState('')
+  const filtered = demoPatients.filter(
+    p =>
+      p.name.toLowerCase().includes(query.toLowerCase()) ||
+      p.recoveryContext.toLowerCase().includes(query.toLowerCase())
+  )
+
+  return (
+    <Card className={cn('overflow-hidden p-0', className)}>
+      <div className="flex items-center justify-between gap-4 border-b border-border p-4 bg-card">
+        <div className="flex-1 max-w-md">
+          <SearchField
+            placeholder="Search patients by name or recovery context..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            size="sm"
+          />
+        </div>
+        {onAddPatient && (
+          <Button size="sm" onClick={onAddPatient}>
+            <Plus className="size-3.5" /> Add Patient
+          </Button>
+        )}
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {['Patient', 'Recovery context', 'Day', 'Symptoms', 'Check-ins', 'Attention'].map(x => (
+              <TableHead key={x}>{x}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filtered.map(p => (
+            <TableRow key={p.id}>
+              <TableCell>
+                <Link
+                  href={`/clinician/patients/${p.id}`}
+                  className="font-semibold text-foreground hover:underline"
+                >
+                  {p.name}
+                </Link>
+                <p className="text-xs text-muted-foreground font-mono">{p.id}</p>
+              </TableCell>
+              <TableCell>{p.recoveryContext}</TableCell>
+              <TableCell>{p.day}</TableCell>
+              <TableCell className="font-semibold">{p.symptomTotal} / 48</TableCell>
+              <TableCell>{p.checkInRate}%</TableCell>
+              <TableCell>
+                <Badge tone={attentionTone(p.attention)}>{p.attention}</Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
+  )
+}
+
+function PatientTableLive({ onAddPatient, className }: PatientTableProps) {
   const [query, setQuery] = useState('')
   const today = useMemo(() => getLocalDateString(), [])
 
@@ -107,7 +169,10 @@ export function PatientTable({ onAddPatient, className }: PatientTableProps) {
                     {row.checkInRate !== null ? `${row.checkInRate}%` : '—'}
                   </TableCell>
                   <TableCell>
-                    <Badge tone={attentionTone(row.attention)} title={row.attentionReasons.join(' ')}>
+                    <Badge
+                      tone={attentionTone(row.attention)}
+                      title={row.attentionReasons.join(' ')}
+                    >
                       {row.attention}
                     </Badge>
                   </TableCell>
@@ -134,4 +199,11 @@ export function PatientTable({ onAddPatient, className }: PatientTableProps) {
       )}
     </Card>
   )
+}
+
+export function PatientTable(props: PatientTableProps) {
+  if (isE2ETestMode) {
+    return <PatientTableDemo {...props} />
+  }
+  return <PatientTableLive {...props} />
 }

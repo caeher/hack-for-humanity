@@ -11,11 +11,57 @@ import { PageHeader } from '@/components/layouts/page-header'
 import { ExplanationView } from '@/components/explanation'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
+import { alerts as demoAlerts } from '@/lib/cri-data'
+import { isE2ETestMode } from '@/lib/e2e'
 import { cn } from '@/lib/utils'
 
 type AlertFilter = 'all' | 'high' | 'unassigned' | 'resolved'
 
-export function ClinicalAlertsList() {
+function ClinicalAlertsListDemo() {
+  const [resolved, setResolved] = useState<string[]>([])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="[E2E demo shell] Follow-up workspace"
+        title="Clinical alerts"
+        description="Prototype triage queue — simulated safety events for smoke testing."
+      />
+      <div className="space-y-3">
+        {demoAlerts.map(a => (
+          <Card className="p-5" key={a.patient}>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex gap-4">
+                <div className="grid size-10 place-items-center rounded-lg bg-muted text-foreground shrink-0">
+                  <AlertTriangle className="size-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-foreground">{a.patient}</p>
+                    <Badge tone={a.severity === 'High' ? 'bad' : 'warn'}>{a.severity}</Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {a.detail} · {a.time}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  setResolved(r => (r.includes(a.patient) ? r : [...r, a.patient]))
+                }
+                className="rounded-lg border border-border px-3.5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+              >
+                {resolved.includes(a.patient) ? 'Acknowledged' : 'Acknowledge'}
+              </button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ClinicalAlertsListLive() {
   const [filter, setFilter] = useState<AlertFilter>('all')
   const [expandedAlertId, setExpandedAlertId] = useState<Id<'alerts'> | null>(null)
   const [snoozeTarget, setSnoozeTarget] = useState<Id<'alerts'> | null>(null)
@@ -240,4 +286,11 @@ export function ClinicalAlertsList() {
       )}
     </div>
   )
+}
+
+export function ClinicalAlertsList() {
+  if (isE2ETestMode) {
+    return <ClinicalAlertsListDemo />
+  }
+  return <ClinicalAlertsListLive />
 }
