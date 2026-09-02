@@ -53,6 +53,8 @@ export default defineSchema({
   })
     .index('by_severity', ['severity'])
     .index('by_status', ['status'])
+    .index('by_status_and_severity', ['status', 'severity'])
+    .index('by_patientId', ['patientId'])
     .index('by_patientName', ['patientName']),
 
   clinicalEncounters: defineTable({
@@ -84,7 +86,9 @@ export default defineSchema({
     read: v.boolean(),
   })
     .index('by_threadId', ['threadId'])
-    .index('by_senderId', ['senderId']),
+    .index('by_senderId', ['senderId'])
+    .index('by_threadId_and_createdAt', ['threadId', 'createdAt'])
+    .index('by_threadId_and_read', ['threadId', 'read']),
 
   carePlans: defineTable({
     patientId: v.string(),
@@ -103,11 +107,13 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_actor', ['actor'])
-    .index('by_resource', ['resource']),
+    .index('by_resource', ['resource'])
+    .index('by_createdAt', ['createdAt']),
 
   users: defineTable({
     name: v.string(),
     email: v.string(),
+    tokenIdentifier: v.optional(v.string()),
     role: v.union(
       v.literal('patient'),
       v.literal('caregiver'),
@@ -119,5 +125,6 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_email', ['email'])
-    .index('by_role', ['role']),
+    .index('by_role', ['role'])
+    .index('by_tokenIdentifier', ['tokenIdentifier']),
 })
