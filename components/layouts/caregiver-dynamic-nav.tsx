@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { HeartPulse } from 'lucide-react'
 import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import { cn } from '@/lib/utils'
 
 export interface CaregiverDynamicNavProps {
@@ -12,7 +13,28 @@ export interface CaregiverDynamicNavProps {
   onClose: () => void
 }
 
-export function CaregiverDynamicNav({ pathname, onClose }: CaregiverDynamicNavProps) {
+function CaregiverDynamicNavDemo({ pathname, onClose }: CaregiverDynamicNavProps) {
+  const href = '/caregiver/patient/P-1042'
+  const active = pathname.startsWith(href)
+
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={cn(
+        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+        active
+          ? 'bg-foreground text-background font-semibold'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      )}
+    >
+      <HeartPulse className="size-4 shrink-0" />
+      <span className="truncate">Maya’s recovery</span>
+    </Link>
+  )
+}
+
+function CaregiverDynamicNavLive({ pathname, onClose }: CaregiverDynamicNavProps) {
   const accessiblePatients = useQuery(api.consent.listAccessiblePatients, {})
 
   if (!accessiblePatients || accessiblePatients.length === 0) {
@@ -45,4 +67,12 @@ export function CaregiverDynamicNav({ pathname, onClose }: CaregiverDynamicNavPr
       })}
     </>
   )
+}
+
+export function CaregiverDynamicNav(props: CaregiverDynamicNavProps) {
+  if (isE2ETestMode) {
+    return <CaregiverDynamicNavDemo {...props} />
+  }
+
+  return <CaregiverDynamicNavLive {...props} />
 }
