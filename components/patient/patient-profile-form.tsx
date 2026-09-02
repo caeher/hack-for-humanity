@@ -13,8 +13,69 @@ import {
   DEFAULT_QUIET_HOURS,
   WEARABLE_SYNC_COPY,
 } from '@/lib/reminderPreferences'
+import { isE2ETestMode } from '@/lib/e2e'
 
-export function PatientProfileForm() {
+function PatientProfileFormDemo() {
+  const [profileForm, setProfileForm] = useState({
+    name: 'Maya Chen',
+    email: 'maya@example.com',
+    phone: '(415) 555-0192',
+    smsReminders: true,
+    largeText: false,
+    timeZone: 'America/New_York',
+    quietHoursStart: DEFAULT_QUIET_HOURS.start,
+    quietHoursEnd: DEFAULT_QUIET_HOURS.end,
+  })
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Account & privacy"
+        title="Your profile"
+        description="Manage recovery preferences, connected data, and caregiver access."
+      />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="space-y-4 p-6">
+          <h2 className="border-b border-border pb-3 text-lg font-semibold text-foreground">
+            Personal & Contact Info
+          </h2>
+          <TextField label="Full Name" value={profileForm.name} onChange={() => undefined} icon={User} />
+          <TextField label="Email Address" type="email" value={profileForm.email} onChange={() => undefined} icon={Mail} />
+          <PhoneField label="Mobile Phone" value={profileForm.phone} onChange={() => undefined} />
+          <TextField label="Time zone" value={profileForm.timeZone} onChange={() => undefined} />
+        </Card>
+        <Card className="space-y-4 p-6">
+          <h2 className="border-b border-border pb-3 text-lg font-semibold text-foreground">
+            Accessibility & Notifications
+          </h2>
+          <SwitchField
+            inline
+            label="Daily SMS Check-in Reminders"
+            sublabel="Sent at 8:00 AM every morning"
+            checked={profileForm.smsReminders}
+            onChange={e => setProfileForm({ ...profileForm, smsReminders: e.target.checked })}
+          />
+          <SwitchField
+            inline
+            label="High Contrast / Large Text Mode"
+            checked={profileForm.largeText}
+            onChange={e => setProfileForm({ ...profileForm, largeText: e.target.checked })}
+          />
+          <SwitchField
+            inline
+            label={WEARABLE_SYNC_COPY.label}
+            sublabel={WEARABLE_SYNC_COPY.sublabel}
+            checked={false}
+            onChange={() => undefined}
+            disabled
+          />
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function PatientProfileFormLive() {
   const me = useQuery(api.users.getMe, {})
   const patient = useQuery(api.patients.getMePatient, {})
   const preferences = useQuery(
@@ -270,4 +331,11 @@ export function PatientProfileForm() {
       </div>
     </div>
   )
+}
+
+export function PatientProfileForm() {
+  if (isE2ETestMode) {
+    return <PatientProfileFormDemo />
+  }
+  return <PatientProfileFormLive />
 }

@@ -11,12 +11,52 @@ import { TodayPlan } from '@/components/dashboard/today-plan'
 import type { Doc } from '@/convex/_generated/dataModel'
 import { api } from '@/convex/_generated/api'
 import { CARE_PLAN_CATEGORY_LABELS } from '@/lib/carePlan'
+import { isE2ETestMode } from '@/lib/e2e'
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function CarePlanSection() {
+function CarePlanSectionDemo() {
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Personalized pathway"
+        title="Recovery plan"
+        description="Clinician-provided instructions, appointments, and personal reminders in one place."
+      />
+      <Card className="p-4">
+        <p className="text-sm text-muted-foreground">
+          2 of 4 clinician-directed items completed. Missed or skipped items are not emergencies — contact
+          your care team if symptoms change.
+        </p>
+      </Card>
+      <TodayPlan />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="p-6">
+          <h2 className="font-semibold text-foreground">Plan reminders</h2>
+          <div className="mt-4 flex flex-col gap-3">
+            {['Bring symptom summary to follow-up', 'Write down questions for the care team'].map(x => (
+              <div className="flex items-center justify-between rounded-lg bg-muted p-4" key={x}>
+                <span className="text-sm font-medium text-foreground">{x}</span>
+                <Badge tone="good">Added by patient</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card className="p-6">
+          <h2 className="font-semibold text-foreground">Upcoming care</h2>
+          <div className="mt-4 rounded-lg bg-muted p-4">
+            <p className="font-semibold text-foreground">Concussion follow-up</p>
+            <p className="mt-1 text-sm text-muted-foreground">Sep 3 · 10:30 AM · Dr. Olivia Brooks</p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function CarePlanSectionLive() {
   const patient = useQuery(api.patients.getMePatient, {})
   const patientId = patient?._id
 
@@ -204,4 +244,11 @@ export function CarePlanSection() {
       )}
     </div>
   )
+}
+
+export function CarePlanSection() {
+  if (isE2ETestMode) {
+    return <CarePlanSectionDemo />
+  }
+  return <CarePlanSectionLive />
 }
