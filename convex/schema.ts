@@ -13,12 +13,71 @@ export default defineSchema({
     cohortCapacity: v.optional(v.number()),
     accentColor: v.optional(v.string()),
     activePathways: v.optional(v.array(v.string())),
+    locale: v.optional(v.string()),
+    featureFlags: v.optional(
+      v.object({
+        aiInsights: v.boolean(),
+        caregiverPortal: v.boolean(),
+        secureMessaging: v.boolean(),
+        patternDetection: v.boolean(),
+      })
+    ),
+    approvedPolicies: v.optional(v.array(v.string())),
     clerkUpdatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index('by_slug', ['slug'])
     .index('by_clerkId', ['clerkId'])
     .index('by_createdAt', ['createdAt']),
+
+  // 1b. Organization membership (org-scoped roles; prevents cross-org administration)
+  organizationMemberships: defineTable({
+    userId: v.id('users'),
+    orgId: v.id('organizations'),
+    orgRole: v.union(
+      v.literal('patient'),
+      v.literal('caregiver'),
+      v.literal('clinician'),
+      v.literal('admin')
+    ),
+    status: v.union(v.literal('active'), v.literal('inactive'), v.literal('invited')),
+    clerkMembershipId: v.optional(v.string()),
+    joinedAt: v.number(),
+  })
+    .index('by_orgId', ['orgId'])
+    .index('by_userId', ['userId'])
+    .index('by_userId_and_orgId', ['userId', 'orgId'])
+    .index('by_orgId_and_orgRole', ['orgId', 'orgRole'])
+    .index('by_orgId_and_status', ['orgId', 'status']),
+
+  // 1c. Pending organization invitations (synced with Clerk)
+  organizationInvitations: defineTable({
+    orgId: v.id('organizations'),
+    email: v.string(),
+    name: v.string(),
+    role: v.union(
+      v.literal('patient'),
+      v.literal('caregiver'),
+      v.literal('clinician'),
+      v.literal('admin')
+    ),
+    clerkInvitationId: v.optional(v.string()),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('accepted'),
+      v.literal('revoked'),
+      v.literal('expired')
+    ),
+    invitedByUserId: v.id('users'),
+    expiresAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index('by_orgId', ['orgId'])
+    .index('by_email', ['email'])
+    .index('by_clerkInvitationId', ['clerkInvitationId'])
+    .index('by_orgId_and_status', ['orgId', 'status'])
+    .index('by_orgId_and_email', ['orgId', 'email']),
 
   // 2. Identity & User Accounts (Synced from Clerk via tokenIdentifier)
   users: defineTable({

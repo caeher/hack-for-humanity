@@ -133,6 +133,17 @@ export const syncCurrentUser = mutation({
 
         await ctx.db.patch(existingUser._id, updates)
 
+        const invitedMemberships = await ctx.db
+          .query('organizationMemberships')
+          .withIndex('by_userId', q => q.eq('userId', existingUser._id))
+          .collect()
+
+        for (const membership of invitedMemberships) {
+          if (membership.status === 'invited') {
+            await ctx.db.patch(membership._id, { status: 'active' })
+          }
+        }
+
         await ctx.db.insert('auditLogs', {
           actorUserId: existingUser._id,
           actorRole: existingUser.role,

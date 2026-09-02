@@ -232,7 +232,16 @@ export async function requireOrgAccess(
   }
 
   if (user.role === 'admin') {
-    return { ...auth, organization }
+    const membership = await ctx.db
+      .query('organizationMemberships')
+      .withIndex('by_userId_and_orgId', q => q.eq('userId', user._id).eq('orgId', orgId))
+      .first()
+
+    if (membership && membership.orgRole === 'admin' && membership.status === 'active') {
+      return { ...auth, organization }
+    }
+
+    throw new Error(`Forbidden: Access to organization ${orgId} denied.`)
   }
 
   if (user.role === 'clinician') {

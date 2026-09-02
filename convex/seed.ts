@@ -38,11 +38,43 @@ export const seedDatabase = mutation({
           'Adolescent Return-to-Learn',
           'Persistent Post-Concussion Monitoring',
         ],
+        locale: 'en-US',
+        featureFlags: {
+          aiInsights: true,
+          caregiverPortal: true,
+          secureMessaging: true,
+          patternDetection: true,
+        },
+        approvedPolicies: [
+          'CDC concussion symptom guidance',
+          'Return-to-learn accommodations',
+          'Privacy and consent policy',
+        ],
         createdAt: Date.now() - 86400000 * 90,
       })
       org = await ctx.db.get(orgId)
     }
     if (!org) throw new Error('Failed to resolve organization.')
+
+    // Backfill organization settings on existing org records
+    if (!org.locale || !org.featureFlags) {
+      await ctx.db.patch(org._id, {
+        locale: org.locale ?? 'en-US',
+        featureFlags: org.featureFlags ?? {
+          aiInsights: true,
+          caregiverPortal: true,
+          secureMessaging: true,
+          patternDetection: true,
+        },
+        approvedPolicies: org.approvedPolicies ?? [
+          'CDC concussion symptom guidance',
+          'Return-to-learn accommodations',
+          'Privacy and consent policy',
+        ],
+      })
+      org = await ctx.db.get(org._id)
+      if (!org) throw new Error('Failed to resolve organization after settings backfill.')
+    }
 
     // 2. Seed Users (Admin, Clinicians, Adult Patients, Pediatric Patient, Caregivers)
     const initialUsersData = [
@@ -199,6 +231,39 @@ export const seedDatabase = mutation({
         .first()
       if (!existing) {
         await ctx.db.insert('clinicianMemberships', m)
+      }
+    }
+
+    // 3b. Seed organization memberships (org-scoped RBAC)
+    const orgMembershipSeed = [
+      { userId: adminUser._id, orgRole: 'admin' as const },
+      { userId: drBrooks._id, orgRole: 'clinician' as const },
+      { userId: drVance._id, orgRole: 'clinician' as const },
+      { userId: mayaUser._id, orgRole: 'patient' as const },
+      { userId: davidUser._id, orgRole: 'caregiver' as const },
+      { userId: danielUser._id, orgRole: 'patient' as const },
+      { userId: avaUser._id, orgRole: 'patient' as const },
+      { userId: jamesUser._id, orgRole: 'patient' as const },
+      { userId: noraUser._id, orgRole: 'patient' as const },
+      { userId: leoUser._id, orgRole: 'patient' as const },
+      { userId: sarahUser._id, orgRole: 'caregiver' as const },
+    ]
+
+    for (const entry of orgMembershipSeed) {
+      const existing = await ctx.db
+        .query('organizationMemberships')
+        .withIndex('by_userId_and_orgId', q =>
+          q.eq('userId', entry.userId).eq('orgId', org._id)
+        )
+        .first()
+      if (!existing) {
+        await ctx.db.insert('organizationMemberships', {
+          userId: entry.userId,
+          orgId: org._id,
+          orgRole: entry.orgRole,
+          status: 'active',
+          joinedAt: Date.now() - 86400000 * 30,
+        })
       }
     }
 

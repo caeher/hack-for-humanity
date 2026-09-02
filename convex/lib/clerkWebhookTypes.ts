@@ -75,6 +75,15 @@ export interface ClerkWebhookEnvelope {
   object: string
 }
 
+export interface ClerkOrganizationInvitationData {
+  id: string
+  email_address: string
+  organization_id: string
+  role: string
+  status?: string
+  updated_at?: number
+}
+
 export const SUPPORTED_CLERK_EVENT_TYPES = [
   'user.created',
   'user.updated',
@@ -85,6 +94,9 @@ export const SUPPORTED_CLERK_EVENT_TYPES = [
   'organizationMembership.created',
   'organizationMembership.updated',
   'organizationMembership.deleted',
+  'organizationInvitation.created',
+  'organizationInvitation.accepted',
+  'organizationInvitation.revoked',
 ] as const
 
 export type SupportedClerkEventType = (typeof SUPPORTED_CLERK_EVENT_TYPES)[number]

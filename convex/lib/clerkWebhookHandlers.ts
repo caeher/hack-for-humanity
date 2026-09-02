@@ -4,6 +4,7 @@ import {
   buildDisplayName,
   buildTokenIdentifier,
   ClerkOrganizationData,
+  ClerkOrganizationInvitationData,
   ClerkOrganizationMembershipData,
   ClerkUserData,
   getPrimaryEmail,
@@ -367,6 +368,28 @@ export async function handleOrganizationMembershipCreated(
     await ctx.db.patch(user._id, { role: mappedRole })
   }
 
+  const existingOrgMembership = await ctx.db
+    .query('organizationMemberships')
+    .withIndex('by_userId_and_orgId', q => q.eq('userId', user._id).eq('orgId', organization._id))
+    .first()
+
+  if (existingOrgMembership) {
+    await ctx.db.patch(existingOrgMembership._id, {
+      orgRole: mappedRole,
+      status: 'active',
+      clerkMembershipId: membershipData.id,
+    })
+  } else {
+    await ctx.db.insert('organizationMemberships', {
+      userId: user._id,
+      orgId: organization._id,
+      orgRole: mappedRole,
+      status: 'active',
+      clerkMembershipId: membershipData.id,
+      joinedAt: handlerCtx.now,
+    })
+  }
+
   const existingMembership = await ctx.db
     .query('clinicianMemberships')
     .withIndex('by_userId_and_orgId', q => q.eq('userId', user._id).eq('orgId', organization._id))
@@ -431,6 +454,15 @@ export async function handleOrganizationMembershipDeleted(
 
   await ctx.db.patch(existingMembership._id, { status: 'inactive' })
 
+  const orgMembership = await ctx.db
+    .query('organizationMemberships')
+    .withIndex('by_userId_and_orgId', q => q.eq('userId', user._id).eq('orgId', organization._id))
+    .first()
+
+  if (orgMembership) {
+    await ctx.db.patch(orgMembership._id, { status: 'inactive' })
+  }
+
   await writeWebhookAuditLog(ctx, {
     actorUserId: user._id,
     actorRole: user.role,
@@ -441,4 +473,82 @@ export async function handleOrganizationMembershipDeleted(
     orgId: organization._id,
     now: handlerCtx.now,
   })
+}
+
+export async function handleOrganizationInvitationAccepted(
+  ctx: MutationCtx,
+  invitationData: ClerkOrganizationInvitationData,
+  handlerCtx: ClerkWebhookHandlerContext
+): Promise<void> {
+  const invitation = await ctx.db
+    .query('organizationInvitations')
+    .withIndex('by_clerkInvitationId', q => q.eq('clerkInvitationId', invitationData.id))
+    .first()
+
+  if (invitation) {
+    await ctx.db.patch(invitation._id, {
+      status: 'accepted',
+      updatedAt: handlerCtx.now,
+    })
+    return
+  }
+
+  const org = await findOrganizationByClerkId(ctx, invitationData.organization_id)
+  if (!org) {
+    return
+  }
+
+  const byEmail = await ctx.db
+    .query('organizationInvitations')
+    .withIndex('by_orgId_and_email', q =>
+      q.eq('orgId', org._id).eq('email', invitationData.email_address)
+    )
+    .first()
+
+  if (byEmail && byEmail.status === 'pending') {
+    await ctx.db.patch(byEmail._id, {
+      status: 'accepted',
+      clerkInvitationId: invitationData.id,
+      updatedAt: handlerCtx.now,
+    })
+  }
+}
+
+export async function handleOrganizationInvitationRevoked(
+  ctx: MutationCtx,
+  invitationData: ClerkOrganizationInvitationData,
+  handlerCtx: ClerkWebhookHandlerContext
+): Promise<void> {
+  const invitation = await ctx.db
+    .query('organizationInvitations')
+    .withIndex('by_clerkInvitationId', q => q.eq('clerkInvitationId', invitationData.id))
+    .first()
+
+  if (invitation) {
+    await ctx.db.patch(invitation._id, {
+      status: 'revoked',
+      updatedAt: handlerCtx.now,
+    })
+    return
+  }
+
+  const org = await findOrganizationByClerkId(ctx, invitationData.organization_id)
+  if (!org) {
+    return
+  }
+
+  const byEmail = await ctx.db
+    .query('organizationInvitations')
+    .withIndex('by_orgId_and_email', q =>
+      q.eq('orgId', org._id).eq('email', invitationData.email_address)
+    )
+    .first()
+
+  if (byEmail && byEmail.status === 'pending') {
+    await ctx.db.patch(byEmail._id, {
+      status: 'revoked',
+      clerkInvitationId: invitationData.id,
+      updatedAt: handlerCtx.now,
+    })
+  }
 }
