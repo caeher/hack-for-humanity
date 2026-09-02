@@ -6,6 +6,13 @@ import { MutationCtx } from '../_generated/server'
 import { Doc, Id } from '../_generated/dataModel'
 import type { SafetyEvaluationResult } from './safetyEngine'
 import { buildSafetyProvenance } from './provenance'
+import {
+  buildSourceEventKey,
+  createNotification,
+  deepLinkForRole,
+  getAlertEligibleRecipients,
+  sanitizeNotificationBody,
+} from './notificationLogic'
 
 export type NotificationOutcome = 'sent' | 'skipped_no_consent' | 'skipped_not_escalated'
 
@@ -100,6 +107,40 @@ export async function attemptCareTeamNotification(
       followUpState: 'notification_skipped',
       alertId,
     }
+  }
+
+  const recipientIds = await getAlertEligibleRecipients(ctx, patient, actorUserId)
+
+  for (const recipientId of recipientIds) {
+    const recipient = await ctx.db.get(recipientId)
+    if (!recipient) continue
+
+    const isSafety = safetyResult.highestSeverity === 'emergency' || safetyResult.highestSeverity === 'high'
+
+    await createNotification(ctx, {
+      recipientUserId: recipientId,
+      type: isSafety ? 'safety_guidance' : 'clinician_alert',
+      priority: isSafety ? 'high' : 'medium',
+      title: isSafety ? 'Safety review needed' : 'Clinical alert',
+      body: sanitizeNotificationBody(
+        `A recovery check-in may need review for ${patient.preferredName ?? patient.displayId}. Open alerts for details — symptom specifics are not shown here.`
+      ),
+      sourceResourceType: 'alerts',
+      sourceResourceId: alertId,
+      sourceEventKey: buildSourceEventKey(
+        isSafety ? 'safety_guidance' : 'clinician_alert',
+        'alerts',
+        alertId,
+        recipientId
+      ),
+      patientId: patient._id,
+      orgId: patient.orgId,
+      deepLinkPath: deepLinkForRole(recipient.role, 'alerts'),
+      timeZone: patient.timeZone,
+      attemptExternalDelivery: recipient.role === 'caregiver',
+      externalChannel: 'email',
+      nowMs: now,
+    })
   }
 
   return {

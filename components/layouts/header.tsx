@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Menu, LogIn, ShieldCheck, Sparkles } from 'lucide-react'
+import { Menu, LogIn, ShieldCheck, Sparkles } from 'lucide-react'
 import { Show, UserButton, SignInButton, SignUpButton, useUser } from '@clerk/nextjs'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
@@ -17,6 +17,7 @@ import {
 import { roles, Role } from '@/lib/cri-data'
 import { isE2ETestMode } from '@/lib/e2e'
 import { HeaderDemoSandbox } from './header-demo-sandbox'
+import { NotificationCenter } from '@/components/notifications/notification-center'
 
 export interface HeaderProps {
   role: Role
@@ -101,13 +102,7 @@ function HeaderWithAuth({ role, onMenuClick }: HeaderProps) {
           </div>
         )}
 
-        <button
-          aria-label="Notifications"
-          className="relative grid size-9 place-items-center rounded-lg border border-border bg-card text-foreground hover:bg-muted transition-colors cursor-pointer"
-        >
-          <Bell className="size-4" />
-          <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
-        </button>
+        {isSignedIn && <NotificationCenter />}
 
         {/* Clerk Auth State & User Menu */}
         <Show when="signed-in">

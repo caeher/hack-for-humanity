@@ -15,6 +15,13 @@ import {
   markThreadMessagesRead,
   writeMessageAuditLog,
 } from './lib/messageLogic'
+import {
+  buildSourceEventKey,
+  createNotification,
+  deepLinkForRole,
+  getMessageRecipients,
+  sanitizeNotificationBody,
+} from './lib/notificationLogic'
 import { sanitizeInput, validateStringLength } from './lib/businessLogic'
 
 /**
@@ -179,6 +186,31 @@ export const sendMessage = mutation({
       action: 'create',
       now,
     })
+
+    const recipients = await getMessageRecipients(ctx, thread, user._id)
+    const sender = await ctx.db.get(user._id)
+
+    for (const recipientId of recipients) {
+      const recipient = await ctx.db.get(recipientId)
+      if (!recipient) continue
+
+      await createNotification(ctx, {
+        recipientUserId: recipientId,
+        type: 'message',
+        priority: safety.safetySeverity === 'high' || safety.safetySeverity === 'emergency' ? 'high' : 'low',
+        title: 'New care team message',
+        body: sanitizeNotificationBody(
+          `${sender?.name ?? 'Care team member'} sent a message in ${thread.title}. Open messages to read.`
+        ),
+        sourceResourceType: 'messages',
+        sourceResourceId: messageId,
+        sourceEventKey: buildSourceEventKey('message', 'messages', messageId, recipientId),
+        patientId: patient._id,
+        orgId: thread.orgId,
+        deepLinkPath: deepLinkForRole(recipient.role, 'messages', `thread=${validThreadId}`),
+        timeZone: patient.timeZone,
+      })
+    }
 
     return {
       messageId,

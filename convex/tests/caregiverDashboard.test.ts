@@ -146,7 +146,11 @@ describe('Caregiver invitation & support dashboard', () => {
 
     const notifications = await t
       .withIdentity(davidIdentity)
-      .query(api.accessNotifications.listForMe, {})
-    expect(notifications.some((item: { type: string }) => item.type === 'consent_revoked')).toBe(true)
+      .query(api.notifications.listForMe, {
+        paginationOpts: { numItems: 10, cursor: null },
+      })
+    expect(notifications.page.some((item: { type: string }) => item.type === 'caregiver_access')).toBe(
+      true
+    )
   })
 })

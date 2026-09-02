@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Menu } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { roles, Role } from '@/lib/cri-data'
 
@@ -33,7 +33,16 @@ export function HeaderDemoSandbox({ role, onMenuClick }: HeaderDemoSandboxProps)
         </p>
       </div>
 
-      <div className="w-36">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="relative grid size-9 place-items-center rounded-lg border border-border bg-card text-foreground"
+        >
+          <Bell className="size-4" />
+        </button>
+
+        <div className="w-36">
         <Select
           value={role}
           onValueChange={newRole => router.push(roles[newRole as Role]?.home || '/')}
@@ -49,6 +58,7 @@ export function HeaderDemoSandbox({ role, onMenuClick }: HeaderDemoSandboxProps)
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
     </header>
   )
