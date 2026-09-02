@@ -11,5 +11,19 @@ export default tseslint.config(
       'convex/_generated/**',
       'dist/**',
     ],
+  },
+  {
+    files: ['convex/**/*.ts'],
+    rules: {
+      // This repo uses Convex's Id-first db.get/patch/delete API. The table-first
+      // form is a newer lint suggestion and is out of scope for environment setup.
+      '@convex-dev/explicit-table-ids': 'off',
+      '@convex-dev/no-filter-in-query': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
   }
 )
