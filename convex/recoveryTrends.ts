@@ -7,6 +7,7 @@ import {
   validateScore,
   validateStringLength,
 } from './lib/businessLogic'
+import { SYMPTOM_METHODOLOGY_VERSION } from './lib/symptomMethodology'
 
 /**
  * List recovery trend points for a patient.
@@ -59,6 +60,7 @@ export const addTrendPoint = mutation({
       date: validDate,
       dayLabel: validDay,
       symptomTotal: args.symptomTotal,
+      methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
       headacheRating: args.headacheRating,
       sleepQuality: args.sleepQuality,
       createdAt: Date.now(),

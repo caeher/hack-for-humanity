@@ -28,7 +28,9 @@ import type * as lib_clerkWebhookHandlers from "../lib/clerkWebhookHandlers.js";
 import type * as lib_clerkWebhookTypes from "../lib/clerkWebhookTypes.js";
 import type * as lib_clerkWebhookVerify from "../lib/clerkWebhookVerify.js";
 import type * as lib_safetyEngine from "../lib/safetyEngine.js";
+import type * as lib_safetyFollowUp from "../lib/safetyFollowUp.js";
 import type * as lib_safetyRules from "../lib/safetyRules.js";
+import type * as lib_symptomMethodology from "../lib/symptomMethodology.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
@@ -37,6 +39,7 @@ import type * as patients from "../patients.js";
 import type * as recoveryTrends from "../recoveryTrends.js";
 import type * as safety from "../safety.js";
 import type * as seed from "../seed.js";
+import type * as symptomSummaries from "../symptomSummaries.js";
 import type * as users from "../users.js";
 
 import type {
@@ -66,7 +69,9 @@ declare const fullApi: ApiFromModules<{
   "lib/clerkWebhookTypes": typeof lib_clerkWebhookTypes;
   "lib/clerkWebhookVerify": typeof lib_clerkWebhookVerify;
   "lib/safetyEngine": typeof lib_safetyEngine;
+  "lib/safetyFollowUp": typeof lib_safetyFollowUp;
   "lib/safetyRules": typeof lib_safetyRules;
+  "lib/symptomMethodology": typeof lib_symptomMethodology;
   "lib/validators": typeof lib_validators;
   messages: typeof messages;
   migrations: typeof migrations;
@@ -75,6 +80,7 @@ declare const fullApi: ApiFromModules<{
   recoveryTrends: typeof recoveryTrends;
   safety: typeof safety;
   seed: typeof seed;
+  symptomSummaries: typeof symptomSummaries;
   users: typeof users;
 }>;
 

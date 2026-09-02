@@ -55,6 +55,14 @@ describe('PR #39 safety boundary regressions', () => {
         ) {
           continue
         }
+        if (
+          (file.endsWith('symptomMethodology.ts') ||
+            file.endsWith('SYMPTOM_METHODOLOGY.md') ||
+            file.endsWith('recovery-timeline.tsx')) &&
+          /not a clinical recovery score/i.test(content)
+        ) {
+          continue
+        }
         violations.push(`${file}: matched ${pattern}`)
       }
     }

@@ -22,6 +22,7 @@ import {
   validateSkippedFields,
 } from './lib/baselineLogic'
 import { evaluateBaseline } from './lib/safetyEngine'
+import { SYMPTOM_METHODOLOGY_VERSION } from './lib/symptomMethodology'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 
@@ -249,6 +250,7 @@ async function persistBaselineVersion(
     diagnosisStatus: args.diagnosisStatus,
     symptoms: args.symptoms,
     symptomTotal,
+    methodologyVersion: SYMPTOM_METHODOLOGY_VERSION,
     sleepHours: args.sleepHours,
     schoolWorkDemand: args.schoolWorkDemand,
     physicalActivityLevel: args.physicalActivityLevel,

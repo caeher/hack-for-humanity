@@ -119,6 +119,39 @@ export const symptomsObjectValidator = v.object({
   sleepDifficulty: v.number(),
 })
 
+export const methodologyVersionValidator = v.string()
+
+export const trendDirectionValidator = v.union(
+  v.literal('decreasing'),
+  v.literal('increasing'),
+  v.literal('stable'),
+  v.literal('mixed')
+)
+
+export const trendReadinessValidator = v.union(
+  v.literal('insufficient'),
+  v.literal('sufficient')
+)
+
+export const trendSummaryValidator = v.object({
+  methodologyVersion: methodologyVersionValidator,
+  readiness: trendReadinessValidator,
+  direction: v.union(trendDirectionValidator, v.null()),
+  windowDays: v.number(),
+  dataPointsInWindow: v.number(),
+  totalDataPoints: v.number(),
+  hasConsecutiveStreak: v.boolean(),
+  longestConsecutiveStreak: v.number(),
+  earliestDate: v.union(v.string(), v.null()),
+  latestDate: v.union(v.string(), v.null()),
+  earliestTotal: v.union(v.number(), v.null()),
+  latestTotal: v.union(v.number(), v.null()),
+  delta: v.union(v.number(), v.null()),
+  summaryText: v.string(),
+  disclaimerText: v.string(),
+  insufficientReason: v.union(v.string(), v.null()),
+})
+
 export const trackingRelationshipValidator = v.union(
   v.literal('patient'),
   v.literal('caregiver'),
@@ -221,6 +254,7 @@ export const recoveryBaselineDocValidator = v.object({
   diagnosisStatus: diagnosisStatusValidator,
   symptoms: symptomsObjectValidator,
   symptomTotal: v.number(),
+  methodologyVersion: v.optional(methodologyVersionValidator),
   sleepHours: v.optional(v.number()),
   schoolWorkDemand: v.optional(v.number()),
   physicalActivityLevel: v.optional(v.number()),
@@ -347,6 +381,7 @@ export const checkInDocValidator = v.object({
   date: v.string(),
   symptoms: symptomsObjectValidator,
   symptomTotal: v.number(),
+  methodologyVersion: v.optional(methodologyVersionValidator),
   activityImpact: activityImpactValidator,
   dangerSignsPresent: v.boolean(),
   dangerSigns: v.array(v.string()),
@@ -377,6 +412,7 @@ export const recoveryTrendDocValidator = v.object({
   date: v.string(),
   dayLabel: v.string(),
   symptomTotal: v.number(),
+  methodologyVersion: v.optional(methodologyVersionValidator),
   headacheRating: v.number(),
   sleepQuality: v.number(),
   createdAt: v.number(),

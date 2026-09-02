@@ -3,9 +3,40 @@ import { ArrowRight, ClipboardCheck, Activity, CalendarDays } from 'lucide-react
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/layouts'
-import { StatCard, TrendChart, ScoreGauge, TodayPlan, InsightCard } from '@/components/dashboard'
+import {
+  StatCard,
+  TrendChart,
+  ScoreGauge,
+  TodayPlan,
+  InsightCard,
+  SymptomMethodologyPanel,
+} from '@/components/dashboard'
+import {
+  computeDescriptiveTrend,
+  METHODOLOGY_COPY,
+  SYMPTOM_METHODOLOGY_VERSION,
+} from '@/lib/symptomMethodology'
+import { recoveryTrend } from '@/lib/cri-data'
+
+const demoTrendPoints = [
+  { date: '2026-08-25', symptomTotal: 27 },
+  { date: '2026-08-26', symptomTotal: 25 },
+  { date: '2026-08-27', symptomTotal: 23 },
+  { date: '2026-08-28', symptomTotal: 24 },
+  { date: '2026-08-29', symptomTotal: 20 },
+  { date: '2026-08-30', symptomTotal: 18 },
+  { date: '2026-09-01', symptomTotal: 15 },
+]
+
+const demoTrend = computeDescriptiveTrend(demoTrendPoints)
 
 export default function PatientDashboardPage() {
+  const latestTotal = recoveryTrend[recoveryTrend.length - 1]?.symptomBurden ?? 15
+  const changeText =
+    demoTrend.readiness === 'sufficient' && demoTrend.delta !== null
+      ? `${demoTrend.delta > 0 ? '+' : ''}${demoTrend.delta} points in ${demoTrend.windowDays}-day window`
+      : 'Trend pending additional check-ins'
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -24,20 +55,33 @@ export default function PatientDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_1.7fr]">
         <Card className="p-6">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-semibold text-foreground">Today&apos;s symptom total</h2>
+            <h2 className="font-semibold text-foreground">Today&apos;s {METHODOLOGY_COPY.metricShortName}</h2>
             <span className="font-mono text-xs text-muted-foreground">UPDATED 8:42 AM</span>
           </div>
-          <ScoreGauge score={15} maxScore={48} />
+          <ScoreGauge
+            score={latestTotal}
+            maxScore={48}
+            statusText={
+              demoTrend.readiness === 'sufficient' && demoTrend.direction
+                ? `Descriptive trend: ${demoTrend.direction}`
+                : 'Within-person comparison pending'
+            }
+            changeText={changeText}
+            trendDirection={demoTrend.direction}
+            methodologyVersion={SYMPTOM_METHODOLOGY_VERSION}
+          />
         </Card>
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-semibold text-foreground">7-day trajectory</h2>
-              <p className="text-sm text-muted-foreground">Patient-reported symptom total</p>
+              <p className="text-sm text-muted-foreground">{METHODOLOGY_COPY.metricName}</p>
             </div>
             <Badge>Last 7 days</Badge>
           </div>
           <TrendChart />
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">{demoTrend.summaryText}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{demoTrend.disclaimerText}</p>
         </Card>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -64,6 +108,7 @@ export default function PatientDashboardPage() {
         <TodayPlan />
         <InsightCard />
       </div>
+      <SymptomMethodologyPanel compact />
     </div>
   )
 }

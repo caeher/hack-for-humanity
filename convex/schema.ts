@@ -171,6 +171,7 @@ export default defineSchema({
       sleepDifficulty: v.number(),
     }),
     symptomTotal: v.number(),
+    methodologyVersion: v.optional(v.string()),
     activityImpact: v.union(
       v.literal('yes'),
       v.literal('no'),
@@ -212,6 +213,7 @@ export default defineSchema({
     date: v.string(),
     dayLabel: v.string(),
     symptomTotal: v.number(),
+    methodologyVersion: v.optional(v.string()),
     headacheRating: v.number(),
     sleepQuality: v.number(),
     createdAt: v.number(),
@@ -459,6 +461,7 @@ export default defineSchema({
       sleepDifficulty: v.number(),
     }),
     symptomTotal: v.number(),
+    methodologyVersion: v.optional(v.string()),
     sleepHours: v.optional(v.number()),
     schoolWorkDemand: v.optional(v.number()),
     physicalActivityLevel: v.optional(v.number()),
