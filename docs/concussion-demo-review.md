@@ -34,8 +34,8 @@ Those measurements should be displayed as supporting context only. They should n
 - The visible demo is concussion-aligned across all four portals. Data remains simulated and session-only in several flows.
 - The dashboard uses a descriptive **patient-reported symptom total (0–48)**, not a validated Recovery Score.
 - Danger-sign handling exists in the check-in UI. A versioned backend Safety Engine is still required.
-- Legacy Convex field names (`painScore`, `mobilityScore`, `procedure`, `surgeon`, and similar) remain and must be migrated.
-- Product vision and safety boundaries live in [`docs/base.md`](./base.md).
+- Product vision and initial architecture live in [`docs/base.md`](./base.md).
+- Clinical scope, safety boundaries, evidence governance, and the PR review checklist are specified in [`docs/CLINICAL_SCOPE_AND_SAFETY.md`](./CLINICAL_SCOPE_AND_SAFETY.md).
 
 ## GitHub backlog (38 issues, aligned to CRI)
 
