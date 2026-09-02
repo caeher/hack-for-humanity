@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { roles, Role } from '@/lib/cri-data'
+import { isE2ETestMode } from '@/lib/e2e'
+import { HeaderDemoSandbox } from './header-demo-sandbox'
 
 export interface HeaderProps {
   role: Role
@@ -22,6 +24,14 @@ export interface HeaderProps {
 }
 
 export function Header({ role, onMenuClick }: HeaderProps) {
+  if (isE2ETestMode) {
+    return <HeaderDemoSandbox role={role} onMenuClick={onMenuClick} />
+  }
+
+  return <HeaderWithAuth role={role} onMenuClick={onMenuClick} />
+}
+
+function HeaderWithAuth({ role, onMenuClick }: HeaderProps) {
   const router = useRouter()
   const { isSignedIn } = useUser()
   const currentUser = useQuery(api.users.getMe)

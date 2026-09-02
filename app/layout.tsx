@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { shadcn } from '@clerk/ui/themes'
 import { ConvexClientProvider } from '@/components/providers/convex-client-provider'
 import { getClerkPublishableKey } from '@/lib/env'
+import { isE2ETestMode } from '@/lib/e2e'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -17,6 +18,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: '#f8f7f5', colorScheme: 'light', userScalable: true }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  if (isE2ETestMode) {
+    return (
+      <html lang="en" className="bg-background">
+        <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>{children}</body>
+      </html>
+    )
+  }
+
   return (
     <html lang="en" className="bg-background">
       <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>

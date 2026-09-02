@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "description": "Expected CRI application routes (PR #39 baseline). Update intentionally when routes change.",
+  "routes": [
+    "/",
+    "/admin/audit",
+    "/admin/cohorts",
+    "/admin/dashboard",
+    "/admin/settings",
+    "/admin/users",
+    "/caregiver/dashboard",
+    "/caregiver/messages",
+    "/caregiver/patient/[id]",
+    "/clinician/alerts",
+    "/clinician/dashboard",
+    "/clinician/patients",
+    "/clinician/patients/[id]",
+    "/clinician/reports",
+    "/patient/check-in",
+    "/patient/dashboard",
+    "/patient/insights",
+    "/patient/messages",
+    "/patient/plan",
+    "/patient/profile",
+    "/patient/recovery",
+    "/patient/reports"
+  ]
+}

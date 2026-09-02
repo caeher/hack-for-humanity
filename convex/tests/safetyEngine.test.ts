@@ -313,6 +313,19 @@ describe('Deterministic Safety Engine Core Pipeline', () => {
       const redFlagResult = evaluateFreeText('Experienced severe numbness in left arm after impact.')
       expect(redFlagResult.status).toBe('emergency')
     })
+
+    it('applies fail-safe when symptom inventory is incomplete — missing ratings are not treated as a complete check-in', () => {
+      const partialSymptoms = {
+        headache: 3,
+        dizziness: 2,
+      } as ConcussionSymptoms
+
+      const result = evaluateCheckIn(partialSymptoms, [])
+      expect(result.failSafeApplied).toBe(true)
+      expect(result.matchedRules.some(r => r.outputCode === SAFETY_OUTPUT_CODES.DATA_INCOMPLETE_FAILSAFE)).toBe(
+        true
+      )
+    })
   })
 
   // --- 6. PRIVACY & SENSITIVE PAYLOAD MINIMIZATION ---

@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Role } from '@/lib/cri-data'
+import { isE2ETestMode } from '@/lib/e2e'
 import { AccessDeniedView, AccountSuspendedView } from './access-denied'
 
 export interface RoleGuardProps {
@@ -13,6 +14,14 @@ export interface RoleGuardProps {
 }
 
 export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
+  if (isE2ETestMode) {
+    return <>{children}</>
+  }
+
+  return <RoleGuardWithAuth allowedRoles={allowedRoles}>{children}</RoleGuardWithAuth>
+}
+
+function RoleGuardWithAuth({ allowedRoles, children }: RoleGuardProps) {
   const { isSignedIn, isLoaded: isClerkLoaded } = useUser()
   const currentUser = useQuery(api.users.getMe)
 
