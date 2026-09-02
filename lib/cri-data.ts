@@ -24,16 +24,18 @@ export const recoveryTrend = [
 
 export const patients = [
   { id: 'P-1042', name: 'Maya Chen', recoveryContext: 'Clinician-diagnosed concussion', day: 12, symptomTotal: 15, attention: 'Routine', checkInRate: 92 },
-  { id: 'P-1038', name: 'Daniel Ortiz', recoveryContext: 'Suspected concussion', day: 5, symptomTotal: 31, attention: 'Review', checkInRate: 71 },
+  { id: 'P-1038', name: 'Daniel Ortiz', recoveryContext: 'Suspected concussion (review status)', day: 10, symptomTotal: 31, attention: 'Review', checkInRate: 71 },
   { id: 'P-1031', name: 'Ava Williams', recoveryContext: 'Clinician-diagnosed concussion', day: 21, symptomTotal: 10, attention: 'Routine', checkInRate: 96 },
-  { id: 'P-1027', name: 'James Kim', recoveryContext: 'Head injury under evaluation', day: 2, symptomTotal: 38, attention: 'Safety', checkInRate: 64 },
+  { id: 'P-1027', name: 'James Kim', recoveryContext: 'Head injury under emergency evaluation', day: 3, symptomTotal: 38, attention: 'Safety', checkInRate: 64 },
   { id: 'P-1019', name: 'Nora Patel', recoveryContext: 'Persistent concussion symptoms', day: 34, symptomTotal: 26, attention: 'Review', checkInRate: 89 },
+  { id: 'P-1055', name: 'Leo Miller', recoveryContext: 'Adolescent Return-to-Learn', day: 10, symptomTotal: 16, attention: 'Routine', checkInRate: 90 },
 ]
 
 export const alerts = [
-  { patient: 'James Kim', detail: 'Self-reported repeated vomiting; emergency guidance displayed', severity: 'High', time: '18 min ago' },
-  { patient: 'Daniel Ortiz', detail: 'Headache increased 3 points in 24 hours', severity: 'Medium', time: '1 hr ago' },
+  { patient: 'James Kim', detail: 'Self-reported repeated vomiting and acute drowsiness; emergency guidance displayed', severity: 'High', time: '18 min ago' },
+  { patient: 'Daniel Ortiz', detail: 'Headache increased 3 points in 24 hours coinciding with screen exposure', severity: 'Medium', time: '1 hr ago' },
   { patient: 'Maya Chen', detail: 'Sleep quality below baseline for 3 nights', severity: 'Low', time: '3 hrs ago' },
+  { patient: 'Leo Miller', detail: 'Classroom light sensitivity during school return; accommodation active', severity: 'Low', time: '1 day ago' },
 ]
 
 export const nav: Record<Role, { label: string; href: string }[]> = {
