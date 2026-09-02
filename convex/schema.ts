@@ -466,9 +466,11 @@ export default defineSchema({
     .index('by_encounterId', ['encounterId'])
     .index('by_patientId_and_createdAt', ['patientId', 'createdAt']),
 
-  // 10c. Encounter attachment metadata (secure storage policy; no public URLs)
+  // 10c. Clinical attachment metadata (Convex private storage; no permanent public URLs)
   encounterAttachmentMetadata: defineTable({
+    contextType: v.union(v.literal('encounter'), v.literal('message')),
     encounterId: v.optional(v.id('clinicalEncounters')),
+    messageId: v.optional(v.id('messages')),
     patientId: v.id('patients'),
     orgId: v.id('organizations'),
     uploadedByUserId: v.id('users'),
@@ -476,18 +478,32 @@ export default defineSchema({
     mimeType: v.string(),
     sizeBytes: v.number(),
     storageId: v.optional(v.id('_storage')),
+    lifecycleStatus: v.union(
+      v.literal('pending_upload'),
+      v.literal('active'),
+      v.literal('deleted'),
+      v.literal('failed_upload')
+    ),
     scanStatus: v.union(
       v.literal('pending'),
       v.literal('clean'),
       v.literal('quarantined'),
       v.literal('failed')
     ),
+    quarantineReason: v.optional(v.string()),
     authorizationScope: v.string(),
+    uploadExpiresAt: v.optional(v.number()),
+    scannedAt: v.optional(v.number()),
+    deletedAt: v.optional(v.number()),
     createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
   })
     .index('by_encounterId', ['encounterId'])
+    .index('by_messageId', ['messageId'])
     .index('by_patientId', ['patientId'])
-    .index('by_orgId', ['orgId']),
+    .index('by_orgId', ['orgId'])
+    .index('by_storageId', ['storageId'])
+    .index('by_lifecycleStatus_and_uploadExpiresAt', ['lifecycleStatus', 'uploadExpiresAt']),
 
   // 11. Concussion-Adapted Pacing & Care Plans
   carePlans: defineTable({

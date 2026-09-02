@@ -141,8 +141,11 @@ export const getAttachmentPolicy = query({
       allowedExtensions: [...ATTACHMENT_POLICY.allowedExtensions],
       maxSizeBytes: ATTACHMENT_POLICY.maxSizeBytes,
       maxFilesPerEncounter: ATTACHMENT_POLICY.maxFilesPerEncounter,
+      maxFilesPerMessage: ATTACHMENT_POLICY.maxFilesPerMessage,
+      downloadUrlTtlSeconds: ATTACHMENT_POLICY.downloadUrlTtlSeconds,
       malwareScanPlan: ATTACHMENT_POLICY.malwareScanPlan,
       storageStatus: ATTACHMENT_POLICY.storageStatus,
+      storageBackend: ATTACHMENT_POLICY.storageBackend,
       authorizationRequired: ATTACHMENT_POLICY.authorizationRequired,
     }
   },
@@ -360,6 +363,7 @@ export const registerAttachmentMetadata = mutation({
 
     const now = Date.now()
     return await ctx.db.insert('encounterAttachmentMetadata', {
+      contextType: 'encounter',
       encounterId: args.encounterId,
       patientId: patient._id,
       orgId: patient.orgId,
@@ -367,9 +371,12 @@ export const registerAttachmentMetadata = mutation({
       fileName: validFileName,
       mimeType: args.mimeType,
       sizeBytes: args.sizeBytes,
+      lifecycleStatus: 'pending_upload',
       scanStatus: 'pending',
       authorizationScope: 'clinical_encounter',
+      uploadExpiresAt: now + ATTACHMENT_POLICY.uploadTtlMs,
       createdAt: now,
+      updatedAt: now,
     })
   },
 })
