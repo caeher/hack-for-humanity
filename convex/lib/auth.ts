@@ -10,6 +10,8 @@ export type ConsentScope =
   | 'view_plan'
   | 'log_proxy'
   | 'receive_alerts'
+  | 'view_messages'
+  | 'send_messages'
 
 export interface AuthContext {
   identity: UserIdentity
@@ -255,39 +257,5 @@ export async function requireOrgAccess(
   }
 
   throw new Error(`Forbidden: Access to organization ${orgId} denied.`)
-}
-
-/**
- * Verifies access to a messaging thread.
- */
-export async function requireThreadParticipant(
-  ctx: QueryCtx | MutationCtx,
-  threadId: string
-): Promise<AuthContext> {
-  const auth = await requireUser(ctx)
-  const { user } = auth
-
-  if (user.role === 'admin' || user.role === 'clinician') {
-    return auth
-  }
-
-  const messageInThread = await ctx.db
-    .query('messages')
-    .withIndex('by_threadId', q => q.eq('threadId', threadId))
-    .first()
-
-  if (!messageInThread) {
-    // New thread initiated by user
-    return auth
-  }
-
-  if (
-    messageInThread.senderUserId === user._id ||
-    messageInThread.recipientUserId === user._id
-  ) {
-    return auth
-  }
-
-  return auth
 }
 
