@@ -659,6 +659,75 @@ export const accessNotificationDocValidator = v.object({
   createdAt: v.number(),
 })
 
+export const notificationTypeValidator = v.union(
+  v.literal('check_in_reminder'),
+  v.literal('plan_update'),
+  v.literal('message'),
+  v.literal('caregiver_access'),
+  v.literal('clinician_alert'),
+  v.literal('safety_guidance')
+)
+
+export const notificationPriorityValidator = v.union(
+  v.literal('low'),
+  v.literal('medium'),
+  v.literal('high')
+)
+
+export const notificationExternalDeliveryStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('delivered'),
+  v.literal('failed'),
+  v.literal('skipped_consent'),
+  v.literal('skipped_quiet_hours'),
+  v.literal('skipped_channel_disabled'),
+  v.literal('not_applicable')
+)
+
+export const notificationDocValidator = v.object({
+  _id: v.id('notifications'),
+  _creationTime: v.number(),
+  recipientUserId: v.id('users'),
+  type: notificationTypeValidator,
+  priority: notificationPriorityValidator,
+  title: v.string(),
+  body: v.string(),
+  sourceResourceType: v.string(),
+  sourceResourceId: v.string(),
+  sourceEventKey: v.string(),
+  patientId: v.optional(v.id('patients')),
+  orgId: v.optional(v.id('organizations')),
+  deepLinkPath: v.optional(v.string()),
+  readAt: v.optional(v.number()),
+  inAppDeliveryStatus: v.union(v.literal('delivered'), v.literal('blocked_access')),
+  externalChannel: v.optional(v.union(v.literal('email'), v.literal('sms'))),
+  externalDeliveryStatus: v.optional(notificationExternalDeliveryStatusValidator),
+  externalDeliveryError: v.optional(v.string()),
+  locale: v.optional(v.string()),
+  timeZone: v.optional(v.string()),
+  createdAt: v.number(),
+})
+
+export const notificationListItemValidator = v.object({
+  _id: v.id('notifications'),
+  type: notificationTypeValidator,
+  priority: notificationPriorityValidator,
+  title: v.string(),
+  body: v.string(),
+  deepLinkPath: v.optional(v.string()),
+  deepLinkAccessible: v.boolean(),
+  readAt: v.optional(v.number()),
+  isUnread: v.boolean(),
+  createdAt: v.number(),
+  externalDeliveryStatus: v.optional(notificationExternalDeliveryStatusValidator),
+})
+
+export const deepLinkResolutionValidator = v.object({
+  accessible: v.boolean(),
+  path: v.optional(v.string()),
+  reason: v.optional(v.string()),
+})
+
 export const checkInDocValidator = v.object({
   _id: v.id('checkIns'),
   _creationTime: v.number(),

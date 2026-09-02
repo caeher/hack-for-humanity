@@ -17,6 +17,12 @@ import {
   validateMedicationInstruction,
 } from './lib/carePlanLogic'
 import { getActiveCaregiverGrant, redactCarePlanForCaregiver } from './lib/caregiverAccess'
+import {
+  buildSourceEventKey,
+  createNotification,
+  deepLinkForRole,
+  sanitizeNotificationBody,
+} from './lib/notificationLogic'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 
@@ -58,6 +64,39 @@ async function recordCarePlanEvent(
     action: args.eventType === 'created' ? 'create' : 'update',
     createdAt: now,
   })
+
+  if (args.eventType === 'created' || args.eventType === 'updated') {
+    const patient = await ctx.db.get(args.patientId)
+    if (patient && patient.userId !== args.actorUserId) {
+      const patientUser = await ctx.db.get(patient.userId)
+      if (patientUser) {
+        const eventKey = buildSourceEventKey(
+          'plan_update',
+          'carePlans',
+          args.carePlanId ?? `event-${now}`,
+          patient.userId,
+          args.eventType
+        )
+
+        await createNotification(ctx, {
+          recipientUserId: patient.userId,
+          type: 'plan_update',
+          priority: 'medium',
+          title: 'Care plan updated',
+          body: sanitizeNotificationBody(
+            `Your care team updated a recovery plan item. ${args.summary}`
+          ),
+          sourceResourceType: 'carePlans',
+          sourceResourceId: args.carePlanId ?? String(now),
+          sourceEventKey: eventKey,
+          patientId: patient._id,
+          orgId: args.orgId,
+          deepLinkPath: deepLinkForRole(patientUser.role, 'care-plan'),
+          timeZone: patient.timeZone,
+        })
+      }
+    }
+  }
 }
 
 /**

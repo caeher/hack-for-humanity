@@ -238,7 +238,50 @@ export default defineSchema({
     .index('by_granteeUserId_and_status', ['granteeUserId', 'status'])
     .index('by_patientId_and_status', ['patientId', 'status']),
 
-  // 6b. In-app notifications for consent and access changes
+  // 6b. Consent-aware in-app notification center (unified delivery ledger)
+  notifications: defineTable({
+    recipientUserId: v.id('users'),
+    type: v.union(
+      v.literal('check_in_reminder'),
+      v.literal('plan_update'),
+      v.literal('message'),
+      v.literal('caregiver_access'),
+      v.literal('clinician_alert'),
+      v.literal('safety_guidance')
+    ),
+    priority: v.union(v.literal('low'), v.literal('medium'), v.literal('high')),
+    title: v.string(),
+    body: v.string(),
+    sourceResourceType: v.string(),
+    sourceResourceId: v.string(),
+    sourceEventKey: v.string(),
+    patientId: v.optional(v.id('patients')),
+    orgId: v.optional(v.id('organizations')),
+    deepLinkPath: v.optional(v.string()),
+    readAt: v.optional(v.number()),
+    inAppDeliveryStatus: v.union(v.literal('delivered'), v.literal('blocked_access')),
+    externalChannel: v.optional(v.union(v.literal('email'), v.literal('sms'))),
+    externalDeliveryStatus: v.optional(
+      v.union(
+        v.literal('pending'),
+        v.literal('delivered'),
+        v.literal('failed'),
+        v.literal('skipped_consent'),
+        v.literal('skipped_quiet_hours'),
+        v.literal('skipped_channel_disabled'),
+        v.literal('not_applicable')
+      )
+    ),
+    externalDeliveryError: v.optional(v.string()),
+    locale: v.optional(v.string()),
+    timeZone: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_recipientUserId_and_createdAt', ['recipientUserId', 'createdAt'])
+    .index('by_recipientUserId_and_readAt', ['recipientUserId', 'readAt'])
+    .index('by_sourceEventKey', ['sourceEventKey']),
+
+  // 6c. Legacy access notifications (deprecated — use notifications table)
   accessNotifications: defineTable({
     recipientUserId: v.id('users'),
     patientId: v.optional(v.id('patients')),

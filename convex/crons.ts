@@ -10,4 +10,11 @@ crons.interval(
   {}
 )
 
+crons.interval(
+  'process check-in reminder notifications',
+  { hours: 1 },
+  internal.notificationJobs.processDueReminders,
+  {}
+)
+
 export default crons
