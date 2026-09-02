@@ -91,7 +91,9 @@ export const carePlanCategoryValidator = v.union(
   v.literal('sleep_hygiene'),
   v.literal('medication'),
   v.literal('check_in'),
-  v.literal('appointment')
+  v.literal('appointment'),
+  v.literal('education'),
+  v.literal('accommodations')
 )
 
 export const auditActionValidator = v.union(

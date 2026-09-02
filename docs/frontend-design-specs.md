@@ -201,15 +201,15 @@ Diseñado con una arquitectura desacoplada mediante `FieldWrapper` (`components/
 - **Canal de Ayuda:** Sugerencias accionables diarias para apoyar al paciente (ej. recordatorios de medicación o ejercicios).
 
 ### 5.3 Portal Clínico (`/clinician/*`)
-- **Gestión de Caseload (`/clinician/dashboard`, `/clinician/patients`):** Tabla interactiva con búsqueda por nombre o procedimiento, puntuación de recuperación, porcentaje de adherencia y clasificación de riesgo (`Stable`, `Review`, `Elevated`).
-- **Alertas Clínicas (`/clinician/alerts`):** Triage de eventos adversos (ej. incremento súbito de dolor o check-ins omitidos).
+- **Gestión de Caseload (`/clinician/dashboard`, `/clinician/patients`):** Tabla interactiva con búsqueda por nombre o contexto de recuperación, total de síntomas (0–48), porcentaje de adherencia y clasificación de riesgo (`Stable`, `Review`, `Elevated`).
+- **Alertas Clínicas (`/clinician/alerts`):** Triage de eventos adversos (ej. signos de alarma neurológica o incremento súbito de cefalea).
 - **Detalle de Paciente (`/clinician/patients/[id]`):** Vista clínica profunda con telemetría longitudinal y registro de encuentros.
 - **Modal de Encuentro Clínico (`components/clinician/clinical-encounter-modal.tsx`):** Registro de consultas presenciales, telemedicina o revisión de expediente con diagnóstico, notas y adjuntos.
 
 ### 5.4 Portal de Administración y Organización (`/admin/*`)
 - **Resumen Organizacional (`/admin/dashboard`):** Métricas de población, volumen de pacientes activos y tasas de finalización.
 - **Gestión de Usuarios (`/admin/users`):** Listado y modal de enrolamiento e invitación de usuarios (`UserInviteModal`).
-- **Análisis de Cohortes (`/admin/cohorts`):** Comparativas de recuperación por tipo de procedimiento (ACL, prótesis de rodilla, descompresión lumbar).
+- **Análisis de Cohortes (`/admin/cohorts`):** Comparativas de recuperación por vía clínica (Conmoción deportiva, Protocolo Return-to-Learn, Síntomas persistentes).
 - **Registro de Auditoría (`/admin/audit`):** Tabla de logs con acciones de usuario, IP, marcas de tiempo y nivel de severidad.
 - **Configuración (`/admin/settings`):** Parámetros globales de la organización y políticas de retención.
 
