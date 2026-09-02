@@ -12,19 +12,40 @@ import {
   YAxis,
 } from 'recharts'
 import { recoveryTrend } from '@/lib/cri-data'
+import type { TrendChartDatum } from '@/lib/patientDashboard'
 
 export interface TrendChartProps {
   clinical?: boolean
+  data?: TrendChartDatum[]
+  emptyMessage?: string
 }
 
-export function TrendChart({ clinical = false }: TrendChartProps) {
+export function TrendChart({ clinical = false, data, emptyMessage }: TrendChartProps) {
+  const chartData = data ?? recoveryTrend
+  const isEmpty = chartData.length === 0
+
+  if (isEmpty) {
+    return (
+      <div className="flex h-64 w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          {emptyMessage ??
+            'No complete check-ins in this window yet. Missing days stay blank — not shown as zero symptoms.'}
+        </p>
+      </div>
+    )
+  }
+
+  const firstTotal = chartData[0]?.symptomBurden
+  const lastTotal = chartData[chartData.length - 1]?.symptomBurden
+  const ariaLabel =
+    firstTotal !== undefined && lastTotal !== undefined
+      ? `Patient-reported symptom total changed from ${firstTotal} to ${lastTotal} over ${chartData.length} logged days`
+      : 'Patient-reported symptom total trend chart'
+
   return (
-    <div
-      className="h-64 w-full"
-      aria-label="Patient-reported symptom total decreased from 27 to 15 over seven days"
-    >
+    <div className="h-64 w-full" aria-label={ariaLabel}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={recoveryTrend} margin={{ top: 15, right: 8, left: -24, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 15, right: 8, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id="symptomBurden" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#f9a600" stopOpacity={0.28} />
