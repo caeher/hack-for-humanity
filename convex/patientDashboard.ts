@@ -4,6 +4,10 @@ import { requirePatientAccess } from './lib/auth'
 import { resolveEpisodeEndDate } from './lib/checkInHistoryLogic'
 import { dashboardSummaryValidator } from './lib/validators'
 import {
+  buildSymptomTotalProvenanceFromSymptoms,
+  buildTrendProvenance,
+} from './lib/provenance'
+import {
   buildChartPoints,
   computeCheckInConsistency,
   computeEpisodeDayNumber,
@@ -15,6 +19,15 @@ import { computeDescriptiveTrend, TREND_REQUIREMENTS } from './lib/symptomMethod
 import { validateDateString } from './lib/businessLogic'
 import type { Id } from './_generated/dataModel'
 import type { QueryCtx } from './_generated/server'
+
+async function getLatestAmendmentForCheckIn(ctx: QueryCtx, checkInId: Id<'checkIns'>) {
+  const amendments = await ctx.db
+    .query('checkInAmendments')
+    .withIndex('by_checkInId', q => q.eq('checkInId', checkInId))
+    .order('desc')
+    .take(1)
+  return amendments[0] ?? null
+}
 
 async function getActiveEpisodeForPatient(ctx: QueryCtx, patientId: Id<'patients'>) {
   return await ctx.db
@@ -34,7 +47,7 @@ export const getSummary = query({
   },
   returns: dashboardSummaryValidator,
   handler: async (ctx, args) => {
-    const { patient } = await requirePatientAccess(ctx, args.patientId, 'view_trends')
+    const { patient, user } = await requirePatientAccess(ctx, args.patientId, 'view_trends')
     const validToday = validateDateString(args.today, 'Today')
 
     const episode = await getActiveEpisodeForPatient(ctx, patient._id)
@@ -52,7 +65,14 @@ export const getSummary = query({
       .map(checkIn => ({ date: checkIn.date, symptomTotal: checkIn.symptomTotal }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    const trendSummary = computeDescriptiveTrend(trendPoints, TREND_REQUIREMENTS.defaultWindowDays)
+    const trendSummaryBase = computeDescriptiveTrend(trendPoints, TREND_REQUIREMENTS.defaultWindowDays)
+    const trendSummary = {
+      ...trendSummaryBase,
+      provenance: buildTrendProvenance({
+        trend: trendSummaryBase,
+        sourceCheckInDates: trendPoints.map(point => point.date),
+      }),
+    }
     const chartPoints = buildChartPoints(checkIns, validToday)
 
     const episodeStart = episode?.startDate ?? episode?.incidentDate ?? validToday
@@ -120,6 +140,20 @@ export const getSummary = query({
     const insight = deriveSleepHeadacheInsight(checkIns, exposures, validToday)
     const safetyEscalation = resolveSafetyEscalation(latestSafety)
 
+    let latestSymptomProvenance = null
+    if (todayCheckIn) {
+      const latestAmendment = await getLatestAmendmentForCheckIn(ctx, todayCheckIn._id)
+      const effectiveSymptoms = latestAmendment?.symptoms ?? todayCheckIn.symptoms
+      latestSymptomProvenance = buildSymptomTotalProvenanceFromSymptoms({
+        symptoms: effectiveSymptoms,
+        checkInDate: todayCheckIn.date,
+        checkInId: todayCheckIn._id,
+        recomputedFromAmendment: latestAmendment !== null,
+        amendmentNote: latestAmendment?.reason,
+        hidePrivateNotes: user.role === 'caregiver',
+      })
+    }
+
     const displayName = patient.preferredName ?? 'there'
 
     return {
@@ -136,6 +170,7 @@ export const getSummary = query({
       latestSymptomTotal: todayCheckIn?.symptomTotal ?? null,
       latestHeadacheRating: todayCheckIn?.symptoms.headache ?? latestCheckIn?.symptoms.headache ?? null,
       latestCheckInUpdatedAt: todayCheckIn?.createdAt ?? latestCheckIn?.createdAt ?? null,
+      latestSymptomProvenance,
       trendSummary,
       chartPoints,
       checkInConsistency,

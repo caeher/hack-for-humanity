@@ -5,12 +5,29 @@ import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/layouts/page-header'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { TrendChart } from '@/components/dashboard/trend-chart'
+import { ExplanationView } from '@/components/explanation'
+import { buildSymptomTotalProvenanceFromAnswers } from '@/lib/provenance'
 
 export interface CaregiverOverviewProps {
   patientId?: string
 }
 
 export function CaregiverOverview({ patientId }: CaregiverOverviewProps) {
+  const symptomProvenance = buildSymptomTotalProvenanceFromAnswers({
+    answers: {
+      headache: 2,
+      dizziness: 1,
+      nausea: 0,
+      lightSensitivity: 1,
+      noiseSensitivity: 0,
+      fatigue: 3,
+      concentration: 2,
+      sleepDifficulty: 1,
+    },
+    checkInDate: '2026-09-01',
+    viewer: { canViewPrivateNotes: false },
+  })
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -50,6 +67,12 @@ export function CaregiverOverview({ patientId }: CaregiverOverviewProps) {
           </div>
         </Card>
       </div>
+      <ExplanationView
+        provenance={symptomProvenance}
+        title="How today's symptom total is calculated"
+        compact
+        id="caregiver-symptom-explanation"
+      />
       <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
         <strong className="text-foreground">Shared with permission.</strong> Private notes and clinician-only records are not included in this caregiver view.
       </div>

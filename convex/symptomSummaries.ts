@@ -2,6 +2,7 @@ import { v } from 'convex/values'
 import { query } from './_generated/server'
 import { requirePatientAccess } from './lib/auth'
 import { trendSummaryValidator } from './lib/validators'
+import { buildTrendProvenance } from './lib/provenance'
 import {
   computeDescriptiveTrend,
   METHODOLOGY_COPY,
@@ -41,7 +42,14 @@ export const getTrendSummary = query({
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    return computeDescriptiveTrend(points, windowDays)
+    const trendBase = computeDescriptiveTrend(points, windowDays)
+    return {
+      ...trendBase,
+      provenance: buildTrendProvenance({
+        trend: trendBase,
+        sourceCheckInDates: points.map(point => point.date),
+      }),
+    }
   },
 })
 

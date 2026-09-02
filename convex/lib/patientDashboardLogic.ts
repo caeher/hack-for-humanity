@@ -7,6 +7,7 @@ import {
   type CheckInObservation,
   type ExposureObservation,
 } from './patternDetection'
+import { buildPatternInsightProvenance } from './provenance'
 
 export interface ChartPoint {
   date: string
@@ -29,6 +30,7 @@ export interface DashboardInsight {
   footer: string
   generatedAt: string | null
   sourceRecordCount: number
+  provenance: ReturnType<typeof buildPatternInsightProvenance>
 }
 
 export interface SafetyEscalation {

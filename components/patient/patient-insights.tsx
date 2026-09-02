@@ -7,10 +7,12 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/layouts'
 import { InsightCard } from '@/components/dashboard'
+import { ExplanationView } from '@/components/explanation'
 import { api } from '@/convex/_generated/api'
 import { getLocalDateString } from '@/lib/checkInHistory'
 import { isE2ETestMode } from '@/lib/e2e'
 import { NON_CAUSAL_DISCLAIMER, PATTERN_DETECTION_VERSION } from '@/lib/patternDetection'
+import { buildPatternInsightProvenance } from '@/lib/provenance'
 
 function PatientInsightsDemo() {
   return (
@@ -28,6 +30,21 @@ function PatientInsightsDemo() {
           confidence="moderate"
           sampleCount={6}
           effectDirection="positive"
+          provenance={buildPatternInsightProvenance({
+            title: 'Shorter sleep observed alongside higher next-day headache ratings',
+            description: `On 4 of 6 nights with less than 7 hours of sleep, the next check-in included a higher headache rating. ${NON_CAUSAL_DISCLAIMER}`,
+            patternType: 'short_sleep_lagged_headache',
+            status: 'available',
+            confidence: 'moderate',
+            sampleCount: 6,
+            matchCount: 4,
+            inputDateRangeStart: '2026-08-01',
+            inputDateRangeEnd: '2026-08-31',
+            algorithmVersion: PATTERN_DETECTION_VERSION,
+            effectDirection: 'positive',
+            checkInCount: 12,
+            exposureCount: 10,
+          })}
         />
         <InsightCard
           title="Higher screen time observed alongside higher headache ratings"
@@ -36,6 +53,21 @@ function PatientInsightsDemo() {
           confidence="moderate"
           sampleCount={8}
           effectDirection="positive"
+          provenance={buildPatternInsightProvenance({
+            title: 'Higher screen time observed alongside higher headache ratings',
+            description: `Across 8 days with both screen time and headache ratings logged, higher values appeared together (rank association 0.71). ${NON_CAUSAL_DISCLAIMER}`,
+            patternType: 'high_screen_same_day_headache',
+            status: 'available',
+            confidence: 'moderate',
+            sampleCount: 8,
+            matchCount: 5,
+            inputDateRangeStart: '2026-08-01',
+            inputDateRangeEnd: '2026-08-31',
+            algorithmVersion: PATTERN_DETECTION_VERSION,
+            effectDirection: 'positive',
+            checkInCount: 12,
+            exposureCount: 10,
+          })}
         />
       </div>
       <Card className="p-6">
@@ -107,6 +139,16 @@ function PatientInsightsLive() {
           <p className="mt-4 font-mono text-xs text-muted-foreground uppercase">
             {`BASED ON ${patternResult.checkInCount} CHECK-INS · ALGORITHM v${patternResult.algorithmVersion}`}
           </p>
+          {insufficientPatterns[0]?.provenance ? (
+            <div className="mt-4">
+              <ExplanationView
+                provenance={insufficientPatterns[0].provenance}
+                title="Why more data is needed"
+                compact
+                id="insufficient-insight-explanation"
+              />
+            </div>
+          ) : null}
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -119,6 +161,7 @@ function PatientInsightsLive() {
               confidence={pattern.confidence}
               sampleCount={pattern.sampleCount}
               effectDirection={pattern.effectDirection}
+              provenance={pattern.provenance}
             />
           ))}
         </div>
