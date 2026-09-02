@@ -432,17 +432,62 @@ export default defineSchema({
       v.literal('telehealth'),
       v.literal('asynchronous')
     ),
+    status: v.optional(
+      v.union(v.literal('draft'), v.literal('finalized'))
+    ),
     diagnosis: v.string(),
     datetime: v.string(),
     clinicalSummary: v.string(),
     notes: v.string(),
     attachmentStorageId: v.optional(v.id('_storage')),
+    finalizedAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index('by_patientId', ['patientId'])
     .index('by_orgId', ['orgId'])
     .index('by_clinicianUserId', ['clinicianUserId'])
+    .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
+    .index('by_patientId_and_status', ['patientId', 'status']),
+
+  // 10b. Append-only encounter amendments (finalized records remain immutable)
+  encounterAmendments: defineTable({
+    encounterId: v.id('clinicalEncounters'),
+    patientId: v.id('patients'),
+    orgId: v.id('organizations'),
+    amendedByUserId: v.id('users'),
+    reason: v.string(),
+    clinicalSummary: v.string(),
+    notes: v.string(),
+    originalClinicalSummary: v.string(),
+    originalNotes: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_encounterId', ['encounterId'])
     .index('by_patientId_and_createdAt', ['patientId', 'createdAt']),
+
+  // 10c. Encounter attachment metadata (secure storage policy; no public URLs)
+  encounterAttachmentMetadata: defineTable({
+    encounterId: v.optional(v.id('clinicalEncounters')),
+    patientId: v.id('patients'),
+    orgId: v.id('organizations'),
+    uploadedByUserId: v.id('users'),
+    fileName: v.string(),
+    mimeType: v.string(),
+    sizeBytes: v.number(),
+    storageId: v.optional(v.id('_storage')),
+    scanStatus: v.union(
+      v.literal('pending'),
+      v.literal('clean'),
+      v.literal('quarantined'),
+      v.literal('failed')
+    ),
+    authorizationScope: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_encounterId', ['encounterId'])
+    .index('by_patientId', ['patientId'])
+    .index('by_orgId', ['orgId']),
 
   // 11. Concussion-Adapted Pacing & Care Plans
   carePlans: defineTable({

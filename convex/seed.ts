@@ -1610,6 +1610,8 @@ export const seedDatabase = mutation({
         datetime: '2026-08-20 10:30',
         clinicalSummary: '[SIMULATED DEMO] Initial post-injury clinical encounter. Graduated pacing protocol initiated.',
         notes: '[SIMULATED DEMO] Patient presented with headache (5/6) and light sensitivity (4/6) post soccer collision. Recommended symptom-limited cognitive pacing, 48h relative rest, and daily CRI logging.',
+        status: 'finalized' as const,
+        finalizedAt: Date.now() - 86400000 * 12,
         createdAt: Date.now() - 86400000 * 12,
       },
       {
@@ -1622,6 +1624,8 @@ export const seedDatabase = mutation({
         datetime: '2026-08-28 11:15',
         clinicalSummary: '[SIMULATED DEMO] Longitudinal trajectory review. Downward symptom trend confirmed.',
         notes: '[SIMULATED DEMO] Symptom total decreased from baseline 27 to 24. Screen tolerance improving. Reinforced non-pharmacological pacing.',
+        status: 'finalized' as const,
+        finalizedAt: Date.now() - 86400000 * 4,
         createdAt: Date.now() - 86400000 * 4,
       },
       {
@@ -1634,6 +1638,8 @@ export const seedDatabase = mutation({
         datetime: '2026-08-24 14:00',
         clinicalSummary: '[SIMULATED DEMO] Telehealth triage evaluation.',
         notes: '[SIMULATED DEMO] Discussed screen moderation and hydration. Instructed patient on Tier 1 emergency danger signs and review criteria.',
+        status: 'finalized' as const,
+        finalizedAt: Date.now() - 86400000 * 8,
         createdAt: Date.now() - 86400000 * 8,
       },
       {
@@ -1646,6 +1652,8 @@ export const seedDatabase = mutation({
         datetime: '2026-08-25 15:30',
         clinicalSummary: '[SIMULATED DEMO] Pediatric concussion encounter with parent/caregiver.',
         notes: '[SIMULATED DEMO] Evaluated 15-year-old student athlete. Issued 4-stage Return-to-Learn school accommodation letter. Proxy logging authorized for caregiver Sarah Miller.',
+        status: 'finalized' as const,
+        finalizedAt: Date.now() - 86400000 * 7,
         createdAt: Date.now() - 86400000 * 7,
       },
       {
@@ -1658,6 +1666,8 @@ export const seedDatabase = mutation({
         datetime: '2026-08-31 20:00',
         clinicalSummary: '[SIMULATED DEMO] Emergency handoff review following Tier 1 danger sign alert.',
         notes: '[SIMULATED DEMO] Evaluated following reported recurrent emesis and severe drowsiness. Emergency neuroimaging confirmed no acute intracranial bleed. Strict 72h close monitoring plan established.',
+        status: 'finalized' as const,
+        finalizedAt: Date.now() - 86400000 * 1,
         createdAt: Date.now() - 86400000 * 1,
       },
       {
@@ -1670,6 +1680,8 @@ export const seedDatabase = mutation({
         datetime: '2026-08-15 09:00',
         clinicalSummary: '[SIMULATED DEMO] Persistent symptom multidisciplinary review.',
         notes: '[SIMULATED DEMO] Sub-symptom threshold exercise and vestibular-ocular therapy coordination discussed. Emphasized gradual autonomic recovery.',
+        status: 'finalized' as const,
+        finalizedAt: Date.now() - 86400000 * 17,
         createdAt: Date.now() - 86400000 * 17,
       },
     ]

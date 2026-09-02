@@ -142,6 +142,52 @@ export const list = query({
 })
 
 /**
+ * List clinical alerts for a specific patient (clinician workspace).
+ */
+export const listByPatient = query({
+  args: {
+    patientId: v.id('patients'),
+    includeResolved: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(clinicalAlertViewValidator),
+  handler: async (ctx, args) => {
+    const { patient } = await requirePatientAccess(ctx, args.patientId, 'view_plan')
+    const limit = Math.min(args.limit ?? 20, 50)
+
+    const alerts = await ctx.db
+      .query('alerts')
+      .withIndex('by_patientId', q => q.eq('patientId', patient._id))
+      .order('desc')
+      .take(limit)
+
+    const filtered = args.includeResolved
+      ? alerts
+      : alerts.filter(alert => alert.status !== 'resolved')
+
+    const views = []
+    for (const alert of filtered) {
+      const assignedTo = alert.assignedToUserId
+        ? await ctx.db.get(alert.assignedToUserId)
+        : null
+      const patientUser = await ctx.db.get(patient.userId)
+
+      views.push({
+        alert,
+        patientDisplayId: patient.displayId,
+        patientName: patient.preferredName ?? patientUser?.name ?? patient.displayId,
+        assignedToName: assignedTo?.name ?? null,
+        isUnassigned: !alert.assignedToUserId,
+        freshnessLabel: formatAlertFreshness(alert.createdAt, Date.now()),
+        provenance: resolveAlertProvenance(alert),
+      })
+    }
+
+    return views
+  },
+})
+
+/**
  * Create a new clinical alert or danger-sign notification.
  */
 export const createAlert = mutation({
