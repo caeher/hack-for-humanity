@@ -1,46 +1,68 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server'
-import { patientDocValidator, riskValidator } from './lib/validators'
+import { patientDocValidator, patientStatusValidator } from './lib/validators'
 import { requirePatientAccess, requireRole, requireUser } from './lib/auth'
-import {
-  validateAdherence,
-  validateScore,
-  validateStringLength,
-} from './lib/businessLogic'
+import { validateStringLength } from './lib/businessLogic'
 
 /**
  * List patients across caseload.
- * - Clinicians and Admins can view all patients or filter by risk.
- * - Caregivers can only view patients assigned to them.
+ * - Clinicians and Admins can view caseload patients in their organization.
+ * - Caregivers can view patients who have granted active consent.
+ * - Patients can view their own patient profile.
  */
 export const list = query({
   args: {
-    risk: v.optional(riskValidator),
+    orgId: v.optional(v.id('organizations')),
+    status: v.optional(patientStatusValidator),
     paginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(paginationResultValidator(patientDocValidator), v.array(patientDocValidator)),
   handler: async (ctx, args) => {
     const { user } = await requireUser(ctx)
 
-    // Caregivers only see their assigned patients
+    // 1. Caregivers: Resolve patients via active consent grants
     if (user.role === 'caregiver') {
-      const allPatients = await ctx.db.query('patients').take(50)
-      const assigned = allPatients.filter(
-        p =>
-          p.caregiverName?.toLowerCase() === user.name.toLowerCase() ||
-          p.caregiverId === user._id ||
-          p.caregiverId === user.email
-      )
-      return args.risk ? assigned.filter(p => p.risk === args.risk) : assigned
+      const grants = await ctx.db
+        .query('consentGrants')
+        .withIndex('by_granteeUserId_and_status', q =>
+          q.eq('granteeUserId', user._id).eq('status', 'active')
+        )
+        .take(50)
+
+      const now = Date.now()
+      const validGrants = grants.filter(g => g.expiresAt === undefined || g.expiresAt > now)
+
+      const patientList = []
+      for (const grant of validGrants) {
+        const patient = await ctx.db.get(grant.patientId)
+        if (patient) {
+          if (!args.status || patient.status === args.status) {
+            patientList.push(patient)
+          }
+        }
+      }
+      return patientList
     }
 
-    // Clinicians & Admins
+    // 2. Clinicians & Admins: Query organization caseload
     if (user.role === 'clinician' || user.role === 'admin') {
-      if (args.risk) {
+      if (args.orgId && args.status) {
         const q = ctx.db
           .query('patients')
-          .withIndex('by_risk', q => q.eq('risk', args.risk!))
+          .withIndex('by_orgId_and_status', q =>
+            q.eq('orgId', args.orgId!).eq('status', args.status!)
+          )
+        if (args.paginationOpts) {
+          return await q.paginate(args.paginationOpts)
+        }
+        return await q.take(50)
+      }
+
+      if (args.orgId) {
+        const q = ctx.db
+          .query('patients')
+          .withIndex('by_orgId', q => q.eq('orgId', args.orgId!))
         if (args.paginationOpts) {
           return await q.paginate(args.paginationOpts)
         }
@@ -54,27 +76,58 @@ export const list = query({
       return await q.take(50)
     }
 
-    // Patients see their own record
-    const patientRecord = await ctx.db
+    // 3. Patients: Return self profile
+    const selfPatient = await ctx.db
       .query('patients')
-      .take(50)
-    return patientRecord.filter(p => p.name.toLowerCase() === user.name.toLowerCase())
+      .withIndex('by_userId', q => q.eq('userId', user._id))
+      .first()
+
+    return selfPatient ? [selfPatient] : []
   },
 })
 
 /**
- * Retrieve patient by patient ID with authorization check.
+ * Retrieve patient by unique Convex Document ID.
  */
 export const getById = query({
-  args: { patientId: v.string() },
+  args: { patientId: v.id('patients') },
   returns: v.union(patientDocValidator, v.null()),
   handler: async (ctx, args) => {
-    const validId = validateStringLength(args.patientId, 'patientId', 1, 64)
-    await requirePatientAccess(ctx, validId)
+    const { patient } = await requirePatientAccess(ctx, args.patientId)
+    return patient
+  },
+})
 
+/**
+ * Retrieve patient by human-readable display ID (e.g. "P-1042").
+ */
+export const getByDisplayId = query({
+  args: { displayId: v.string() },
+  returns: v.union(patientDocValidator, v.null()),
+  handler: async (ctx, args) => {
+    const patient = await ctx.db
+      .query('patients')
+      .withIndex('by_displayId', q => q.eq('displayId', args.displayId))
+      .first()
+
+    if (!patient) return null
+
+    await requirePatientAccess(ctx, patient._id)
+    return patient
+  },
+})
+
+/**
+ * Retrieve patient profile belonging to the calling user.
+ */
+export const getMePatient = query({
+  args: {},
+  returns: v.union(patientDocValidator, v.null()),
+  handler: async ctx => {
+    const { user } = await requireUser(ctx)
     return await ctx.db
       .query('patients')
-      .withIndex('by_patientId', q => q.eq('patientId', validId))
+      .withIndex('by_userId', q => q.eq('userId', user._id))
       .first()
   },
 })
@@ -85,108 +138,89 @@ export const getById = query({
  */
 export const create = mutation({
   args: {
-    patientId: v.string(),
-    name: v.string(),
-    procedure: v.string(),
-    day: v.number(),
-    score: v.number(),
-    risk: riskValidator,
-    adherence: v.number(),
-    surgeon: v.optional(v.string()),
-    caregiverId: v.optional(v.string()),
-    caregiverName: v.optional(v.string()),
-    surgeryDate: v.optional(v.string()),
+    userId: v.id('users'),
+    orgId: v.id('organizations'),
+    displayId: v.string(),
+    primaryClinicianId: v.optional(v.id('users')),
+    dateOfBirth: v.optional(v.string()),
+    preferredName: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
   returns: v.id('patients'),
   handler: async (ctx, args) => {
-    await requireRole(ctx, ['admin', 'clinician'])
+    const { user: authorUser } = await requireRole(ctx, ['admin', 'clinician'])
 
-    const patientId = validateStringLength(args.patientId, 'Patient ID', 1, 64)
-    const name = validateStringLength(args.name, 'Patient Name', 2, 100)
-    const procedure = validateStringLength(args.procedure, 'Procedure/Context', 2, 200)
-    validateScore(args.score, 0, 100)
-    validateAdherence(args.adherence)
-
+    const displayId = validateStringLength(args.displayId, 'Display ID', 1, 64)
     const existing = await ctx.db
       .query('patients')
-      .withIndex('by_patientId', q => q.eq('patientId', patientId))
+      .withIndex('by_displayId', q => q.eq('displayId', displayId))
       .first()
 
     if (existing) {
-      throw new Error(`Patient with ID ${patientId} already exists.`)
+      throw new Error(`Patient with display ID ${displayId} already exists.`)
     }
 
-    return await ctx.db.insert('patients', {
-      ...args,
+    const now = Date.now()
+    const patientId = await ctx.db.insert('patients', {
+      userId: args.userId,
+      orgId: args.orgId,
+      primaryClinicianId: args.primaryClinicianId,
+      displayId,
+      dateOfBirth: args.dateOfBirth,
+      preferredName: args.preferredName,
+      status: 'Active',
+      notes: args.notes,
+      createdAt: now,
+    })
+
+    await ctx.db.insert('auditLogs', {
+      actorUserId: authorUser._id,
+      actorRole: authorUser.role,
+      orgId: args.orgId,
       patientId,
-      name,
-      procedure,
+      event: `Enrolled patient ${displayId}`,
+      targetResource: 'patients',
+      resourceId: patientId,
+      action: 'create',
+      createdAt: now,
     })
+
+    return patientId
   },
 })
 
 /**
- * Update tracked symptom score and recovery adherence.
+ * Update patient status.
  */
-export const updateScore = mutation({
+export const updateStatus = mutation({
   args: {
-    patientId: v.string(),
-    score: v.number(),
-    adherence: v.optional(v.number()),
+    patientId: v.id('patients'),
+    status: patientStatusValidator,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const validId = validateStringLength(args.patientId, 'patientId', 1, 64)
-    await requirePatientAccess(ctx, validId)
+    const { user } = await requireRole(ctx, ['admin', 'clinician'])
 
-    validateScore(args.score, 0, 100)
-    if (args.adherence !== undefined) {
-      validateAdherence(args.adherence)
-    }
-
-    const patient = await ctx.db
-      .query('patients')
-      .withIndex('by_patientId', q => q.eq('patientId', validId))
-      .first()
-
+    const patient = await ctx.db.get(args.patientId)
     if (!patient) {
-      throw new Error(`Patient ${validId} not found.`)
+      throw new Error(`Patient ${args.patientId} not found.`)
     }
 
-    await ctx.db.patch('patients', patient._id, {
-      score: args.score,
-      ...(args.adherence !== undefined ? { adherence: args.adherence } : {}),
+    await ctx.db.patch(args.patientId, { status: args.status })
+
+    await ctx.db.insert('auditLogs', {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: patient.orgId,
+      patientId: patient._id,
+      event: `Updated status to ${args.status}`,
+      targetResource: 'patients',
+      resourceId: patient._id,
+      action: 'update',
+      createdAt: Date.now(),
     })
 
     return null
   },
 })
 
-/**
- * Update patient triage risk tier.
- * Restricted to clinicians and administrators.
- */
-export const updateRisk = mutation({
-  args: {
-    patientId: v.string(),
-    risk: riskValidator,
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await requireRole(ctx, ['admin', 'clinician'])
-
-    const validId = validateStringLength(args.patientId, 'patientId', 1, 64)
-    const patient = await ctx.db
-      .query('patients')
-      .withIndex('by_patientId', q => q.eq('patientId', validId))
-      .first()
-
-    if (!patient) {
-      throw new Error(`Patient ${validId} not found.`)
-    }
-
-    await ctx.db.patch('patients', patient._id, { risk: args.risk })
-    return null
-  },
-})

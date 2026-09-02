@@ -6,7 +6,7 @@ import {
   alertSeverityValidator,
   alertStatusValidator,
 } from './lib/validators'
-import { requireRole, requireUser } from './lib/auth'
+import { requirePatientAccess, requireRole, requireUser } from './lib/auth'
 import { validateStringLength } from './lib/businessLogic'
 
 /**
@@ -16,6 +16,7 @@ import { validateStringLength } from './lib/businessLogic'
  */
 export const list = query({
   args: {
+    orgId: v.optional(v.id('organizations')),
     status: v.optional(alertStatusValidator),
     severity: v.optional(alertSeverityValidator),
     paginationOpts: v.optional(paginationOptsValidator),
@@ -69,29 +70,27 @@ export const list = query({
  */
 export const createAlert = mutation({
   args: {
-    patientId: v.optional(v.string()),
-    patientName: v.string(),
+    patientId: v.id('patients'),
+    episodeId: v.optional(v.id('recoveryEpisodes')),
     detail: v.string(),
     severity: alertSeverityValidator,
+    dangerSigns: v.optional(v.array(v.string())),
   },
   returns: v.id('alerts'),
   handler: async (ctx, args) => {
-    await requireUser(ctx)
+    const { patient } = await requirePatientAccess(ctx, args.patientId, 'receive_alerts')
 
-    const validPatientName = validateStringLength(args.patientName, 'Patient name', 2, 100)
     const validDetail = validateStringLength(args.detail, 'Alert detail', 2, 500)
-    const validPatientId = args.patientId
-      ? validateStringLength(args.patientId, 'Patient ID', 1, 64)
-      : undefined
 
     return await ctx.db.insert('alerts', {
-      patientId: validPatientId,
-      patientName: validPatientName,
+      patientId: args.patientId,
+      episodeId: args.episodeId,
+      orgId: patient.orgId,
       detail: validDetail,
       severity: args.severity,
       status: 'active',
+      dangerSigns: args.dangerSigns,
       createdAt: Date.now(),
-      timeAgo: 'Just now',
     })
   },
 })
@@ -104,14 +103,17 @@ export const resolveAlert = mutation({
   args: { alertId: v.id('alerts') },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireRole(ctx, ['admin', 'clinician'])
+    const { user } = await requireRole(ctx, ['admin', 'clinician'])
 
-    const alert = await ctx.db.get('alerts', args.alertId)
+    const alert = await ctx.db.get(args.alertId)
     if (!alert) {
       throw new Error(`Alert ${args.alertId} not found.`)
     }
 
-    await ctx.db.patch('alerts', args.alertId, { status: 'resolved' })
+    await ctx.db.patch(args.alertId, {
+      status: 'resolved',
+      resolvedByUserId: user._id,
+    })
     return null
   },
 })
@@ -124,14 +126,18 @@ export const acknowledgeAlert = mutation({
   args: { alertId: v.id('alerts') },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireRole(ctx, ['admin', 'clinician'])
+    const { user } = await requireRole(ctx, ['admin', 'clinician'])
 
-    const alert = await ctx.db.get('alerts', args.alertId)
+    const alert = await ctx.db.get(args.alertId)
     if (!alert) {
       throw new Error(`Alert ${args.alertId} not found.`)
     }
 
-    await ctx.db.patch('alerts', args.alertId, { status: 'acknowledged' })
+    await ctx.db.patch(args.alertId, {
+      status: 'acknowledged',
+      acknowledgedByUserId: user._id,
+    })
     return null
   },
 })
+

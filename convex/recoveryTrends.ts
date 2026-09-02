@@ -14,19 +14,18 @@ import {
  */
 export const listByPatient = query({
   args: {
-    patientId: v.string(),
+    patientId: v.id('patients'),
     limit: v.optional(v.number()),
   },
   returns: v.array(recoveryTrendDocValidator),
   handler: async (ctx, args) => {
-    const validId = validateStringLength(args.patientId, 'patientId', 1, 64)
-    await requirePatientAccess(ctx, validId)
+    await requirePatientAccess(ctx, args.patientId, 'view_trends')
 
     const limit = Math.min(Math.max(args.limit ?? 30, 1), 90)
 
     return await ctx.db
       .query('recoveryTrends')
-      .withIndex('by_patientId', q => q.eq('patientId', validId))
+      .withIndex('by_patientId', q => q.eq('patientId', args.patientId))
       .take(limit)
   },
 })
@@ -36,31 +35,34 @@ export const listByPatient = query({
  */
 export const addTrendPoint = mutation({
   args: {
-    patientId: v.string(),
-    day: v.string(),
-    score: v.number(),
-    pain: v.number(),
-    mobility: v.number(),
-    date: v.optional(v.string()),
+    patientId: v.id('patients'),
+    episodeId: v.optional(v.id('recoveryEpisodes')),
+    date: v.string(),
+    dayLabel: v.string(),
+    symptomTotal: v.number(),
+    headacheRating: v.number(),
+    sleepQuality: v.number(),
   },
   returns: v.id('recoveryTrends'),
   handler: async (ctx, args) => {
-    const validPatientId = validateStringLength(args.patientId, 'patientId', 1, 64)
-    await requirePatientAccess(ctx, validPatientId)
+    await requirePatientAccess(ctx, args.patientId)
 
-    const validDay = validateStringLength(args.day, 'day', 1, 30)
-    validateScore(args.score, 0, 100)
-    validateScore(args.pain, 0, 10)
-    validateScore(args.mobility, 0, 10)
-    const validDate = args.date ? validateDateString(args.date, 'date') : undefined
+    const validDay = validateStringLength(args.dayLabel, 'Day label', 1, 30)
+    const validDate = validateDateString(args.date, 'Trend date')
+    validateScore(args.symptomTotal, 0, 48)
+    validateScore(args.headacheRating, 0, 6)
+    validateScore(args.sleepQuality, 0, 10)
 
     return await ctx.db.insert('recoveryTrends', {
-      patientId: validPatientId,
-      day: validDay,
-      score: args.score,
-      pain: args.pain,
-      mobility: args.mobility,
+      patientId: args.patientId,
+      episodeId: args.episodeId,
       date: validDate,
+      dayLabel: validDay,
+      symptomTotal: args.symptomTotal,
+      headacheRating: args.headacheRating,
+      sleepQuality: args.sleepQuality,
+      createdAt: Date.now(),
     })
   },
 })
+

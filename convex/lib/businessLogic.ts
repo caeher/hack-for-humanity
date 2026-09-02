@@ -1,43 +1,65 @@
 /**
- * Pure, database-independent business logic functions.
+ * Pure, database-independent business logic functions for Concussion Recovery Intelligence.
  * Keeps function handlers thin and ensures easy unit testing.
  */
 
-export interface CheckInScores {
-  painScore: number
-  sleepScore: number
-  mobilityScore: number
-  emotionalScore: number
+export interface ConcussionSymptoms {
+  headache: number
+  dizziness: number
+  nausea: number
+  lightSensitivity: number
+  noiseSensitivity: number
+  fatigue: number
+  concentration: number
+  sleepDifficulty: number
 }
 
-/**
- * Validates check-in symptom scores.
- * Concussion recovery check-ins measure 0-6 severity per category (or 0-10 max scale).
- */
-export function validateCheckInScores(scores: CheckInScores): void {
-  const { painScore, sleepScore, mobilityScore, emotionalScore } = scores
+export const CDC_DANGER_SIGNS = [
+  'Worsening headache that does not go away',
+  'Repeated vomiting or nausea',
+  'Seizures or convulsions',
+  'Slurred speech, weakness, numbness, or decreased coordination',
+  'Increasing confusion, restlessness, or agitation',
+  'One pupil larger than the other',
+  'Extreme drowsiness, loss of consciousness, or inability to wake up',
+  'Unusual behavior',
+] as const
 
-  const fields = [
-    { name: 'painScore', val: painScore },
-    { name: 'sleepScore', val: sleepScore },
-    { name: 'mobilityScore', val: mobilityScore },
-    { name: 'emotionalScore', val: emotionalScore },
+/**
+ * Validates 8-symptom Likert inventory (0 to 6 per symptom dimension).
+ * Returns the computed total (0 to 48).
+ */
+export function validateConcussionSymptoms(symptoms: ConcussionSymptoms): number {
+  const fields: (keyof ConcussionSymptoms)[] = [
+    'headache',
+    'dizziness',
+    'nausea',
+    'lightSensitivity',
+    'noiseSensitivity',
+    'fatigue',
+    'concentration',
+    'sleepDifficulty',
   ]
 
-  for (const { name, val } of fields) {
+  let total = 0
+  for (const field of fields) {
+    const val = symptoms[field]
     if (typeof val !== 'number' || isNaN(val)) {
-      throw new Error(`Invalid score for ${name}: must be a valid number.`)
+      throw new Error(`Invalid rating for ${field}: must be a number.`)
     }
-    if (val < 0 || val > 10) {
-      throw new Error(`Score for ${name} (${val}) out of bounds: must be between 0 and 10.`)
+    if (val < 0 || val > 6 || !Number.isInteger(val)) {
+      throw new Error(`Rating for ${field} (${val}) out of bounds: must be an integer between 0 and 6.`)
     }
+    total += val
   }
+
+  return total
 }
 
 /**
- * Validates recovery symptom total (0 to 100).
+ * Validates recovery symptom total (0 to 48 for concussion symptom total, or up to 100 for percentage metrics).
  */
-export function validateScore(score: number, min = 0, max = 100): void {
+export function validateScore(score: number, min = 0, max = 48): void {
   if (typeof score !== 'number' || isNaN(score) || score < min || score > max) {
     throw new Error(`Score (${score}) must be a number between ${min} and ${max}.`)
   }
@@ -108,3 +130,4 @@ export function sanitizeInput(text: string): string {
   if (!text) return ''
   return text.trim().replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F]/g, '')
 }
+

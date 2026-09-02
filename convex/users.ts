@@ -72,6 +72,7 @@ export const inviteUser = mutation({
     name: v.string(),
     email: v.string(),
     role: roleValidator,
+    orgId: v.optional(v.id('organizations')),
   },
   returns: v.id('users'),
   handler: async (ctx, args) => {
@@ -91,6 +92,7 @@ export const inviteUser = mutation({
 
     const now = Date.now()
     const userId = await ctx.db.insert('users', {
+      tokenIdentifier: `invited|${validEmail}`,
       name: validName,
       email: validEmail,
       role: args.role,
@@ -100,13 +102,17 @@ export const inviteUser = mutation({
 
     // Record audit trail
     await ctx.db.insert('auditLogs', {
-      time: 'Just now',
-      actor: adminUser.name || 'Admin',
+      actorUserId: adminUser._id,
+      actorRole: adminUser.role,
+      orgId: args.orgId,
       event: `Invited new ${args.role} user (${validEmail})`,
-      resource: validEmail,
+      targetResource: 'users',
+      resourceId: userId,
+      action: 'create',
       createdAt: now,
     })
 
     return userId
   },
 })
+
