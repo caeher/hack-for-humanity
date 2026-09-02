@@ -24,7 +24,14 @@ export const alertSeverityValidator = v.union(
 export const alertStatusValidator = v.union(
   v.literal('active'),
   v.literal('acknowledged'),
-  v.literal('resolved')
+  v.literal('resolved'),
+  v.literal('snoozed')
+)
+
+export const alertSourceValidator = v.union(
+  v.literal('safety_engine'),
+  v.literal('missed_check_in'),
+  v.literal('trend_rule')
 )
 
 export const userStatusValidator = v.union(
@@ -767,9 +774,19 @@ export const alertDocValidator = v.object({
   detail: v.string(),
   severity: alertSeverityValidator,
   status: alertStatusValidator,
+  alertSource: v.optional(alertSourceValidator),
+  ruleCode: v.optional(v.string()),
+  safetyEvaluationId: v.optional(v.id('safetyEvaluations')),
+  provenance: v.optional(provenanceMetadataValidator),
   dangerSigns: v.optional(v.array(v.string())),
+  assignedToUserId: v.optional(v.id('users')),
+  snoozedUntil: v.optional(v.number()),
+  snoozeReason: v.optional(v.string()),
   acknowledgedByUserId: v.optional(v.id('users')),
+  acknowledgedAt: v.optional(v.number()),
   resolvedByUserId: v.optional(v.id('users')),
+  resolvedAt: v.optional(v.number()),
+  updatedAt: v.optional(v.number()),
   createdAt: v.number(),
 })
 
@@ -1214,5 +1231,61 @@ export const patternInsightDocValidator = v.object({
   suppressedReason: v.optional(v.string()),
   computedAt: v.string(),
   createdAt: v.number(),
+})
+
+// --- Clinician Caseload Validators ---
+
+export const caseloadAttentionValidator = v.union(
+  v.literal('Routine'),
+  v.literal('Review'),
+  v.literal('Safety')
+)
+
+export const caseloadSortKeyValidator = v.union(
+  v.literal('displayId'),
+  v.literal('riskLevel'),
+  v.literal('symptomTotal'),
+  v.literal('checkInRate')
+)
+
+export const caseloadPatientRowValidator = v.object({
+  patientId: v.id('patients'),
+  displayId: v.string(),
+  patientName: v.string(),
+  preferredName: v.optional(v.string()),
+  recoveryContext: v.union(v.string(), v.null()),
+  episodeId: v.union(v.id('recoveryEpisodes'), v.null()),
+  dayNumber: v.union(v.number(), v.null()),
+  symptomTotal: v.union(v.number(), v.null()),
+  symptomTotalUpdatedAt: v.union(v.number(), v.null()),
+  checkInRate: v.union(v.number(), v.null()),
+  riskLevel: v.union(riskValidator, v.null()),
+  riskRationale: v.string(),
+  attention: caseloadAttentionValidator,
+  attentionReasons: v.array(v.string()),
+  activeAlertCount: v.number(),
+  missedCheckInsLast7Days: v.number(),
+  status: patientStatusValidator,
+  sortKey: v.string(),
+})
+
+export const caseloadSummaryValidator = v.object({
+  activePatientCount: v.number(),
+  newPatientsThisMonth: v.number(),
+  needsReviewCount: v.number(),
+  highPriorityAlertCount: v.number(),
+  checkInRatePercent: v.union(v.number(), v.null()),
+  averageSymptomTotal: v.union(v.number(), v.null()),
+  dataAsOfMs: v.number(),
+})
+
+export const clinicalAlertViewValidator = v.object({
+  alert: alertDocValidator,
+  patientDisplayId: v.string(),
+  patientName: v.string(),
+  assignedToName: v.union(v.string(), v.null()),
+  isUnassigned: v.boolean(),
+  freshnessLabel: v.string(),
+  provenance: v.union(provenanceMetadataValidator, v.null()),
 })
 

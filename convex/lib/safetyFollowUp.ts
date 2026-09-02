@@ -5,6 +5,7 @@
 import { MutationCtx } from '../_generated/server'
 import { Doc, Id } from '../_generated/dataModel'
 import type { SafetyEvaluationResult } from './safetyEngine'
+import { buildSafetyProvenance } from './provenance'
 
 export type NotificationOutcome = 'sent' | 'skipped_no_consent' | 'skipped_not_escalated'
 
@@ -33,6 +34,8 @@ export async function attemptCareTeamNotification(
     dangerSigns: string[]
     actorUserId: Id<'users'>
     actorRole: string
+    symptomTotal?: number
+    safetyEvaluationId?: Id<'safetyEvaluations'>
     now: number
   }
 ): Promise<NotificationResult> {
@@ -47,6 +50,10 @@ export async function attemptCareTeamNotification(
 
   const topRule = safetyResult.matchedRules[0]
   const detail = `[Safety Engine v${safetyResult.ruleEngineVersion}] ${topRule?.name ?? 'Clinical safety event'}: ${topRule?.matchedEvidenceSummary ?? 'Elevated risk detected'}`
+  const provenance = buildSafetyProvenance({
+    safetyResult,
+    symptomTotal: params.symptomTotal,
+  })
 
   const alertId = await ctx.db.insert('alerts', {
     patientId: patient._id,
@@ -55,6 +62,10 @@ export async function attemptCareTeamNotification(
     detail,
     severity: 'High',
     status: 'active',
+    alertSource: 'safety_engine',
+    ruleCode: topRule?.outputCode,
+    safetyEvaluationId: params.safetyEvaluationId,
+    provenance,
     dangerSigns: dangerSigns.length > 0 ? dangerSigns : undefined,
     createdAt: now,
   })

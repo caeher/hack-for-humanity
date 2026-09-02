@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server'
 import { patientDocValidator, patientStatusValidator } from './lib/validators'
-import { requirePatientAccess, requireRole, requireUser } from './lib/auth'
+import { requirePatientAccess, requireRole, requireUser, requireOrgAccess } from './lib/auth'
 import { validateStringLength } from './lib/businessLogic'
 
 /**
@@ -45,13 +45,44 @@ export const list = query({
       return patientList
     }
 
-    // 2. Clinicians & Admins: Query organization caseload
+    // 2. Clinicians & Admins: Query organization caseload (org-scoped only)
     if (user.role === 'clinician' || user.role === 'admin') {
-      if (args.orgId && args.status) {
+      let orgId = args.orgId
+
+      if (!orgId) {
+        if (user.role === 'clinician') {
+          const membership = await ctx.db
+            .query('clinicianMemberships')
+            .withIndex('by_userId', q => q.eq('userId', user._id))
+            .first()
+
+          if (!membership || membership.status !== 'active') {
+            throw new Error('Forbidden: No active clinician organization membership.')
+          }
+          orgId = membership.orgId
+        } else {
+          const adminMembership = await ctx.db
+            .query('organizationMemberships')
+            .withIndex('by_userId', q => q.eq('userId', user._id))
+            .collect()
+
+          const activeAdmin = adminMembership.find(
+            m => m.orgRole === 'admin' && m.status === 'active'
+          )
+          if (!activeAdmin) {
+            throw new Error('Forbidden: Organization admin membership required.')
+          }
+          orgId = activeAdmin.orgId
+        }
+      } else {
+        await requireOrgAccess(ctx, orgId)
+      }
+
+      if (args.status) {
         const q = ctx.db
           .query('patients')
           .withIndex('by_orgId_and_status', q =>
-            q.eq('orgId', args.orgId!).eq('status', args.status!)
+            q.eq('orgId', orgId!).eq('status', args.status!)
           )
         if (args.paginationOpts) {
           return await q.paginate(args.paginationOpts)
@@ -59,17 +90,9 @@ export const list = query({
         return await q.take(50)
       }
 
-      if (args.orgId) {
-        const q = ctx.db
-          .query('patients')
-          .withIndex('by_orgId', q => q.eq('orgId', args.orgId!))
-        if (args.paginationOpts) {
-          return await q.paginate(args.paginationOpts)
-        }
-        return await q.take(50)
-      }
-
-      const q = ctx.db.query('patients')
+      const q = ctx.db
+        .query('patients')
+        .withIndex('by_orgId', q => q.eq('orgId', orgId!))
       if (args.paginationOpts) {
         return await q.paginate(args.paginationOpts)
       }

@@ -151,8 +151,7 @@ export const evaluateCheckInSafety = mutation({
 
     const now = Date.now()
 
-    // Store evaluation document with minimized evidence summary
-    await ctx.db.insert('safetyEvaluations', {
+    const safetyEvaluationId = await ctx.db.insert('safetyEvaluations', {
       patientId: args.patientId,
       orgId: patient.orgId,
       evaluatedByUserId: user._id,
@@ -178,6 +177,10 @@ export const evaluateCheckInSafety = mutation({
         dangerSigns,
         actorUserId: user._id,
         actorRole: user.role,
+        symptomTotal: args.symptoms
+          ? Object.values(args.symptoms).reduce((sum, v) => sum + (v ?? 0), 0)
+          : undefined,
+        safetyEvaluationId,
         now,
       })
     }

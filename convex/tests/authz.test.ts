@@ -214,14 +214,14 @@ describe('Convex API Authorization & RBAC', () => {
       expect(Array.isArray(caseload) ? caseload.length : caseload.page.length).toBeGreaterThan(0)
 
       // Clinician lists alerts
-      const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {})
-      const alertList = Array.isArray(alerts) ? alerts : alerts.page
-      expect(alertList.length).toBeGreaterThan(0)
+      const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {
+        paginationOpts: { numItems: 20, cursor: null },
+      })
+      expect(alerts.page.length).toBeGreaterThan(0)
 
-      // Clinician resolves active alert
-      const activeAlert = alertList[0]
+      const activeAlert = alerts.page[0]
       await t.withIdentity(clinicianIdentity).mutation(api.alerts.resolveAlert, {
-        alertId: activeAlert._id,
+        alertId: activeAlert.alert._id,
       })
     })
 
