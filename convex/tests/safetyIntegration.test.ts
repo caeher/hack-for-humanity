@@ -36,7 +36,7 @@ describe('Safety Engine Convex Integration & Persistence', () => {
     expect(patient).toBeDefined()
 
     // Submit daily check-in with mild symptoms
-    const checkInId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+    const result = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
       patientId: patient!._id,
       date: '2026-09-02',
       symptoms: {
@@ -53,7 +53,9 @@ describe('Safety Engine Convex Integration & Persistence', () => {
       dangerSigns: [],
       note: 'Routine morning check-in.',
     })
-    expect(checkInId).toBeDefined()
+    expect(result.checkInId).toBeDefined()
+    expect(result.safetyResult.status).toBe('safe')
+    expect(result.safetyEvaluationId).toBeDefined()
 
     // Verify safety evaluation record was generated and persisted
     const latestEvaluation = await t
@@ -61,7 +63,7 @@ describe('Safety Engine Convex Integration & Persistence', () => {
       .query(api.safety.getLatestForPatient, { patientId: patient!._id })
 
     expect(latestEvaluation).not.toBeNull()
-    expect(latestEvaluation?.targetResourceId).toBe(checkInId)
+    expect(latestEvaluation?.targetResourceId).toBe(result.checkInId)
     expect(latestEvaluation?.contextType).toBe('check_in')
     expect(latestEvaluation?.status).toBe('safe')
     expect(latestEvaluation?.ruleEngineVersion).toBe('1.0.0')
@@ -74,7 +76,7 @@ describe('Safety Engine Convex Integration & Persistence', () => {
     const patient = await t.withIdentity(patientIdentity).query(api.patients.getMePatient, {})
 
     // Submit check-in with Tier 1 CDC Danger Sign
-    const checkInId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+    const result = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
       patientId: patient!._id,
       date: '2026-09-02',
       symptoms: {
@@ -91,7 +93,9 @@ describe('Safety Engine Convex Integration & Persistence', () => {
       dangerSigns: ['Repeated vomiting or nausea'],
       note: 'Felt severe nausea and vomited twice after lunch.',
     })
-    expect(checkInId).toBeDefined()
+    expect(result.checkInId).toBeDefined()
+    expect(result.safetyResult.status).toBe('emergency')
+    expect(result.safetyResult.blockedActions).toContain('allow_routine_completion')
 
     // Verify safety evaluation doc has emergency status
     const latestEvaluation = await t
@@ -102,6 +106,9 @@ describe('Safety Engine Convex Integration & Persistence', () => {
     expect(latestEvaluation?.highestSeverity).toBe('emergency')
     expect(latestEvaluation?.primaryEscalation).toBe('emergency_911_ed')
     expect(latestEvaluation?.blockedActions).toContain('allow_routine_completion')
+    expect(latestEvaluation?.matchedRuleIds?.length).toBeGreaterThan(0)
+    expect(latestEvaluation?.notificationOutcome).toBeDefined()
+    expect(latestEvaluation?.followUpState).toBeDefined()
 
     // Verify clinical alert was generated in alerts table
     const alerts = await t.withIdentity(clinicianIdentity).query(api.alerts.list, {
@@ -177,5 +184,41 @@ describe('Safety Engine Convex Integration & Persistence', () => {
     expect(result.status).toBe('elevated')
     expect(result.blockedActions).toContain('invoke_llm')
     expect(result.matchedRules[0].outputCode).toBe('GUARDRAIL_DIAGNOSTIC_ATTEMPT')
+  })
+
+  test('acknowledgeSafetyOutcome records acknowledgement without implying clinical resolution', async () => {
+    const t = convexTest(schema, modules)
+    await t.mutation(api.seed.seedDatabase, {})
+
+    const patient = await t.withIdentity(patientIdentity).query(api.patients.getMePatient, {})
+
+    const submitResult = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+      patientId: patient!._id,
+      date: '2026-09-03',
+      symptoms: {
+        headache: 5,
+        dizziness: 4,
+        nausea: 4,
+        lightSensitivity: 3,
+        noiseSensitivity: 3,
+        fatigue: 4,
+        concentration: 3,
+        sleepDifficulty: 2,
+      },
+      activityImpact: 'yes',
+      dangerSigns: ['Repeated vomiting or nausea'],
+    })
+
+    await t.withIdentity(patientIdentity).mutation(api.safety.acknowledgeSafetyOutcome, {
+      safetyEvaluationId: submitResult.safetyEvaluationId,
+      patientId: patient!._id,
+    })
+
+    const evaluation = await t
+      .withIdentity(patientIdentity)
+      .query(api.safety.getLatestForPatient, { patientId: patient!._id })
+
+    expect(evaluation?.followUpState).toBe('acknowledged')
+    expect(evaluation?.acknowledgedAt).toBeDefined()
   })
 })

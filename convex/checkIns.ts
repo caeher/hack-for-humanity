@@ -4,6 +4,7 @@ import { paginationOptsValidator, paginationResultValidator } from 'convex/serve
 import {
   activityImpactValidator,
   checkInDocValidator,
+  checkInSubmitResultValidator,
   symptomsObjectValidator,
 } from './lib/validators'
 import { requirePatientAccess } from './lib/auth'
@@ -13,6 +14,7 @@ import {
   validateDateString,
 } from './lib/businessLogic'
 import { evaluateCheckIn, LongitudinalRecord } from './lib/safetyEngine'
+import { attemptCareTeamNotification } from './lib/safetyFollowUp'
 
 /**
  * List historical check-ins for a patient in reverse-chronological order.
@@ -73,7 +75,7 @@ export const submitCheckIn = mutation({
     screenMinutes: v.optional(v.number()),
     cognitiveMinutes: v.optional(v.number()),
   },
-  returns: v.id('checkIns'),
+  returns: checkInSubmitResultValidator,
   handler: async (ctx, args) => {
     const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
@@ -87,7 +89,37 @@ export const submitCheckIn = mutation({
       .first()
 
     if (existingForDate) {
-      return existingForDate._id
+      const recentEvaluations = await ctx.db
+        .query('safetyEvaluations')
+        .withIndex('by_patientId_and_createdAt', q => q.eq('patientId', args.patientId))
+        .order('desc')
+        .take(10)
+
+      const existingEvaluation = recentEvaluations.find(
+        e => e.targetResourceId === existingForDate._id
+      )
+
+      const safetyResult = evaluateCheckIn(
+        existingForDate.symptoms,
+        existingForDate.dangerSigns ?? [],
+        existingForDate.note,
+        [],
+        {
+          screenMinutes: args.screenMinutes,
+          cognitiveMinutes: args.cognitiveMinutes,
+        }
+      )
+
+      if (!existingEvaluation) {
+        throw new Error('Check-in exists but safety evaluation record is missing.')
+      }
+
+      return {
+        checkInId: existingForDate._id,
+        blocked: safetyResult.blockedActions.includes('allow_routine_completion'),
+        safetyEvaluationId: existingEvaluation._id,
+        safetyResult,
+      }
     }
 
     const symptomTotal = validateConcussionSymptoms(args.symptoms)
@@ -101,7 +133,6 @@ export const submitCheckIn = mutation({
     const dangerSignsPresent = dangerSignsList.length > 0
     const now = Date.now()
 
-    // Retrieve previous check-in records for trajectory / multi-day analysis
     const recentCheckIns = await ctx.db
       .query('checkIns')
       .withIndex('by_patientId_and_createdAt', q => q.eq('patientId', args.patientId))
@@ -114,7 +145,6 @@ export const submitCheckIn = mutation({
       symptoms: c.symptoms,
     }))
 
-    // Execute Deterministic Safety Engine
     const safetyResult = evaluateCheckIn(
       args.symptoms,
       dangerSignsList,
@@ -125,6 +155,8 @@ export const submitCheckIn = mutation({
         cognitiveMinutes: args.cognitiveMinutes,
       }
     )
+
+    const blocked = safetyResult.blockedActions.includes('allow_routine_completion')
 
     let episodeId = args.episodeId
     if (!episodeId) {
@@ -151,8 +183,17 @@ export const submitCheckIn = mutation({
       createdAt: now,
     })
 
-    // Record immutable Safety Engine evaluation linked to check-in
-    await ctx.db.insert('safetyEvaluations', {
+    const notification = await attemptCareTeamNotification(ctx, {
+      patient,
+      episodeId,
+      safetyResult,
+      dangerSigns: dangerSignsList,
+      actorUserId: user._id,
+      actorRole: user.role,
+      now,
+    })
+
+    const safetyEvaluationId = await ctx.db.insert('safetyEvaluations', {
       patientId: args.patientId,
       orgId: patient.orgId,
       evaluatedByUserId: user._id,
@@ -161,45 +202,35 @@ export const submitCheckIn = mutation({
       highestSeverity: safetyResult.highestSeverity,
       ruleEngineVersion: safetyResult.ruleEngineVersion,
       matchedRuleCodes: safetyResult.matchedRules.map(r => r.outputCode),
+      matchedRuleIds: safetyResult.matchedRules.map(r => r.ruleId),
       matchedEvidenceSummary: safetyResult.matchedRules.map(r => r.matchedEvidenceSummary),
       primaryEscalation: safetyResult.primaryEscalation,
       blockedActions: safetyResult.blockedActions,
       failSafeApplied: safetyResult.failSafeApplied,
       targetResourceId: checkInId,
+      followUpState: notification.followUpState,
+      notificationAttemptedAt: now,
+      notificationOutcome: notification.outcome,
       createdAt: now,
     })
 
-    // Automatic Safety Escalation: If emergency danger signs or elevated severity triggered, generate alert
-    if (safetyResult.highestSeverity === 'emergency' || safetyResult.highestSeverity === 'high') {
-      const topRule = safetyResult.matchedRules[0]
-      const alertSeverity = safetyResult.highestSeverity === 'emergency' ? 'High' : 'High'
-      await ctx.db.insert('alerts', {
-        patientId: args.patientId,
-        episodeId,
-        orgId: patient.orgId,
-        detail: `[Safety Engine v${safetyResult.ruleEngineVersion}] ${topRule?.name || 'Clinical safety event'}: ${topRule?.matchedEvidenceSummary || 'High risk detected'}`,
-        severity: alertSeverity,
-        status: 'active',
-        dangerSigns: dangerSignsPresent ? dangerSignsList : undefined,
-        createdAt: now,
-      })
-    }
-
-    // Record audit trail
     await ctx.db.insert('auditLogs', {
       actorUserId: user._id,
       actorRole: user.role,
       orgId: patient.orgId,
       patientId: patient._id,
-      event: `Submitted daily check-in (Symptom Total: ${symptomTotal}/48, Danger Signs: ${dangerSignsPresent ? 'YES' : 'NO'}, Safety Status: ${safetyResult.status.toUpperCase()})`,
+      event: `Submitted daily check-in (Symptom Total: ${symptomTotal}/48, Danger Signs: ${dangerSignsPresent ? 'YES' : 'NO'}, Safety Status: ${safetyResult.status.toUpperCase()}, Notification: ${notification.outcome})`,
       targetResource: 'checkIns',
       resourceId: checkInId,
       action: 'create',
       createdAt: now,
     })
 
-    return checkInId
+    return {
+      checkInId,
+      blocked,
+      safetyEvaluationId,
+      safetyResult,
+    }
   },
 })
-
-

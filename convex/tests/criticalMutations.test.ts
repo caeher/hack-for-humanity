@@ -44,21 +44,22 @@ describe('Critical mutation authorization & validation matrix', () => {
     await t.mutation(api.seed.seedDatabase, {})
     const patient = await t.withIdentity(patientIdentity).query(api.patients.getMePatient, {})
 
-    const checkInId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+    const result = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
       patientId: patient!._id,
       date: '2026-09-04',
       symptoms: validSymptoms,
       activityImpact: 'none',
     })
-    expect(checkInId).toBeDefined()
+    expect(result.checkInId).toBeDefined()
+    expect(result.safetyResult).toBeDefined()
 
-    const duplicateId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+    const duplicate = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
       patientId: patient!._id,
       date: '2026-09-04',
       symptoms: validSymptoms,
       activityImpact: 'none',
     })
-    expect(duplicateId).toBe(checkInId)
+    expect(duplicate.checkInId).toBe(result.checkInId)
 
     await expect(
       t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {

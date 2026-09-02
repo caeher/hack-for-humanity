@@ -2,13 +2,17 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from 'convex/react'
-import { AlertTriangle, Check, Loader2, PhoneCall } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PageHeader } from '@/components/layouts/page-header'
 import { ProgressField, RadioGroupField, TextareaField } from '@/components/forms'
+import { SafetyOutcomePanel, type SafetyOutcomeSource } from '@/components/safety/safety-outcome-panel'
 import { api } from '@/convex/_generated/api'
+import type { Id } from '@/convex/_generated/dataModel'
+import type { SafetyEvaluationResult } from '@/convex/lib/safetyEngine'
 import {
   clearCheckInDraft,
   readCheckInDraft,
@@ -16,6 +20,9 @@ import {
 } from '@/lib/checkInDraft'
 import { DANGER_SIGN_OPTIONS, mapDangerSignIdsToCdcLabels } from '@/lib/dangerSigns'
 import { isE2ETestMode } from '@/lib/e2e'
+import { evaluateCheckInClient } from '@/lib/safety/evaluate'
+import { detectEmergencyRegion } from '@/lib/safety/emergency'
+import type { AudienceBand } from '@/lib/safety/copy'
 import {
   computeAnsweredSymptomTotal,
   isCompleteSymptomInventory,
@@ -69,7 +76,7 @@ const symptomIds = symptomQuestions.map(question => question.id)
 type SubmissionState =
   | { status: 'idle' }
   | { status: 'submitting' }
-  | { status: 'success' }
+  | { status: 'outcome'; safetyResult: SafetyEvaluationResult; source: SafetyOutcomeSource; safetyEvaluationId?: Id<'safetyEvaluations'> }
   | { status: 'error'; message: string }
 
 interface CheckInFormState {
@@ -82,10 +89,16 @@ interface CheckInFormState {
 interface CheckInFlowViewProps {
   mode: 'demo' | 'persisted'
   patientId?: string
-  onFinish?: (form: CheckInFormState) => Promise<boolean>
+  audience?: AudienceBand
+  onFinish?: (form: CheckInFormState) => Promise<{
+    safetyResult: SafetyEvaluationResult
+    source: SafetyOutcomeSource
+    safetyEvaluationId?: Id<'safetyEvaluations'>
+  } | null>
   isSubmitting?: boolean
   submitError?: string | null
-  savedSuccessfully?: boolean
+  onAcknowledge?: (safetyEvaluationId: Id<'safetyEvaluations'>) => Promise<void>
+  isAcknowledging?: boolean
 }
 
 function getLocalDateString(date = new Date()): string {
@@ -111,23 +124,32 @@ function buildSymptomsPayload(answers: Record<string, number>) {
 function CheckInFlowView({
   mode,
   patientId,
+  audience = 'adult',
   onFinish,
   isSubmitting = false,
   submitError = null,
-  savedSuccessfully = false,
+  onAcknowledge,
+  isAcknowledging = false,
 }: CheckInFlowViewProps) {
+  const router = useRouter()
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [activityImpact, setActivityImpact] = useState('not-sure')
   const [selectedDangerSigns, setSelectedDangerSigns] = useState<string[]>([])
   const [note, setNote] = useState('')
   const [draftLoaded, setDraftLoaded] = useState(mode === 'demo')
+  const [outcome, setOutcome] = useState<{
+    safetyResult: SafetyEvaluationResult
+    source: SafetyOutcomeSource
+    safetyEvaluationId?: Id<'safetyEvaluations'>
+  } | null>(null)
 
   const safetyStep = symptomQuestions.length
   const totalSteps = symptomQuestions.length + 1
   const symptomTotal = useMemo(() => computeAnsweredSymptomTotal(answers), [answers])
   const hasDangerSign = selectedDangerSigns.length > 0
   const isDemoSession = mode === 'demo'
+  const emergencyRegion = useMemo(() => detectEmergencyRegion(), [])
 
   useEffect(() => {
     if (!patientId || draftLoaded) return
@@ -158,94 +180,57 @@ function CheckInFlowView({
   }, [activityImpact, answers, draftLoaded, note, patientId, selectedDangerSigns, step])
 
   const handleFinish = async () => {
-    if (onFinish) {
-      const saved = await onFinish({
-        answers,
-        activityImpact,
-        selectedDangerSigns,
-        note,
-      })
-      if (!saved) return
+    const form: CheckInFormState = {
+      answers,
+      activityImpact,
+      selectedDangerSigns,
+      note,
     }
+
+    if (onFinish) {
+      const result = await onFinish(form)
+      if (!result) return
+      setOutcome(result)
+      setStep(totalSteps)
+      return
+    }
+
+    const symptoms = buildSymptomsPayload(form.answers)
+    const dangerSignLabels = mapDangerSignIdsToCdcLabels(form.selectedDangerSigns)
+    const clientResult = evaluateCheckInClient(symptoms, dangerSignLabels, form.note.trim() || undefined)
+    setOutcome({ safetyResult: clientResult, source: 'client_fallback' })
     setStep(totalSteps)
   }
 
-  if (step >= totalSteps && hasDangerSign) {
-    return (
-      <div className="mx-auto max-w-2xl" aria-live="assertive">
-        <Card className="border-destructive p-8" role="alert">
-          <div className="grid size-14 place-items-center rounded-full bg-destructive text-white">
-            <AlertTriangle className="size-7" />
-          </div>
-          <p className="mt-5 font-mono text-xs font-semibold uppercase tracking-wider text-destructive">
-            Concussion danger sign reported
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-            Get emergency medical help now
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            You selected one or more danger signs that can require immediate medical attention.
-            In the United States, call 911 or go to the nearest emergency department. Outside the
-            United States, call your local emergency number.
-          </p>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            This app cannot determine whether you have an emergency and does not replace a medical
-            evaluation.
-          </p>
-          {!isDemoSession && savedSuccessfully && (
-            <p className="mt-3 max-w-xl text-sm leading-6 text-foreground">
-              Your responses were saved so your care team can review them. This does not replace
-              emergency medical care.
-            </p>
-          )}
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href="tel:911"
-              className="inline-flex items-center gap-2 rounded-lg bg-destructive px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-            >
-              <PhoneCall className="size-4" /> Call 911 in the US
-            </a>
-            <button
-              type="button"
-              onClick={() => setStep(safetyStep)}
-              className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
-            >
-              Review my answers
-            </button>
-          </div>
-        </Card>
-      </div>
-    )
+  const handleAcknowledge = async () => {
+    if (!outcome) return
+
+    if (onAcknowledge && outcome.safetyEvaluationId) {
+      await onAcknowledge(outcome.safetyEvaluationId)
+    }
+
+    const blocked = outcome.safetyResult.blockedActions.includes('allow_routine_completion')
+    if (!blocked) {
+      router.push('/patient/dashboard')
+    }
   }
 
-  if (step >= totalSteps) {
+  if (step >= totalSteps && outcome) {
+    const blocked = outcome.safetyResult.blockedActions.includes('allow_routine_completion')
+
     return (
-      <div className="mx-auto max-w-2xl">
-        <Card className="p-8 text-center" aria-live="polite">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-primary text-primary-foreground">
-            <Check className="size-6" />
-          </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground">
-            {isDemoSession ? 'Demo check-in complete' : 'Check-in complete'}
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-            Today&apos;s patient-reported symptom total is {symptomTotal} out of 48. This simple total
-            helps compare entries over time. It is not a diagnosis, prognosis, or return-to-activity
-            decision.
-          </p>
-          <p className="mx-auto mt-3 max-w-md text-xs leading-5 text-muted-foreground">
-            {isDemoSession
-              ? 'The prototype keeps these responses only for this demo session. They have not been sent to a clinician or saved to the backend.'
-              : 'Your check-in was saved to your recovery record. Symptom totals are descriptive only and do not indicate recovery or clearance.'}
-          </p>
-          <Link
-            href="/patient/dashboard"
-            className="mt-6 inline-flex rounded-lg bg-foreground px-4 py-2.5 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors"
-          >
-            Return to overview
-          </Link>
-        </Card>
-      </div>
+      <SafetyOutcomePanel
+        safetyResult={outcome.safetyResult}
+        symptomTotal={symptomTotal}
+        source={outcome.source}
+        audience={audience}
+        emergencyRegion={emergencyRegion}
+        savedSuccessfully={outcome.source === 'backend'}
+        isAcknowledging={isAcknowledging}
+        onAcknowledge={handleAcknowledge}
+        onReviewAnswers={blocked ? () => setStep(safetyStep) : undefined}
+        showRoutineCompletion={!isDemoSession}
+      />
     )
   }
 
@@ -260,7 +245,10 @@ function CheckInFlowView({
         <Card className="space-y-6 p-7">
           {hasDangerSign && (
             <div className="rounded-lg border border-destructive bg-destructive/5 p-4" role="alert">
-              <p className="font-semibold text-destructive">Get emergency medical help now.</p>
+              <p className="font-semibold text-foreground">
+                <span aria-hidden="true">⚠ </span>
+                Urgent: Get emergency medical help now.
+              </p>
               <p className="mt-1 text-sm leading-6 text-foreground">
                 Continue to view emergency contact guidance. Do not wait for a routine app response.
               </p>
@@ -269,7 +257,7 @@ function CheckInFlowView({
 
           {submitError && (
             <div className="rounded-lg border border-destructive bg-destructive/5 p-4" role="alert">
-              <p className="font-semibold text-destructive">Could not save check-in</p>
+              <p className="font-semibold text-foreground">Could not save check-in</p>
               <p className="mt-1 text-sm leading-6 text-foreground">{submitError}</p>
             </div>
           )}
@@ -342,7 +330,7 @@ function CheckInFlowView({
               disabled={isSubmitting}
               className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold transition-colors disabled:opacity-70 ${
                 hasDangerSign
-                  ? 'bg-destructive text-white hover:opacity-90'
+                  ? 'bg-destructive text-destructive-foreground hover:opacity-90'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
             >
@@ -417,16 +405,20 @@ export function CheckInFlowSession() {
 function CheckInFlowPersisted() {
   const patient = useQuery(api.patients.getMePatient)
   const submitCheckIn = useMutation(api.checkIns.submitCheckIn)
+  const acknowledgeSafety = useMutation(api.safety.acknowledgeSafetyOutcome)
   const [submission, setSubmission] = useState<SubmissionState>({ status: 'idle' })
+  const [isAcknowledging, setIsAcknowledging] = useState(false)
+
+  const audience: AudienceBand = patient?.ageBand === '13-17' ? 'pediatric' : 'adult'
 
   const persistCheckIn = useCallback(
-    async (form: CheckInFormState): Promise<boolean> => {
+    async (form: CheckInFormState) => {
       if (!patient) {
         setSubmission({
           status: 'error',
           message: 'Sign in and complete onboarding before saving a check-in.',
         })
-        return false
+        return null
       }
 
       if (!isCompleteSymptomInventory(form.answers, symptomIds)) {
@@ -434,34 +426,73 @@ function CheckInFlowPersisted() {
           status: 'error',
           message: 'Rate all eight symptoms before finishing your check-in.',
         })
-        return false
+        return null
       }
 
       setSubmission({ status: 'submitting' })
 
+      const symptoms = buildSymptomsPayload(form.answers)
+      const dangerSignLabels = mapDangerSignIdsToCdcLabels(form.selectedDangerSigns)
+
       try {
-        await submitCheckIn({
+        const result = await submitCheckIn({
           patientId: patient._id,
           date: getLocalDateString(),
-          symptoms: buildSymptomsPayload(form.answers),
+          symptoms,
           activityImpact: form.activityImpact as 'yes' | 'no' | 'not-sure' | 'none',
-          dangerSigns: mapDangerSignIdsToCdcLabels(form.selectedDangerSigns),
+          dangerSigns: dangerSignLabels,
           note: form.note.trim() ? form.note.trim() : undefined,
         })
 
         clearCheckInDraft(patient._id)
-        setSubmission({ status: 'success' })
-        return true
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'We could not save your check-in. Please try again.'
-        setSubmission({ status: 'error', message })
-        return false
+        setSubmission({
+          status: 'outcome',
+          safetyResult: result.safetyResult,
+          source: 'backend',
+          safetyEvaluationId: result.safetyEvaluationId,
+        })
+
+        return {
+          safetyResult: result.safetyResult,
+          source: 'backend' as const,
+          safetyEvaluationId: result.safetyEvaluationId,
+        }
+      } catch {
+        const fallbackResult = evaluateCheckInClient(
+          symptoms,
+          dangerSignLabels,
+          form.note.trim() || undefined
+        )
+
+        setSubmission({
+          status: 'outcome',
+          safetyResult: fallbackResult,
+          source: 'client_fallback',
+        })
+
+        return {
+          safetyResult: fallbackResult,
+          source: 'client_fallback' as const,
+        }
       }
     },
     [patient, submitCheckIn]
+  )
+
+  const handleAcknowledge = useCallback(
+    async (safetyEvaluationId: Id<'safetyEvaluations'>) => {
+      if (!patient) return
+      setIsAcknowledging(true)
+      try {
+        await acknowledgeSafety({
+          safetyEvaluationId,
+          patientId: patient._id,
+        })
+      } finally {
+        setIsAcknowledging(false)
+      }
+    },
+    [acknowledgeSafety, patient]
   )
 
   if (patient === undefined) {
@@ -486,6 +517,12 @@ function CheckInFlowPersisted() {
             We could not find a patient profile for your account. Finish onboarding before saving
             daily check-ins.
           </p>
+          <Link
+            href="/onboarding"
+            className="mt-6 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            Go to onboarding
+          </Link>
         </Card>
       </div>
     )
@@ -495,10 +532,12 @@ function CheckInFlowPersisted() {
     <CheckInFlowView
       mode="persisted"
       patientId={patient._id}
+      audience={audience}
       onFinish={persistCheckIn}
       isSubmitting={submission.status === 'submitting'}
       submitError={submission.status === 'error' ? submission.message : null}
-      savedSuccessfully={submission.status === 'success'}
+      onAcknowledge={handleAcknowledge}
+      isAcknowledging={isAcknowledging}
     />
   )
 }

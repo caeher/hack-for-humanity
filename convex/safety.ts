@@ -17,6 +17,7 @@ import {
   evaluateOnboarding,
   LongitudinalRecord,
 } from './lib/safetyEngine'
+import { attemptCareTeamNotification } from './lib/safetyFollowUp'
 import { RULE_REGISTRY_VERSION, SAFETY_RULES } from './lib/safetyRules'
 
 /**
@@ -160,25 +161,24 @@ export const evaluateCheckInSafety = mutation({
       highestSeverity: evaluation.highestSeverity,
       ruleEngineVersion: evaluation.ruleEngineVersion,
       matchedRuleCodes: evaluation.matchedRules.map(r => r.outputCode),
+      matchedRuleIds: evaluation.matchedRules.map(r => r.ruleId),
       matchedEvidenceSummary: evaluation.matchedRules.map(r => r.matchedEvidenceSummary),
       primaryEscalation: evaluation.primaryEscalation,
       blockedActions: evaluation.blockedActions,
       failSafeApplied: evaluation.failSafeApplied,
+      followUpState: 'pending_acknowledgement',
       createdAt: now,
     })
 
-    // If emergency danger sign or high severity trajectory triggered, create or escalate clinical alert
     if (evaluation.highestSeverity === 'emergency' || evaluation.highestSeverity === 'high') {
-      const topRule = evaluation.matchedRules[0]
-      await ctx.db.insert('alerts', {
-        patientId: args.patientId,
+      await attemptCareTeamNotification(ctx, {
+        patient,
         episodeId: args.episodeId,
-        orgId: patient.orgId,
-        detail: `[Safety Engine ${evaluation.ruleEngineVersion}] ${topRule.name}: ${topRule.matchedEvidenceSummary}`,
-        severity: evaluation.highestSeverity === 'emergency' ? 'High' : 'High',
-        status: 'active',
-        dangerSigns: dangerSigns.length > 0 ? dangerSigns : undefined,
-        createdAt: now,
+        safetyResult: evaluation,
+        dangerSigns,
+        actorUserId: user._id,
+        actorRole: user.role,
+        now,
       })
     }
 
@@ -222,6 +222,7 @@ export const evaluateAiQuerySafety = mutation({
       highestSeverity: evaluation.highestSeverity,
       ruleEngineVersion: evaluation.ruleEngineVersion,
       matchedRuleCodes: evaluation.matchedRules.map(r => r.outputCode),
+      matchedRuleIds: evaluation.matchedRules.map(r => r.ruleId),
       matchedEvidenceSummary: evaluation.matchedRules.map(r => r.matchedEvidenceSummary),
       primaryEscalation: evaluation.primaryEscalation,
       blockedActions: evaluation.blockedActions,
@@ -266,6 +267,7 @@ export const evaluateFreeTextSafety = mutation({
       highestSeverity: evaluation.highestSeverity,
       ruleEngineVersion: evaluation.ruleEngineVersion,
       matchedRuleCodes: evaluation.matchedRules.map(r => r.outputCode),
+      matchedRuleIds: evaluation.matchedRules.map(r => r.ruleId),
       matchedEvidenceSummary: evaluation.matchedRules.map(r => r.matchedEvidenceSummary),
       primaryEscalation: evaluation.primaryEscalation,
       blockedActions: evaluation.blockedActions,
@@ -308,6 +310,7 @@ export const evaluateOnboardingSafety = mutation({
       highestSeverity: evaluation.highestSeverity,
       ruleEngineVersion: evaluation.ruleEngineVersion,
       matchedRuleCodes: evaluation.matchedRules.map(r => r.outputCode),
+      matchedRuleIds: evaluation.matchedRules.map(r => r.ruleId),
       matchedEvidenceSummary: evaluation.matchedRules.map(r => r.matchedEvidenceSummary),
       primaryEscalation: evaluation.primaryEscalation,
       blockedActions: evaluation.blockedActions,
@@ -328,5 +331,51 @@ export const evaluateOnboardingSafety = mutation({
     }
 
     return evaluation
+  },
+})
+
+/**
+ * Record patient acknowledgement of a safety outcome.
+ * Acknowledgement is audited and does NOT constitute clinical resolution.
+ */
+export const acknowledgeSafetyOutcome = mutation({
+  args: {
+    safetyEvaluationId: v.id('safetyEvaluations'),
+    patientId: v.id('patients'),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { user } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
+
+    const evaluation = await ctx.db.get(args.safetyEvaluationId)
+    if (!evaluation) {
+      throw new Error('Safety evaluation not found.')
+    }
+
+    if (evaluation.patientId !== args.patientId) {
+      throw new Error('Safety evaluation does not belong to this patient.')
+    }
+
+    const now = Date.now()
+
+    await ctx.db.patch(args.safetyEvaluationId, {
+      followUpState: 'acknowledged',
+      acknowledgedAt: now,
+      acknowledgedByUserId: user._id,
+    })
+
+    await ctx.db.insert('auditLogs', {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: evaluation.orgId,
+      patientId: args.patientId,
+      event: `Acknowledged safety outcome (status: ${evaluation.status}, rules: ${evaluation.matchedRuleCodes.join(', ') || 'none'}) — not clinical resolution`,
+      targetResource: 'safetyEvaluations',
+      resourceId: args.safetyEvaluationId,
+      action: 'safety_acknowledgement',
+      createdAt: now,
+    })
+
+    return null
   },
 })

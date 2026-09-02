@@ -140,7 +140,7 @@ describe('Convex API Authorization & RBAC', () => {
       expect(patient?.displayId).toBe('P-1042')
 
       // Submit check-in
-      const checkInId = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
+      const result = await t.withIdentity(patientIdentity).mutation(api.checkIns.submitCheckIn, {
         patientId: patient!._id,
         date: '2026-09-02',
         symptoms: {
@@ -157,7 +157,7 @@ describe('Convex API Authorization & RBAC', () => {
         dangerSigns: [],
         note: 'Feeling almost back to baseline.',
       })
-      expect(checkInId).toBeDefined()
+      expect(result.checkInId).toBeDefined()
 
       // List care plans
       const plans = await t.withIdentity(patientIdentity).query(api.carePlans.listByPatient, {

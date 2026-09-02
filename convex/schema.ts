@@ -323,7 +323,9 @@ export default defineSchema({
       v.literal('delete'),
       v.literal('consent_grant'),
       v.literal('consent_revoke'),
-      v.literal('auth_failure')
+      v.literal('auth_failure'),
+      v.literal('safety_notification'),
+      v.literal('safety_acknowledgement')
     ),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
@@ -366,11 +368,30 @@ export default defineSchema({
     ),
     ruleEngineVersion: v.string(),
     matchedRuleCodes: v.array(v.string()),
+    matchedRuleIds: v.optional(v.array(v.string())),
     matchedEvidenceSummary: v.array(v.string()),
     primaryEscalation: v.string(),
     blockedActions: v.array(v.string()),
     failSafeApplied: v.boolean(),
     targetResourceId: v.optional(v.string()),
+    followUpState: v.optional(
+      v.union(
+        v.literal('pending_acknowledgement'),
+        v.literal('acknowledged'),
+        v.literal('notification_sent'),
+        v.literal('notification_skipped')
+      )
+    ),
+    acknowledgedAt: v.optional(v.number()),
+    acknowledgedByUserId: v.optional(v.id('users')),
+    notificationAttemptedAt: v.optional(v.number()),
+    notificationOutcome: v.optional(
+      v.union(
+        v.literal('sent'),
+        v.literal('skipped_no_consent'),
+        v.literal('skipped_not_escalated')
+      )
+    ),
     createdAt: v.number(),
   })
     .index('by_patientId', ['patientId'])
