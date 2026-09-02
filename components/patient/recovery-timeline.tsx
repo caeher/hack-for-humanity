@@ -1,8 +1,12 @@
+'use client'
+
 import React from 'react'
+import Link from 'next/link'
 import { Activity, ClipboardCheck, HeartPulse } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layouts/page-header'
 import { StatCard, TrendChart, SymptomMethodologyPanel } from '@/components/dashboard'
+import { CheckInHistory } from '@/components/patient/check-in-history'
 import { computeDescriptiveTrend, METHODOLOGY_COPY } from '@/lib/symptomMethodology'
 
 const demoTrendPoints = [
@@ -61,12 +65,24 @@ export function RecoveryTimeline() {
           </div>
         </Card>
       </div>
+      <CheckInHistory />
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Symptom total" value="15 / 48" detail="Patient-reported today" icon={Activity} />
         <StatCard label="Sleep" value="6h 48m" detail="Self-reported duration" icon={HeartPulse} />
-        <StatCard label="Check-ins" value="11 / 12" detail="One day not recorded (gap shown, not imputed)" icon={ClipboardCheck} />
+        <StatCard
+          label="Check-ins"
+          value="11 / 12"
+          detail="One day not recorded (gap shown, not imputed)"
+          icon={ClipboardCheck}
+        />
       </div>
       <SymptomMethodologyPanel compact />
+      <p className="text-sm text-muted-foreground">
+        Need to log today?{' '}
+        <Link href="/patient/check-in" className="font-medium text-foreground underline-offset-4 hover:underline">
+          Open daily check-in
+        </Link>
+      </p>
     </div>
   )
 }
