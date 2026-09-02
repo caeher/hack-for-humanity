@@ -1,7 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useMutation } from 'convex/react'
 import { User, Mail } from 'lucide-react'
+import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
+import type { Id } from '@/convex/_generated/dataModel'
 import {
   Dialog,
   DialogContent,
@@ -11,15 +15,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import {
-  TextField,
-  SelectField,
-  CalendarField,
-  PhoneField,
-  SwitchField,
-} from '@/components/forms'
+import { TextField, SelectField } from '@/components/forms'
 
 export interface UserInviteModalProps {
+  orgId?: Id<'organizations'>
   title?: string
   open?: boolean
   onClose: () => void
@@ -27,33 +26,59 @@ export interface UserInviteModalProps {
 }
 
 export function UserInviteModal({
+  orgId,
   title = 'Enroll / Invite User',
   open = true,
   onClose,
   onSuccess,
 }: UserInviteModalProps) {
+  const inviteOrgUser = useMutation(api.orgProvisioning.inviteUser)
+  const inviteLegacyUser = useMutation(api.users.inviteUser)
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     role: 'patient',
-    birthDate: '',
-    phone: '',
-    newsletter: true,
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert(`User ${formData.fullName || 'New User'} registered successfully!`)
-    onSuccess?.()
-    onClose()
+    if (isE2ETestMode) {
+      onSuccess?.()
+      onClose()
+      return
+    }
+    setSubmitting(true)
+    setError(null)
+    try {
+      if (orgId) {
+        await inviteOrgUser({
+          orgId,
+          name: formData.fullName,
+          email: formData.email,
+          role: formData.role as 'patient' | 'caregiver' | 'clinician' | 'admin',
+        })
+      } else {
+        await inviteLegacyUser({
+          name: formData.fullName,
+          email: formData.email,
+          role: formData.role as 'patient' | 'caregiver' | 'clinician' | 'admin',
+        })
+      }
+      onSuccess?.()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invitation failed.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -62,11 +87,11 @@ export function UserInviteModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Register and provision user access tokens
+            Send an organization invitation. Status syncs between Clerk and Convex when configured.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={e => void handleSubmit(e)} className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField
               label="Full Name"
@@ -104,40 +129,16 @@ export function UserInviteModal({
             ]}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <CalendarField
-              label="Date of Birth"
-              name="birthDate"
-              value={formData.birthDate}
-              onChange={handleChange}
-            />
-
-            <PhoneField
-              label="Phone Number"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </div>
-
-          <SwitchField
-            inline
-            label="Subscribe to weekly recovery notifications"
-            name="newsletter"
-            checked={formData.newsletter}
-            onChange={handleChange}
-          />
+          {error && (
+            <p className="text-sm text-destructive" role="alert">{error}</p>
+          )}
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
-            <Button type="submit">
-              Complete Registration
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Sending…' : 'Send invitation'}
             </Button>
           </DialogFooter>
         </form>
@@ -145,4 +146,3 @@ export function UserInviteModal({
     </Dialog>
   )
 }
-

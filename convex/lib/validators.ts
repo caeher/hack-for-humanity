@@ -33,6 +33,26 @@ export const userStatusValidator = v.union(
   v.literal('Suspended')
 )
 
+export const orgFeatureFlagsValidator = v.object({
+  aiInsights: v.boolean(),
+  caregiverPortal: v.boolean(),
+  secureMessaging: v.boolean(),
+  patternDetection: v.boolean(),
+})
+
+export const orgMembershipStatusValidator = v.union(
+  v.literal('active'),
+  v.literal('inactive'),
+  v.literal('invited')
+)
+
+export const invitationStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('accepted'),
+  v.literal('revoked'),
+  v.literal('expired')
+)
+
 export const clinicalRoleValidator = v.union(
   v.literal('lead'),
   v.literal('attending'),
@@ -417,8 +437,56 @@ export const orgDocValidator = v.object({
   cohortCapacity: v.optional(v.number()),
   accentColor: v.optional(v.string()),
   activePathways: v.optional(v.array(v.string())),
+  locale: v.optional(v.string()),
+  featureFlags: v.optional(orgFeatureFlagsValidator),
+  approvedPolicies: v.optional(v.array(v.string())),
   clerkUpdatedAt: v.optional(v.number()),
   createdAt: v.number(),
+})
+
+export const orgMembershipDocValidator = v.object({
+  _id: v.id('organizationMemberships'),
+  _creationTime: v.number(),
+  userId: v.id('users'),
+  orgId: v.id('organizations'),
+  orgRole: roleValidator,
+  status: orgMembershipStatusValidator,
+  clerkMembershipId: v.optional(v.string()),
+  joinedAt: v.number(),
+})
+
+export const orgInvitationDocValidator = v.object({
+  _id: v.id('organizationInvitations'),
+  _creationTime: v.number(),
+  orgId: v.id('organizations'),
+  email: v.string(),
+  name: v.string(),
+  role: roleValidator,
+  clerkInvitationId: v.optional(v.string()),
+  status: invitationStatusValidator,
+  invitedByUserId: v.id('users'),
+  expiresAt: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
+})
+
+export const orgAggregateMetricsValidator = v.object({
+  enrolledPatients: v.number(),
+  newPatientsThisMonth: v.number(),
+  checkInEngagementRate: v.number(),
+  activeAlertsCount: v.number(),
+  escalationRate: v.number(),
+  riskDistribution: v.object({
+    stable: v.number(),
+    review: v.number(),
+    elevated: v.number(),
+  }),
+  pathwayCounts: v.array(
+    v.object({
+      pathway: v.string(),
+      count: v.number(),
+    })
+  ),
 })
 
 export const userDocValidator = v.object({
@@ -434,6 +502,11 @@ export const userDocValidator = v.object({
   lastActive: v.optional(v.string()),
   clerkUpdatedAt: v.optional(v.number()),
   createdAt: v.number(),
+})
+
+export const orgUserSummaryValidator = v.object({
+  user: userDocValidator,
+  membership: orgMembershipDocValidator,
 })
 
 export const syncUserResultValidator = v.object({

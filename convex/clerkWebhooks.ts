@@ -3,6 +3,7 @@ import { internalMutation, internalQuery } from './_generated/server'
 import {
   clerkWebhookProcessResultValidator,
   ClerkOrganizationData,
+  ClerkOrganizationInvitationData,
   ClerkOrganizationMembershipData,
   ClerkUserData,
   ClerkWebhookEnvelope,
@@ -11,6 +12,8 @@ import {
 import {
   handleOrganizationCreated,
   handleOrganizationDeleted,
+  handleOrganizationInvitationAccepted,
+  handleOrganizationInvitationRevoked,
   handleOrganizationMembershipCreated,
   handleOrganizationMembershipDeleted,
   handleOrganizationMembershipUpdated,
@@ -71,6 +74,22 @@ async function dispatchClerkEvent(
         envelope.data as ClerkOrganizationMembershipData,
         handlerCtx
       )
+      return
+    case 'organizationInvitation.accepted':
+      await handleOrganizationInvitationAccepted(
+        ctx,
+        envelope.data as unknown as ClerkOrganizationInvitationData,
+        handlerCtx
+      )
+      return
+    case 'organizationInvitation.revoked':
+      await handleOrganizationInvitationRevoked(
+        ctx,
+        envelope.data as unknown as ClerkOrganizationInvitationData,
+        handlerCtx
+      )
+      return
+    case 'organizationInvitation.created':
       return
     default:
       return

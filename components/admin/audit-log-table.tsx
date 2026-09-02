@@ -1,4 +1,9 @@
+'use client'
+
 import React from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { isE2ETestMode } from '@/lib/e2e'
 import { Card } from '@/components/ui/card'
 import {
   Table,
@@ -10,42 +15,87 @@ import {
 } from '@/components/ui/table'
 import { PageHeader } from '@/components/layouts/page-header'
 
-const auditEvents = [
-  ['10:42 AM', 'Dr. Brooks', 'Viewed recovery report', 'P-1042'],
-  ['9:18 AM', 'Admin Lee', 'Changed user role', 'U-088'],
-  ['Yesterday', 'Maya Chen', 'Shared caregiver access', 'P-1042'],
-  ['Aug 29', 'Dr. Brooks', 'Updated clinical care plan', 'P-1038'],
-  ['Aug 28', 'System', 'Generated automated weekly report', 'Cohort-A'],
-]
+function formatTimestamp(ms: number): string {
+  return new Date(ms).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 export function AuditLogTable() {
+  if (isE2ETestMode) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          eyebrow="Governance"
+          title="Audit log"
+          description="[E2E demo shell] Traceable record of administrative and recovery workspace events."
+        />
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">
+            Demo audit events for role changes, recovery report access, and consent updates.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+
+  return <AuditLogTableLive />
+}
+
+function AuditLogTableLive() {
+  const org = useQuery(api.organizations.getMyOrganization, {})
+  const logs = useQuery(
+    api.auditLogs.listRecent,
+    org ? { orgId: org._id, limit: 50 } : 'skip'
+  )
+
+  const logEntries = Array.isArray(logs) ? logs : logs?.page ?? []
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Governance"
         title="Audit log"
-        description="A traceable record of access, sharing, and administrative events."
+        description="A traceable record of access, sharing, and administrative events for your organization."
       />
       <Card className="overflow-hidden p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              {['Time', 'Actor', 'Event', 'Resource'].map(x => (
+              {['Time', 'Actor role', 'Event', 'Resource'].map(x => (
                 <TableHead key={x}>{x}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {auditEvents.map(r => (
-              <TableRow key={r[0] + r[2]}>
-                {r.map((x, idx) => (
-                  <TableCell
-                    key={x}
-                    className={idx === 0 || idx === 3 ? 'font-mono text-xs' : ''}
-                  >
-                    {x}
-                  </TableCell>
-                ))}
+            {logs === undefined && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  Loading audit events…
+                </TableCell>
+              </TableRow>
+            )}
+            {logs !== undefined && logEntries.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  No audit events recorded yet.
+                </TableCell>
+              </TableRow>
+            )}
+            {logEntries.map(log => (
+              <TableRow key={log._id}>
+                <TableCell className="font-mono text-xs">
+                  {formatTimestamp(log.createdAt)}
+                </TableCell>
+                <TableCell>{log.actorRole}</TableCell>
+                <TableCell>{log.event}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  {log.targetResource}
+                  {log.resourceId ? ` · ${log.resourceId}` : ''}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -54,4 +104,3 @@ export function AuditLogTable() {
     </div>
   )
 }
-
