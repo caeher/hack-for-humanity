@@ -19,6 +19,7 @@ import type * as clerkReconciliationActions from "../clerkReconciliationActions.
 import type * as clerkWebhooks from "../clerkWebhooks.js";
 import type * as consent from "../consent.js";
 import type * as encounters from "../encounters.js";
+import type * as exposureEntries from "../exposureEntries.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_baselineLogic from "../lib/baselineLogic.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   clerkWebhooks: typeof clerkWebhooks;
   consent: typeof consent;
   encounters: typeof encounters;
+  exposureEntries: typeof exposureEntries;
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/baselineLogic": typeof lib_baselineLogic;

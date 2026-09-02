@@ -692,6 +692,44 @@ export const seedDatabase = mutation({
           createdAt: Date.now() - item.offsetDays * 86400000,
         })
       }
+
+      // Seed granular exposure entries for the most recent check-in day
+      if (item.offsetDays === 0 && checkInId) {
+        const existingEntry = await ctx.db
+          .query('exposureEntries')
+          .withIndex('by_checkInId', q => q.eq('checkInId', checkInId))
+          .first()
+
+        if (!existingEntry) {
+          const entryCreatedAt = Date.now() - item.offsetDays * 86400000
+          await ctx.db.insert('exposureEntries', {
+            patientId: mayaPatient._id,
+            episodeId: mayaEpisode._id,
+            checkInId,
+            date: item.date,
+            domain: 'screen',
+            activityType: 'computer',
+            durationMinutes: item.screenMinutes,
+            intensity: 4,
+            symptomsWorsened: 'not_sure',
+            submittedByUserId: mayaUser._id,
+            createdAt: entryCreatedAt,
+          })
+          await ctx.db.insert('exposureEntries', {
+            patientId: mayaPatient._id,
+            episodeId: mayaEpisode._id,
+            checkInId,
+            date: item.date,
+            domain: 'sleep',
+            activityType: 'night_sleep',
+            sleepHours: item.sleepHours,
+            sleepQuality: item.sleepQuality,
+            symptomsWorsened: 'not_applicable',
+            submittedByUserId: mayaUser._id,
+            createdAt: entryCreatedAt,
+          })
+        }
+      }
     }
 
     // Trajectory 2: Daniel Ortiz (P-1038) - Professional Review Scenario (10 days, screen time & sleep correlation)

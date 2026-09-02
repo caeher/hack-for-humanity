@@ -79,6 +79,37 @@ export const activityImpactValidator = v.union(
   v.literal('none')
 )
 
+export const exposureDomainValidator = v.union(
+  v.literal('physical'),
+  v.literal('cognitive'),
+  v.literal('work_school'),
+  v.literal('screen'),
+  v.literal('sleep')
+)
+
+export const symptomsWorsenedValidator = v.union(
+  v.literal('yes'),
+  v.literal('no'),
+  v.literal('not_sure'),
+  v.literal('not_applicable')
+)
+
+export const exposureEntryInputValidator = v.object({
+  domain: exposureDomainValidator,
+  activityType: v.string(),
+  durationMinutes: v.optional(v.number()),
+  intensity: v.optional(v.number()),
+  startTime: v.optional(v.string()),
+  endTime: v.optional(v.string()),
+  symptomsWorsened: symptomsWorsenedValidator,
+  symptomOnsetMinutes: v.optional(v.number()),
+  symptomMagnitude: v.optional(v.number()),
+  symptomRecoveryMinutes: v.optional(v.number()),
+  sleepHours: v.optional(v.number()),
+  sleepQuality: v.optional(v.number()),
+  contextNote: v.optional(v.string()),
+})
+
 export const encounterTypeValidator = v.union(
   v.literal('in-person'),
   v.literal('telehealth'),
@@ -402,6 +433,45 @@ export const activityExposureDocValidator = v.object({
   sleepHours: v.number(),
   sleepQuality: v.number(),
   createdAt: v.number(),
+})
+
+export const exposureEntryDocValidator = v.object({
+  _id: v.id('exposureEntries'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  checkInId: v.optional(v.id('checkIns')),
+  date: v.string(),
+  domain: exposureDomainValidator,
+  activityType: v.string(),
+  durationMinutes: v.optional(v.number()),
+  intensity: v.optional(v.number()),
+  startTime: v.optional(v.string()),
+  endTime: v.optional(v.string()),
+  symptomsWorsened: symptomsWorsenedValidator,
+  symptomOnsetMinutes: v.optional(v.number()),
+  symptomMagnitude: v.optional(v.number()),
+  symptomRecoveryMinutes: v.optional(v.number()),
+  sleepHours: v.optional(v.number()),
+  sleepQuality: v.optional(v.number()),
+  contextNote: v.optional(v.string()),
+  submittedByUserId: v.id('users'),
+  createdAt: v.number(),
+  updatedAt: v.optional(v.number()),
+})
+
+export const exposureValidationWarningValidator = v.object({
+  code: v.union(
+    v.literal('duration_mismatch'),
+    v.literal('overlapping_time'),
+    v.literal('impossible_duration')
+  ),
+  message: v.string(),
+})
+
+export const exposureLogResultValidator = v.object({
+  entryId: v.id('exposureEntries'),
+  warnings: v.array(exposureValidationWarningValidator),
 })
 
 export const recoveryTrendDocValidator = v.object({

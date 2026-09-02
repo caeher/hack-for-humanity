@@ -27,6 +27,8 @@ import {
   computeAnsweredSymptomTotal,
   isCompleteSymptomInventory,
 } from '@/lib/symptomTotals'
+import type { ExposureEntryInput } from '@/lib/exposureTracking'
+import { ExposureQuickLog } from '@/components/patient/exposure-quick-log'
 
 const symptomQuestions = [
   {
@@ -84,6 +86,7 @@ interface CheckInFormState {
   activityImpact: string
   selectedDangerSigns: string[]
   note: string
+  exposureEntries: ExposureEntryInput[]
 }
 
 interface CheckInFlowViewProps {
@@ -94,6 +97,7 @@ interface CheckInFlowViewProps {
     safetyResult: SafetyEvaluationResult
     source: SafetyOutcomeSource
     safetyEvaluationId?: Id<'safetyEvaluations'>
+    checkInId?: Id<'checkIns'>
   } | null>
   isSubmitting?: boolean
   submitError?: string | null
@@ -137,6 +141,7 @@ function CheckInFlowView({
   const [activityImpact, setActivityImpact] = useState('not-sure')
   const [selectedDangerSigns, setSelectedDangerSigns] = useState<string[]>([])
   const [note, setNote] = useState('')
+  const [exposureEntries, setExposureEntries] = useState<ExposureEntryInput[]>([])
   const [draftLoaded, setDraftLoaded] = useState(mode === 'demo')
   const [outcome, setOutcome] = useState<{
     safetyResult: SafetyEvaluationResult
@@ -185,6 +190,7 @@ function CheckInFlowView({
       activityImpact,
       selectedDangerSigns,
       note,
+      exposureEntries,
     }
 
     if (onFinish) {
@@ -315,6 +321,8 @@ function CheckInFlowView({
             }
           />
 
+          <ExposureQuickLog value={exposureEntries} onChange={setExposureEntries} />
+
           <div className="flex justify-between border-t border-border pt-4">
             <button
               type="button"
@@ -405,6 +413,7 @@ export function CheckInFlowSession() {
 function CheckInFlowPersisted() {
   const patient = useQuery(api.patients.getMePatient)
   const submitCheckIn = useMutation(api.checkIns.submitCheckIn)
+  const logExposureBatch = useMutation(api.exposureEntries.logBatch)
   const acknowledgeSafety = useMutation(api.safety.acknowledgeSafetyOutcome)
   const [submission, setSubmission] = useState<SubmissionState>({ status: 'idle' })
   const [isAcknowledging, setIsAcknowledging] = useState(false)
@@ -444,6 +453,15 @@ function CheckInFlowPersisted() {
           note: form.note.trim() ? form.note.trim() : undefined,
         })
 
+        if (form.exposureEntries.length > 0) {
+          await logExposureBatch({
+            patientId: patient._id,
+            checkInId: result.checkInId,
+            date: getLocalDateString(),
+            entries: form.exposureEntries,
+          })
+        }
+
         clearCheckInDraft(patient._id)
         setSubmission({
           status: 'outcome',
@@ -456,6 +474,7 @@ function CheckInFlowPersisted() {
           safetyResult: result.safetyResult,
           source: 'backend' as const,
           safetyEvaluationId: result.safetyEvaluationId,
+          checkInId: result.checkInId,
         }
       } catch {
         const fallbackResult = evaluateCheckInClient(
@@ -476,7 +495,7 @@ function CheckInFlowPersisted() {
         }
       }
     },
-    [patient, submitCheckIn]
+    [patient, submitCheckIn, logExposureBatch]
   )
 
   const handleAcknowledge = useCallback(
