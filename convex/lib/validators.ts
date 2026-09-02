@@ -103,7 +103,9 @@ export const auditActionValidator = v.union(
   v.literal('delete'),
   v.literal('consent_grant'),
   v.literal('consent_revoke'),
-  v.literal('auth_failure')
+  v.literal('auth_failure'),
+  v.literal('safety_notification'),
+  v.literal('safety_acknowledgement')
 )
 
 export const symptomsObjectValidator = v.object({
@@ -484,6 +486,19 @@ export const safetySeverityValidator = v.union(
   v.literal('none')
 )
 
+export const followUpStateValidator = v.union(
+  v.literal('pending_acknowledgement'),
+  v.literal('acknowledged'),
+  v.literal('notification_sent'),
+  v.literal('notification_skipped')
+)
+
+export const notificationOutcomeValidator = v.union(
+  v.literal('sent'),
+  v.literal('skipped_no_consent'),
+  v.literal('skipped_not_escalated')
+)
+
 export const safetyEvaluationDocValidator = v.object({
   _id: v.id('safetyEvaluations'),
   _creationTime: v.number(),
@@ -495,11 +510,17 @@ export const safetyEvaluationDocValidator = v.object({
   highestSeverity: safetySeverityValidator,
   ruleEngineVersion: v.string(),
   matchedRuleCodes: v.array(v.string()),
+  matchedRuleIds: v.optional(v.array(v.string())),
   matchedEvidenceSummary: v.array(v.string()),
   primaryEscalation: v.string(),
   blockedActions: v.array(v.string()),
   failSafeApplied: v.boolean(),
   targetResourceId: v.optional(v.string()),
+  followUpState: v.optional(followUpStateValidator),
+  acknowledgedAt: v.optional(v.number()),
+  acknowledgedByUserId: v.optional(v.id('users')),
+  notificationAttemptedAt: v.optional(v.number()),
+  notificationOutcome: v.optional(notificationOutcomeValidator),
   createdAt: v.number(),
 })
 
@@ -549,6 +570,13 @@ export const baselineSubmitResultValidator = v.object({
   blocked: v.boolean(),
   safetyResult: safetyEvaluationResultValidator,
   nextRoute: v.string(),
+})
+
+export const checkInSubmitResultValidator = v.object({
+  checkInId: v.id('checkIns'),
+  blocked: v.boolean(),
+  safetyEvaluationId: v.id('safetyEvaluations'),
+  safetyResult: safetyEvaluationResultValidator,
 })
 
 export const safetyRuleInfoValidator = v.object({

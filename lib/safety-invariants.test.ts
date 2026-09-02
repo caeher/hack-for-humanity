@@ -66,6 +66,10 @@ describe('PR #39 safety boundary regressions', () => {
       resolve(ROOT, 'components/patient/check-in-flow.tsx'),
       'utf8'
     ).toLowerCase()
+    const safetyOutcomePanel = readFileSync(
+      resolve(ROOT, 'components/safety/safety-outcome-panel.tsx'),
+      'utf8'
+    ).toLowerCase()
     const profileForm = readFileSync(
       resolve(ROOT, 'components/patient/patient-profile-form.tsx'),
       'utf8'
@@ -75,8 +79,12 @@ describe('PR #39 safety boundary regressions', () => {
       'utf8'
     ).toLowerCase()
 
+    const checkInSafetyCopy =
+      checkInFlow +
+      safetyOutcomePanel +
+      readFileSync(resolve(ROOT, 'lib/safety/emergency.ts'), 'utf8').toLowerCase()
     for (const phrase of REQUIRED_SAFE_COPY.checkInFlow) {
-      expect(checkInFlow).toContain(phrase.toLowerCase())
+      expect(checkInSafetyCopy).toContain(phrase.toLowerCase())
     }
     for (const phrase of REQUIRED_SAFE_COPY.profileForm) {
       expect(profileForm).toContain(phrase.toLowerCase())

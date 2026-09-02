@@ -10,6 +10,10 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
 async function completeSymptomSteps(user: ReturnType<typeof userEvent.setup>) {
   for (let step = 0; step < 8; step += 1) {
     await user.click(screen.getByRole('button', { name: /continue/i }))
@@ -17,7 +21,7 @@ async function completeSymptomSteps(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('CheckInFlow', () => {
-  it('walks through eight symptom steps and computes total from answered ratings only', async () => {
+  it('walks through eight symptom steps and shows safety outcome for routine check-in', async () => {
     const user = userEvent.setup()
     render(<CheckInFlow />)
 
@@ -27,12 +31,11 @@ describe('CheckInFlow', () => {
     expect(screen.getByRole('heading', { name: /before you finish, check for danger signs/i })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /finish check-in/i }))
 
-    expect(screen.getByText(/demo check-in complete/i)).toBeInTheDocument()
-    expect(screen.getByText(/out of 48/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /continue your daily recovery routine/i })).toBeInTheDocument()
     expect(screen.queryByText(/recovery score/i)).not.toBeInTheDocument()
   })
 
-  it('intercepts danger signs with emergency guidance and 911 link', async () => {
+  it('intercepts danger signs with structured safety outcome and 911 link', async () => {
     const user = userEvent.setup()
     render(<CheckInFlow />)
     await completeSymptomSteps(user)
@@ -46,6 +49,7 @@ describe('CheckInFlow', () => {
     const alert = screen.getByRole('alert')
     expect(within(alert).getByText(/get emergency medical help now/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /call 911/i })).toHaveAttribute('href', 'tel:911')
+    expect(screen.getByText(/engine v1\.0\.0/i)).toBeInTheDocument()
   })
 
   it('exposes accessible live regions for emergency intercept', async () => {
@@ -58,5 +62,6 @@ describe('CheckInFlow', () => {
     await user.click(screen.getByRole('button', { name: /view urgent guidance/i }))
 
     expect(screen.getByRole('heading', { name: /get emergency medical help now/i })).toBeInTheDocument()
+    expect(screen.getAllByText(/emergency — immediate medical evaluation needed/i).length).toBeGreaterThan(0)
   })
 })
