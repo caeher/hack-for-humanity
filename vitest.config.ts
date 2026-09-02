@@ -36,7 +36,7 @@ export default defineConfig({
         },
         test: {
           name: 'lib',
-          include: ['lib/**/*.test.ts'],
+          include: ['lib/**/*.test.ts', 'evaluations/**/*.test.ts'],
           environment: 'node',
           env: {
             CLERK_JWT_ISSUER_DOMAIN: 'https://clerk.example.test',

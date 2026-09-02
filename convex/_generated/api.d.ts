@@ -9,6 +9,7 @@
  */
 
 import type * as activityExposures from "../activityExposures.js";
+import type * as aiGovernance from "../aiGovernance.js";
 import type * as alerts from "../alerts.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as baseline from "../baseline.js";
@@ -59,6 +60,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activityExposures: typeof activityExposures;
+  aiGovernance: typeof aiGovernance;
   alerts: typeof alerts;
   auditLogs: typeof auditLogs;
   baseline: typeof baseline;
