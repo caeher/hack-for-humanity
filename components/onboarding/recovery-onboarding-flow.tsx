@@ -30,6 +30,7 @@ import {
   type TrackingRelationship,
 } from '@/lib/onboarding'
 import { cn } from '@/lib/utils'
+import { isE2ETestMode } from '@/lib/e2e'
 
 function detectBrowserTimeZone(): string {
   try {
@@ -44,7 +45,39 @@ function formatDateForInput(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
+function RecoveryOnboardingE2EShell() {
+  return (
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-1">
+      <PageHeader
+        eyebrow={`Recovery onboarding · Step 1 of ${ONBOARDING_STEP_COUNT}`}
+        title="Set up your recovery profile"
+        description="This takes a few minutes. Your answers help organize symptom tracking — CRI does not diagnose or predict recovery."
+      />
+      <Card className="space-y-6 p-6 sm:p-8">
+        <RadioGroupField
+          label="Who is doing the tracking?"
+          layout="cards"
+          columns={1}
+          options={TRACKING_RELATIONSHIP_OPTIONS.map(option => ({
+            label: option.label,
+            value: option.value,
+            description: option.description,
+          }))}
+        />
+      </Card>
+    </div>
+  )
+}
+
 export function RecoveryOnboardingFlow() {
+  if (isE2ETestMode) {
+    return <RecoveryOnboardingE2EShell />
+  }
+
+  return <RecoveryOnboardingFlowConnected />
+}
+
+function RecoveryOnboardingFlowConnected() {
   const router = useRouter()
   const savedDraft = useQuery(api.onboarding.getDraft)
   const currentUser = useQuery(api.users.getMe)
