@@ -83,6 +83,29 @@ describe('Business Logic Validators', () => {
       expect(() => validateConcussionSymptoms(invalid)).toThrow(/out of bounds/)
     })
 
+    it('rejects missing symptom dimensions instead of treating them as zero', () => {
+      const incomplete = {
+        headache: 3,
+        dizziness: 2,
+        nausea: 1,
+        lightSensitivity: 4,
+        noiseSensitivity: 2,
+        fatigue: 3,
+        concentration: 2,
+      } as {
+        headache: number
+        dizziness: number
+        nausea: number
+        lightSensitivity: number
+        noiseSensitivity: number
+        fatigue: number
+        concentration: number
+        sleepDifficulty?: number
+      }
+
+      expect(() => validateConcussionSymptoms(incomplete as never)).toThrow(/sleepDifficulty/)
+    })
+
     it('rejects non-integer ratings', () => {
       const invalid = {
         headache: 2.5,

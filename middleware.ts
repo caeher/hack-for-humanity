@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isPublicRoute = createRouteMatcher([
@@ -7,11 +9,17 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks(.*)',
 ])
 
-export default clerkMiddleware(async (auth, request) => {
+function e2eMiddleware(_request: NextRequest) {
+  return NextResponse.next()
+}
+
+const clerkProtectedMiddleware = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect()
   }
 })
+
+export default process.env.E2E_TEST_MODE === 'true' ? e2eMiddleware : clerkProtectedMiddleware
 
 export const config = {
   matcher: [

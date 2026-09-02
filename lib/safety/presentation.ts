@@ -197,6 +197,18 @@ export const OUTPUT_CODE_PRESENTATION: Record<string, OutputCodeInfo> = {
     userSummary: 'Contradictory entries detected. Safe conservative guidance is active.',
     isBlocking: false,
   },
+  [SAFETY_OUTPUT_CODES.ONBOARDING_ACUTE_RED_FLAG]: {
+    title: 'Onboarding Danger Sign',
+    categoryLabel: 'Tier 1 Emergency',
+    userSummary: 'Acute danger signs reported during onboarding require immediate medical evaluation.',
+    isBlocking: true,
+  },
+  [SAFETY_OUTPUT_CODES.ONBOARDING_HIGH_INITIAL_BURDEN]: {
+    title: 'High Initial Symptom Burden',
+    categoryLabel: 'Tier 2 Triage',
+    userSummary: 'Initial symptom total is elevated. Contact your healthcare provider for pacing guidance.',
+    isBlocking: false,
+  },
 }
 
 /**

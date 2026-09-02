@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Activity, ArrowRight, HeartPulse, ShieldCheck, Sparkles, Stethoscope, Users } from 'lucide-react'
 import { WorkspaceButton } from '@/components/auth'
 import { Show, UserButton, SignInButton, SignUpButton } from '@clerk/nextjs'
+import { isE2ETestMode } from '@/lib/e2e'
 
 const portals = [
   {
@@ -45,22 +46,41 @@ export default function Page() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer">
+          {isE2ETestMode ? (
+            <>
+              <Link
+                href="/sign-in"
+                className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted"
+              >
                 Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90 cursor-pointer">
+              </Link>
+              <Link
+                href="/sign-up"
+                className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
                 Get started
-              </button>
-            </SignUpButton>
-          </Show>
-          <Show when="signed-in">
-            <WorkspaceButton />
-            <UserButton />
-          </Show>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Show when="signed-out">
+                <SignInButton mode="modal">
+                  <button className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-sm font-semibold text-foreground hover:bg-muted cursor-pointer">
+                    Sign in
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90 cursor-pointer">
+                    Get started
+                  </button>
+                </SignUpButton>
+              </Show>
+              <Show when="signed-in">
+                <WorkspaceButton />
+                <UserButton />
+              </Show>
+            </>
+          )}
         </div>
       </nav>
 

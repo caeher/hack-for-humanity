@@ -9,3 +9,8 @@ node_modules
 !.env.example
 
 *.tsbuildinfo
+
+# Test artifacts
+test-results/
+playwright-report/
+audit-report.json
