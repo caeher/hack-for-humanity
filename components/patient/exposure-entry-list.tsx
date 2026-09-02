@@ -87,14 +87,68 @@ export function ExposureEntryList({ patientId, date, className }: ExposureEntryL
   >()
   const targetDate = date ?? getLocalDateString()
 
+  if (isE2ETestMode) {
+    return <DemoExposureList />
+  }
+
+  return (
+    <ExposureEntryListLive
+      patientId={patientId}
+      date={targetDate}
+      className={className}
+      formOpen={formOpen}
+      setFormOpen={setFormOpen}
+      editingEntry={editingEntry}
+      setEditingEntry={setEditingEntry}
+    />
+  )
+}
+
+function ExposureEntryListLive({
+  patientId: patientIdProp,
+  date,
+  className,
+  formOpen,
+  setFormOpen,
+  editingEntry,
+  setEditingEntry,
+}: ExposureEntryListProps & {
+  formOpen: boolean
+  setFormOpen: (open: boolean) => void
+  editingEntry:
+    | {
+        entryId: Id<'exposureEntries'>
+        initialEntry: ExposureEntryInput
+      }
+    | undefined
+  setEditingEntry: (
+    entry:
+      | {
+          entryId: Id<'exposureEntries'>
+          initialEntry: ExposureEntryInput
+        }
+      | undefined
+  ) => void
+}) {
+  const mePatient = useQuery(api.patients.getMePatient, patientIdProp ? 'skip' : {})
+  const patientId = patientIdProp ?? mePatient?._id
+
   const entries = useQuery(
     api.exposureEntries.listByPatient,
-    patientId ? { patientId, date: targetDate, limit: 20 } : 'skip'
+    patientId ? { patientId, date, limit: 20 } : 'skip'
   )
   const deleteEntry = useMutation(api.exposureEntries.deleteEntry)
 
-  if (!patientId || isE2ETestMode) {
-    return <DemoExposureList />
+  if (!patientId) {
+    return (
+      <Card className={cn('p-6', className)}>
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Sign in to log and review activity, screen, cognitive, and sleep exposures.
+          </p>
+        </div>
+      </Card>
+    )
   }
 
   if (entries === undefined) {
@@ -117,7 +171,7 @@ export function ExposureEntryList({ patientId, date, className }: ExposureEntryL
           <div>
             <h2 className="font-semibold text-foreground">Exposure log</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Physical, cognitive, screen, work/school, and sleep entries for {targetDate}.
+              Physical, cognitive, screen, work/school, and sleep entries for {date}.
             </p>
           </div>
           <Button
@@ -246,7 +300,7 @@ export function ExposureEntryList({ patientId, date, className }: ExposureEntryL
 
       <ExposureDetailForm
         patientId={patientId}
-        date={targetDate}
+        date={date}
         entryId={editingEntry?.entryId}
         initialEntry={editingEntry?.initialEntry}
         open={formOpen}

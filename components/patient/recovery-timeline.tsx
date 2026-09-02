@@ -9,9 +9,6 @@ import { StatCard, TrendChart, SymptomMethodologyPanel } from '@/components/dash
 import { CheckInHistory } from '@/components/patient/check-in-history'
 import { ExposureEntryList } from '@/components/patient/exposure-entry-list'
 import { computeDescriptiveTrend, METHODOLOGY_COPY } from '@/lib/symptomMethodology'
-import { useQuery } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { isE2ETestMode } from '@/lib/e2e'
 
 const demoTrendPoints = [
   { date: '2026-08-25', symptomTotal: 27 },
@@ -24,9 +21,7 @@ const demoTrendPoints = [
 ]
 
 export function RecoveryTimeline() {
-  const patient = useQuery(api.patients.getMePatient)
   const trend = computeDescriptiveTrend(demoTrendPoints)
-  const patientId = isE2ETestMode ? undefined : patient?._id
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,8 +66,8 @@ export function RecoveryTimeline() {
           </div>
         </Card>
       </div>
-      <CheckInHistory patientId={patientId} />
-      <ExposureEntryList patientId={patientId} />
+      <CheckInHistory />
+      <ExposureEntryList />
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Symptom total" value="15 / 48" detail="Patient-reported today" icon={Activity} />
         <StatCard label="Sleep" value="6h 48m" detail="Self-reported duration" icon={HeartPulse} />
