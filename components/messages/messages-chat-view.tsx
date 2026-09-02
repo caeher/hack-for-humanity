@@ -9,8 +9,93 @@ import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/layouts/page-header'
 import { SearchField, TextField } from '@/components/forms'
 import { cn } from '@/lib/utils'
+import { isE2ETestMode } from '@/lib/e2e'
 import { MessagingDisclaimer } from '@/components/messages/messaging-disclaimer'
 import { MessageSafetyBanner } from '@/components/messages/message-safety-banner'
+
+function MessagesChatViewDemo() {
+  const [messages, setMessages] = useState([
+    {
+      from: 'Dr. Olivia Brooks',
+      text: '[E2E demo shell] I reviewed your symptom log. Please keep following the plan we discussed.',
+      mine: false,
+    },
+    {
+      from: 'Maya Chen',
+      text: '[E2E demo shell] Thank you. I will bring up the headaches I notice after longer screen sessions.',
+      mine: true,
+    },
+  ])
+  const [inputText, setInputText] = useState('')
+
+  const handleSend = (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!inputText.trim()) return
+    setMessages(prev => [...prev, { from: 'Maya Chen', text: inputText, mine: true }])
+    setInputText('')
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Care team"
+        title="Messages"
+        description="[E2E demo shell] Secure prototype conversations with your coordinated care team."
+      />
+      <MessagingDisclaimer />
+      <Card className="grid min-h-[540px] overflow-hidden p-0 md:grid-cols-[260px_1fr]">
+        <div className="space-y-3 border-r border-border bg-muted/30 p-3">
+          <div className="rounded-lg border border-border/80 bg-card p-3">
+            <p className="text-xs font-bold text-foreground">Concussion care team</p>
+            <p className="mt-1 text-xs text-muted-foreground">Demo conversation</p>
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <div className="border-b border-border p-4">
+            <p className="text-sm font-semibold text-foreground">Dr. Olivia Brooks</p>
+            <p className="text-xs text-muted-foreground">Usually replies during clinical hours</p>
+          </div>
+          <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'max-w-md rounded-xl p-3.5 text-sm leading-6 shadow-xs',
+                  message.mine
+                    ? 'ml-auto bg-foreground font-medium text-background'
+                    : 'border border-border/60 bg-muted text-foreground'
+                )}
+              >
+                {message.text}
+              </div>
+            ))}
+          </div>
+          <form
+            onSubmit={handleSend}
+            className="flex items-center gap-2 border-t border-border bg-card p-3"
+          >
+            <div className="flex-1">
+              <TextField
+                placeholder="Write a message to your care team..."
+                value={inputText}
+                onChange={event => setInputText(event.target.value)}
+                clearable
+                size="md"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!inputText.trim()}
+              className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+            >
+              <Send className="size-3.5" aria-hidden="true" /> Send
+            </button>
+          </form>
+        </div>
+      </Card>
+    </div>
+  )
+}
 
 function createClientMessageId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -29,6 +114,13 @@ function formatMessageTime(timestamp: number): string {
 }
 
 export function MessagesChatView() {
+  if (isE2ETestMode) {
+    return <MessagesChatViewDemo />
+  }
+  return <MessagesChatViewLive />
+}
+
+function MessagesChatViewLive() {
   const threads = useQuery(api.messages.listThreads)
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null)
   const [inputText, setInputText] = useState('')
