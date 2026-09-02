@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { shadcn } from '@clerk/ui/themes'
 import { ConvexClientProvider } from '@/components/providers/convex-client-provider'
+import { getClerkPublishableKey } from '@/lib/env'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className="bg-background">
       <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
         <ClerkProvider
+          publishableKey={getClerkPublishableKey()}
           appearance={{
             theme: shadcn,
             variables: {

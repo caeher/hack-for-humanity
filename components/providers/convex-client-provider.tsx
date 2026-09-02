@@ -6,6 +6,7 @@ import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import { useAuth } from '@clerk/nextjs'
 
 import { AuthSync } from '@/components/auth'
+import { getConvexUrl } from '@/lib/env'
 
 interface ConvexClientProviderProps {
   children: React.ReactNode
@@ -13,15 +14,11 @@ interface ConvexClientProviderProps {
 
 /**
  * ConvexClientProvider supplies the reactive Convex client to the React tree
- * authenticated via Clerk.
+ * authenticated via Clerk. It refuses to start without a real deployment URL.
  */
 export function ConvexClientProvider({ children }: ConvexClientProviderProps) {
-  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
-
-  const client = useMemo(() => {
-    const url = convexUrl && convexUrl.trim() !== '' ? convexUrl : 'https://placeholder.convex.cloud'
-    return new ConvexReactClient(url)
-  }, [convexUrl])
+  const convexUrl = getConvexUrl()
+  const client = useMemo(() => new ConvexReactClient(convexUrl), [convexUrl])
 
   return (
     <ConvexProviderWithClerk client={client} useAuth={useAuth}>

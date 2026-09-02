@@ -88,18 +88,35 @@ Use `pnpm` to run commands:
 # Install dependencies
 pnpm install
 
-# Start development server (Turbopack)
+# Convex backend (writes NEXT_PUBLIC_CONVEX_URL, regenerates types)
+pnpm convex:dev
+
+# Next.js dev server (requires a real .env.local — no placeholder URLs)
 pnpm dev
+
+# Or run Convex + Next.js together
+pnpm dev:all
+
+# Quality gates
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm check          # lint + typecheck + test
 
 # Build for production
 pnpm build
 
-# Run production server
+# Start production server
 pnpm start
+
+# Seed the connected Convex dev deployment
+pnpm convex:seed
 
 # Interactive conventional commit wizard
 pnpm commit
 ```
+
+Environment variables are documented in `.env.example`. Copy it to `.env.local` and follow the README Clerk JWT + `npx convex env set` steps. Never commit secrets.
 
 ---
 
