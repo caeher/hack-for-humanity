@@ -111,7 +111,12 @@ describe('PR #39 safety boundary regressions', () => {
       resolve(ROOT, 'app/(patient)/patient/insights/page.tsx'),
       'utf8'
     )
-    const matched = NON_CAUSAL_PHRASES.some(phrase => insightsPage.toLowerCase().includes(phrase))
+    const insightsComponent = readFileSync(
+      resolve(ROOT, 'components/patient/patient-insights.tsx'),
+      'utf8'
+    )
+    const combined = `${insightsPage}\n${insightsComponent}`.toLowerCase()
+    const matched = NON_CAUSAL_PHRASES.some(phrase => combined.includes(phrase))
     expect(matched).toBe(true)
   })
 
