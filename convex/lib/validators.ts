@@ -331,3 +331,105 @@ export const auditLogDocValidator = v.object({
   createdAt: v.number(),
 })
 
+// --- Safety Engine Validators ---
+
+export const safetyContextTypeValidator = v.union(
+  v.literal('check_in'),
+  v.literal('onboarding'),
+  v.literal('baseline'),
+  v.literal('free_text'),
+  v.literal('ai_query'),
+  v.literal('longitudinal')
+)
+
+export const safetyStatusValidator = v.union(
+  v.literal('safe'),
+  v.literal('warning'),
+  v.literal('review'),
+  v.literal('elevated'),
+  v.literal('emergency')
+)
+
+export const safetySeverityValidator = v.union(
+  v.literal('emergency'),
+  v.literal('high'),
+  v.literal('medium'),
+  v.literal('low'),
+  v.literal('info'),
+  v.literal('none')
+)
+
+export const safetyEvaluationDocValidator = v.object({
+  _id: v.id('safetyEvaluations'),
+  _creationTime: v.number(),
+  patientId: v.optional(v.id('patients')),
+  orgId: v.optional(v.id('organizations')),
+  evaluatedByUserId: v.optional(v.id('users')),
+  contextType: safetyContextTypeValidator,
+  status: safetyStatusValidator,
+  highestSeverity: safetySeverityValidator,
+  ruleEngineVersion: v.string(),
+  matchedRuleCodes: v.array(v.string()),
+  matchedEvidenceSummary: v.array(v.string()),
+  primaryEscalation: v.string(),
+  blockedActions: v.array(v.string()),
+  failSafeApplied: v.boolean(),
+  targetResourceId: v.optional(v.string()),
+  createdAt: v.number(),
+})
+
+export const evidenceSourceValidator = v.object({
+  authority: v.string(),
+  citation: v.string(),
+  guidelineSection: v.string(),
+  approvedBy: v.string(),
+  reviewDate: v.string(),
+})
+
+export const userGuidanceValidator = v.object({
+  guidanceCode: v.string(),
+  guidanceKey: v.string(),
+  defaultSafeText: v.string(),
+})
+
+export const matchedRuleDetailValidator = v.object({
+  ruleId: v.string(),
+  version: v.string(),
+  name: v.string(),
+  category: v.string(),
+  severity: v.string(),
+  requiredInputs: v.optional(v.array(v.string())),
+  outputCode: v.string(),
+  evidenceSource: evidenceSourceValidator,
+  escalationPath: v.string(),
+  userGuidance: userGuidanceValidator,
+  matchedEvidenceSummary: v.string(),
+})
+
+export const safetyEvaluationResultValidator = v.object({
+  evaluationId: v.string(),
+  status: safetyStatusValidator,
+  isSafe: v.boolean(),
+  highestSeverity: safetySeverityValidator,
+  primaryEscalation: v.string(),
+  matchedRules: v.array(matchedRuleDetailValidator),
+  blockedActions: v.array(v.string()),
+  failSafeApplied: v.boolean(),
+  ruleEngineVersion: v.string(),
+  evaluatedAt: v.number(),
+})
+
+export const safetyRuleInfoValidator = v.object({
+  ruleId: v.string(),
+  version: v.string(),
+  name: v.string(),
+  category: v.string(),
+  severity: v.string(),
+  requiredInputs: v.array(v.string()),
+  outputCode: v.string(),
+  evidenceSource: evidenceSourceValidator,
+  escalationPath: v.string(),
+  userGuidance: userGuidanceValidator,
+})
+
+

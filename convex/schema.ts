@@ -306,5 +306,50 @@ export default defineSchema({
     .index('by_targetResource', ['targetResource'])
     .index('by_createdAt', ['createdAt'])
     .index('by_orgId_and_createdAt', ['orgId', 'createdAt']),
+
+  // 15. Deterministic Safety Engine Evaluations & Audit Trail
+  safetyEvaluations: defineTable({
+    patientId: v.optional(v.id('patients')),
+    orgId: v.optional(v.id('organizations')),
+    evaluatedByUserId: v.optional(v.id('users')),
+    contextType: v.union(
+      v.literal('check_in'),
+      v.literal('onboarding'),
+      v.literal('baseline'),
+      v.literal('free_text'),
+      v.literal('ai_query'),
+      v.literal('longitudinal')
+    ),
+    status: v.union(
+      v.literal('safe'),
+      v.literal('warning'),
+      v.literal('review'),
+      v.literal('elevated'),
+      v.literal('emergency')
+    ),
+    highestSeverity: v.union(
+      v.literal('emergency'),
+      v.literal('high'),
+      v.literal('medium'),
+      v.literal('low'),
+      v.literal('info'),
+      v.literal('none')
+    ),
+    ruleEngineVersion: v.string(),
+    matchedRuleCodes: v.array(v.string()),
+    matchedEvidenceSummary: v.array(v.string()),
+    primaryEscalation: v.string(),
+    blockedActions: v.array(v.string()),
+    failSafeApplied: v.boolean(),
+    targetResourceId: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_patientId', ['patientId'])
+    .index('by_orgId', ['orgId'])
+    .index('by_contextType', ['contextType'])
+    .index('by_status', ['status'])
+    .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
+    .index('by_createdAt', ['createdAt']),
 })
+
 
