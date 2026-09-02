@@ -1,13 +1,55 @@
+import { v } from 'convex/values'
 import { mutation } from './_generated/server'
 
 export const seedDatabase = mutation({
   args: {},
+  returns: v.object({ success: v.boolean(), message: v.string() }),
   handler: async ctx => {
+    // 0. Seed Users if table is empty
+    const existingUsers = await ctx.db.query('users').take(1)
+    if (existingUsers.length === 0) {
+      const initialUsers = [
+        {
+          name: 'Maya Chen',
+          email: 'maya.chen@example.com',
+          role: 'patient' as const,
+          status: 'Active' as const,
+          lastActive: 'Just now',
+          createdAt: Date.now() - 86400000 * 12,
+        },
+        {
+          name: 'David Chen',
+          email: 'david.chen@example.com',
+          role: 'caregiver' as const,
+          status: 'Active' as const,
+          lastActive: '10 min ago',
+          createdAt: Date.now() - 86400000 * 10,
+        },
+        {
+          name: 'Dr. Olivia Brooks',
+          email: 'dr.brooks@example.com',
+          role: 'clinician' as const,
+          status: 'Active' as const,
+          lastActive: 'Just now',
+          createdAt: Date.now() - 86400000 * 30,
+        },
+        {
+          name: 'System Admin',
+          email: 'admin@example.com',
+          role: 'admin' as const,
+          status: 'Active' as const,
+          lastActive: 'Just now',
+          createdAt: Date.now() - 86400000 * 60,
+        },
+      ]
+
+      for (const u of initialUsers) {
+        await ctx.db.insert('users', u)
+      }
+    }
+
     // 1. Seed Patients
-    // Legacy field names remain until the longitudinal schema migration in issue #6.
-    // `procedure` stores recovery context, `score` stores the tracked symptom total,
-    // `surgeon` stores the assigned clinician, and `surgeryDate` stores incident date.
-    const existingPatients = await ctx.db.query('patients').collect()
+    const existingPatients = await ctx.db.query('patients').take(1)
     if (existingPatients.length === 0) {
       const initialPatients = [
         {
@@ -74,8 +116,7 @@ export const seedDatabase = mutation({
     }
 
     // 2. Seed Recovery Trends for Maya Chen (P-1042)
-    // `score` stores symptom burden, `pain` stores headache, and `mobility` is unused.
-    const existingTrends = await ctx.db.query('recoveryTrends').collect()
+    const existingTrends = await ctx.db.query('recoveryTrends').take(1)
     if (existingTrends.length === 0) {
       const initialTrends = [
         { day: 'Aug 25', score: 27, pain: 5, mobility: 0 },
@@ -96,7 +137,7 @@ export const seedDatabase = mutation({
     }
 
     // 3. Seed Alerts
-    const existingAlerts = await ctx.db.query('alerts').collect()
+    const existingAlerts = await ctx.db.query('alerts').take(1)
     if (existingAlerts.length === 0) {
       const initialAlerts = [
         {
@@ -134,7 +175,7 @@ export const seedDatabase = mutation({
     }
 
     // 4. Seed Care Plans for P-1042
-    const existingPlans = await ctx.db.query('carePlans').collect()
+    const existingPlans = await ctx.db.query('carePlans').take(1)
     if (existingPlans.length === 0) {
       const initialTasks = [
         {
@@ -177,14 +218,44 @@ export const seedDatabase = mutation({
     }
 
     // 5. Seed Audit Logs
-    const existingAudit = await ctx.db.query('auditLogs').collect()
+    const existingAudit = await ctx.db.query('auditLogs').take(1)
     if (existingAudit.length === 0) {
       const initialAudit = [
-        { time: '10:42 AM', actor: 'Dr. Brooks', event: 'Viewed recovery report', resource: 'P-1042', createdAt: Date.now() - 10000 },
-        { time: '9:18 AM', actor: 'Admin Lee', event: 'Changed user role', resource: 'U-088', createdAt: Date.now() - 20000 },
-        { time: 'Yesterday', actor: 'Maya Chen', event: 'Shared caregiver access', resource: 'P-1042', createdAt: Date.now() - 86400000 },
-        { time: 'Aug 29', actor: 'Dr. Brooks', event: 'Updated clinical care plan', resource: 'P-1038', createdAt: Date.now() - 172800000 },
-        { time: 'Aug 28', actor: 'System', event: 'Generated automated weekly report', resource: 'Cohort-A', createdAt: Date.now() - 259200000 },
+        {
+          time: '10:42 AM',
+          actor: 'Dr. Brooks',
+          event: 'Viewed recovery report',
+          resource: 'P-1042',
+          createdAt: Date.now() - 10000,
+        },
+        {
+          time: '9:18 AM',
+          actor: 'Admin Lee',
+          event: 'Changed user role',
+          resource: 'U-088',
+          createdAt: Date.now() - 20000,
+        },
+        {
+          time: 'Yesterday',
+          actor: 'Maya Chen',
+          event: 'Shared caregiver access',
+          resource: 'P-1042',
+          createdAt: Date.now() - 86400000,
+        },
+        {
+          time: 'Aug 29',
+          actor: 'Dr. Brooks',
+          event: 'Updated clinical care plan',
+          resource: 'P-1038',
+          createdAt: Date.now() - 172800000,
+        },
+        {
+          time: 'Aug 28',
+          actor: 'System',
+          event: 'Generated automated weekly report',
+          resource: 'Cohort-A',
+          createdAt: Date.now() - 259200000,
+        },
       ]
 
       for (const log of initialAudit) {
