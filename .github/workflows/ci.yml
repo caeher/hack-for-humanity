@@ -23,14 +23,14 @@ jobs:
     name: Install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: node-modules
           path: node_modules
@@ -41,13 +41,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: install
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: node-modules
           path: node_modules
@@ -58,13 +58,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: install
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: node-modules
           path: node_modules
@@ -75,18 +75,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: install
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: node-modules
           path: node_modules
       - run: pnpm test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: vitest-results
@@ -98,19 +98,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, typecheck, test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: node-modules
           path: node_modules
       - run: pnpm build
       - run: node scripts/verify-routes-from-manifest.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: next-build
           path: .next
@@ -121,13 +121,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: install
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: node-modules
           path: node_modules
@@ -136,7 +136,7 @@ jobs:
       - name: Record audit outcome
         run: |
           pnpm audit --json > audit-report.json || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: dependency-audit
@@ -148,14 +148,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: next-build
           path: .next
@@ -167,7 +167,7 @@ jobs:
           CLERK_SECRET_KEY: ci_placeholder_clerk_secret_not_real
           E2E_TEST_MODE: 'true'
           NEXT_PUBLIC_E2E_TEST_MODE: 'true'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: playwright-report
