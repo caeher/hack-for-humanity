@@ -12,6 +12,7 @@ import type * as alerts from "../alerts.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as carePlans from "../carePlans.js";
 import type * as checkIns from "../checkIns.js";
+import type * as consent from "../consent.js";
 import type * as encounters from "../encounters.js";
 import type * as messages from "../messages.js";
 import type * as patients from "../patients.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   auditLogs: typeof auditLogs;
   carePlans: typeof carePlans;
   checkIns: typeof checkIns;
+  consent: typeof consent;
   encounters: typeof encounters;
   messages: typeof messages;
   patients: typeof patients;

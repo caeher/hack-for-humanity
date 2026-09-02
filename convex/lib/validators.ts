@@ -33,74 +33,261 @@ export const userStatusValidator = v.union(
   v.literal('Suspended')
 )
 
+export const clinicalRoleValidator = v.union(
+  v.literal('lead'),
+  v.literal('attending'),
+  v.literal('staff'),
+  v.literal('consultant')
+)
+
+export const patientStatusValidator = v.union(
+  v.literal('Active'),
+  v.literal('Discharged'),
+  v.literal('Inactive')
+)
+
+export const episodeStatusValidator = v.union(
+  v.literal('active'),
+  v.literal('graduated'),
+  v.literal('dormant')
+)
+
+export const consentScopeValidator = v.union(
+  v.literal('view_symptoms'),
+  v.literal('view_trends'),
+  v.literal('view_plan'),
+  v.literal('log_proxy'),
+  v.literal('receive_alerts')
+)
+
+export const consentStatusValidator = v.union(
+  v.literal('active'),
+  v.literal('revoked'),
+  v.literal('expired')
+)
+
+export const granteeRoleValidator = v.union(
+  v.literal('caregiver'),
+  v.literal('clinician'),
+  v.literal('family')
+)
+
+export const activityImpactValidator = v.union(
+  v.literal('yes'),
+  v.literal('no'),
+  v.literal('not-sure'),
+  v.literal('none')
+)
+
+export const encounterTypeValidator = v.union(
+  v.literal('in-person'),
+  v.literal('telehealth'),
+  v.literal('asynchronous')
+)
+
+export const carePlanCategoryValidator = v.union(
+  v.literal('cognitive_pacing'),
+  v.literal('physical_activity'),
+  v.literal('sleep_hygiene'),
+  v.literal('medication'),
+  v.literal('check_in'),
+  v.literal('appointment')
+)
+
+export const auditActionValidator = v.union(
+  v.literal('read'),
+  v.literal('create'),
+  v.literal('update'),
+  v.literal('delete'),
+  v.literal('consent_grant'),
+  v.literal('consent_revoke'),
+  v.literal('auth_failure')
+)
+
+export const symptomsObjectValidator = v.object({
+  headache: v.number(),
+  dizziness: v.number(),
+  nausea: v.number(),
+  lightSensitivity: v.number(),
+  noiseSensitivity: v.number(),
+  fatigue: v.number(),
+  concentration: v.number(),
+  sleepDifficulty: v.number(),
+})
+
 // --- Document Validators ---
+
+export const orgDocValidator = v.object({
+  _id: v.id('organizations'),
+  _creationTime: v.number(),
+  name: v.string(),
+  slug: v.string(),
+  retentionPolicyDays: v.number(),
+  autoEscalateAlerts: v.boolean(),
+  primaryContactEmail: v.string(),
+  cohortCapacity: v.optional(v.number()),
+  accentColor: v.optional(v.string()),
+  activePathways: v.optional(v.array(v.string())),
+  createdAt: v.number(),
+})
 
 export const userDocValidator = v.object({
   _id: v.id('users'),
   _creationTime: v.number(),
+  tokenIdentifier: v.string(),
   name: v.string(),
   email: v.string(),
-  tokenIdentifier: v.optional(v.string()),
   role: roleValidator,
   status: userStatusValidator,
+  phone: v.optional(v.string()),
   lastActive: v.optional(v.string()),
   createdAt: v.number(),
+})
+
+export const membershipDocValidator = v.object({
+  _id: v.id('clinicianMemberships'),
+  _creationTime: v.number(),
+  userId: v.id('users'),
+  orgId: v.id('organizations'),
+  clinicalRole: clinicalRoleValidator,
+  specialty: v.optional(v.string()),
+  status: v.union(v.literal('active'), v.literal('inactive')),
+  joinedAt: v.number(),
 })
 
 export const patientDocValidator = v.object({
   _id: v.id('patients'),
   _creationTime: v.number(),
-  patientId: v.string(),
-  name: v.string(),
-  procedure: v.string(),
-  day: v.number(),
-  score: v.number(),
-  risk: riskValidator,
-  adherence: v.number(),
-  surgeon: v.optional(v.string()),
-  caregiverId: v.optional(v.string()),
-  caregiverName: v.optional(v.string()),
-  surgeryDate: v.optional(v.string()),
+  userId: v.id('users'),
+  orgId: v.id('organizations'),
+  primaryClinicianId: v.optional(v.id('users')),
+  displayId: v.string(),
+  dateOfBirth: v.optional(v.string()),
+  preferredName: v.optional(v.string()),
+  status: patientStatusValidator,
   notes: v.optional(v.string()),
+  createdAt: v.number(),
+})
+
+export const episodeDocValidator = v.object({
+  _id: v.id('recoveryEpisodes'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  orgId: v.id('organizations'),
+  incidentDate: v.string(),
+  injuryContext: v.string(),
+  status: episodeStatusValidator,
+  riskLevel: riskValidator,
+  baselineSymptomTotal: v.optional(v.number()),
+  adherenceRate: v.optional(v.number()),
+  startDate: v.string(),
+  closedAt: v.optional(v.number()),
+  createdAt: v.number(),
+})
+
+export const consentGrantDocValidator = v.object({
+  _id: v.id('consentGrants'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  granteeUserId: v.id('users'),
+  granteeRole: granteeRoleValidator,
+  scopes: v.array(consentScopeValidator),
+  relationship: v.optional(v.string()),
+  status: consentStatusValidator,
+  grantedAt: v.number(),
+  expiresAt: v.optional(v.number()),
+  revokedAt: v.optional(v.number()),
+  revokedByUserId: v.optional(v.id('users')),
 })
 
 export const checkInDocValidator = v.object({
   _id: v.id('checkIns'),
   _creationTime: v.number(),
-  patientId: v.string(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  submittedByUserId: v.id('users'),
   date: v.string(),
-  painScore: v.number(),
-  sleepScore: v.number(),
-  mobilityScore: v.number(),
-  emotionalScore: v.number(),
-  symptomQuality: v.optional(v.string()),
+  symptoms: symptomsObjectValidator,
+  symptomTotal: v.number(),
+  activityImpact: activityImpactValidator,
+  dangerSignsPresent: v.boolean(),
+  dangerSigns: v.array(v.string()),
   note: v.optional(v.string()),
+  createdAt: v.number(),
+})
+
+export const activityExposureDocValidator = v.object({
+  _id: v.id('activityExposures'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  checkInId: v.optional(v.id('checkIns')),
+  date: v.string(),
+  cognitiveMinutes: v.number(),
+  screenMinutes: v.number(),
+  physicalExertionScore: v.number(),
+  sleepHours: v.number(),
+  sleepQuality: v.number(),
+  createdAt: v.number(),
+})
+
+export const recoveryTrendDocValidator = v.object({
+  _id: v.id('recoveryTrends'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  date: v.string(),
+  dayLabel: v.string(),
+  symptomTotal: v.number(),
+  headacheRating: v.number(),
+  sleepQuality: v.number(),
+  createdAt: v.number(),
+})
+
+export const encounterDocValidator = v.object({
+  _id: v.id('clinicalEncounters'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  orgId: v.id('organizations'),
+  clinicianUserId: v.id('users'),
+  encounterType: encounterTypeValidator,
+  diagnosis: v.string(),
+  datetime: v.string(),
+  clinicalSummary: v.string(),
+  notes: v.string(),
+  attachmentStorageId: v.optional(v.id('_storage')),
+  createdAt: v.number(),
+})
+
+export const carePlanDocValidator = v.object({
+  _id: v.id('carePlans'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  assignedByUserId: v.optional(v.id('users')),
+  title: v.string(),
+  category: carePlanCategoryValidator,
+  targetTime: v.optional(v.string()),
+  completed: v.boolean(),
+  completedAt: v.optional(v.number()),
+  completedByUserId: v.optional(v.id('users')),
+  dayNumber: v.optional(v.number()),
   createdAt: v.number(),
 })
 
 export const alertDocValidator = v.object({
   _id: v.id('alerts'),
   _creationTime: v.number(),
-  patientId: v.optional(v.string()),
-  patientName: v.string(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  orgId: v.id('organizations'),
   detail: v.string(),
   severity: alertSeverityValidator,
   status: alertStatusValidator,
-  createdAt: v.number(),
-  timeAgo: v.optional(v.string()),
-})
-
-export const encounterDocValidator = v.object({
-  _id: v.id('clinicalEncounters'),
-  _creationTime: v.number(),
-  patientId: v.string(),
-  patientName: v.string(),
-  encounterType: v.string(),
-  diagnosis: v.string(),
-  datetime: v.string(),
-  notes: v.string(),
-  clinicianName: v.optional(v.string()),
-  attachmentUrl: v.optional(v.string()),
+  dangerSigns: v.optional(v.array(v.string())),
+  acknowledgedByUserId: v.optional(v.id('users')),
+  resolvedByUserId: v.optional(v.id('users')),
   createdAt: v.number(),
 })
 
@@ -108,44 +295,28 @@ export const messageDocValidator = v.object({
   _id: v.id('messages'),
   _creationTime: v.number(),
   threadId: v.string(),
-  senderId: v.string(),
-  senderName: v.string(),
-  senderRole: roleValidator,
-  recipientId: v.optional(v.string()),
+  senderUserId: v.id('users'),
+  recipientUserId: v.optional(v.id('users')),
+  patientId: v.optional(v.id('patients')),
+  orgId: v.optional(v.id('organizations')),
   content: v.string(),
-  timestamp: v.string(),
   createdAt: v.number(),
   read: v.boolean(),
-})
-
-export const carePlanDocValidator = v.object({
-  _id: v.id('carePlans'),
-  _creationTime: v.number(),
-  patientId: v.string(),
-  title: v.string(),
-  category: v.string(),
-  targetTime: v.optional(v.string()),
-  completed: v.boolean(),
-  dayNumber: v.optional(v.number()),
-})
-
-export const recoveryTrendDocValidator = v.object({
-  _id: v.id('recoveryTrends'),
-  _creationTime: v.number(),
-  patientId: v.string(),
-  day: v.string(),
-  score: v.number(),
-  pain: v.number(),
-  mobility: v.number(),
-  date: v.optional(v.string()),
 })
 
 export const auditLogDocValidator = v.object({
   _id: v.id('auditLogs'),
   _creationTime: v.number(),
-  time: v.string(),
-  actor: v.string(),
+  actorUserId: v.id('users'),
+  actorRole: v.string(),
+  orgId: v.optional(v.id('organizations')),
+  patientId: v.optional(v.id('patients')),
   event: v.string(),
-  resource: v.string(),
+  targetResource: v.string(),
+  resourceId: v.optional(v.string()),
+  action: auditActionValidator,
+  ipAddress: v.optional(v.string()),
+  userAgent: v.optional(v.string()),
   createdAt: v.number(),
 })
+
