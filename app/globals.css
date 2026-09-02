@@ -36,4 +36,9 @@ button, a, input, textarea, select { transition: all 150ms ease; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .warm-shadow { box-shadow: 0 10px 30px rgba(38,27,7,.06); }
 .paper-grid { background-image: linear-gradient(rgba(38,27,7,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(38,27,7,.035) 1px, transparent 1px); background-size: 24px 24px; }
-@media print { .no-print { display: none !important; } }
+@media print {
+  .no-print { display: none !important; }
+  .paper-grid { background-image: none; padding: 0; border: none; }
+  .print-report { box-shadow: none; border: none; max-width: none; }
+  .print-report table { page-break-inside: avoid; }
+}

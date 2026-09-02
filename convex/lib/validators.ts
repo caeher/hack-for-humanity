@@ -190,7 +190,8 @@ export const auditActionValidator = v.union(
   v.literal('consent_revoke'),
   v.literal('auth_failure'),
   v.literal('safety_notification'),
-  v.literal('safety_acknowledgement')
+  v.literal('safety_acknowledgement'),
+  v.literal('report_generate')
 )
 
 export const symptomsObjectValidator = v.object({
@@ -1544,5 +1545,60 @@ export const clinicalAlertViewValidator = v.object({
   isUnassigned: v.boolean(),
   freshnessLabel: v.string(),
   provenance: v.union(provenanceMetadataValidator, v.null()),
+})
+
+// --- Recovery Report Validators ---
+
+export const recoveryReportDocValidator = v.object({
+  _id: v.id('recoveryReports'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  episodeId: v.optional(v.id('recoveryEpisodes')),
+  orgId: v.id('organizations'),
+  reportVersion: v.string(),
+  contentHash: v.string(),
+  rangeStart: v.string(),
+  rangeEnd: v.string(),
+  rangeKey: timelineRangeKeyValidator,
+  dataCutoffAt: v.number(),
+  generatedAt: v.number(),
+  requestedByUserId: v.id('users'),
+  requestedByRole: v.string(),
+  requestedByName: v.string(),
+  consentScopesApplied: v.array(consentScopeValidator),
+  methodologyVersions: v.object({
+    symptom: v.string(),
+    pattern: v.string(),
+    safety: v.string(),
+    provenanceSchema: v.string(),
+  }),
+  dataSource: v.union(v.literal('live'), v.literal('simulated')),
+  sectionsIncluded: v.array(v.string()),
+  sectionsOmitted: v.array(
+    v.object({
+      section: v.string(),
+      reason: v.string(),
+      requiredScope: v.optional(consentScopeValidator),
+    })
+  ),
+  payload: v.any(),
+  sourceRecordRefs: v.array(
+    v.object({
+      recordType: v.string(),
+      recordId: v.string(),
+      date: v.optional(v.string()),
+    })
+  ),
+  status: v.union(v.literal('active'), v.literal('superseded')),
+  supersededByReportId: v.optional(v.id('recoveryReports')),
+})
+
+export const recoveryReportGenerateResultValidator = v.object({
+  reportId: v.id('recoveryReports'),
+  reportVersion: v.string(),
+  contentHash: v.string(),
+  generatedAt: v.number(),
+  dataCutoffAt: v.number(),
+  payload: v.any(),
 })
 
