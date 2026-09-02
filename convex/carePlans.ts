@@ -16,6 +16,7 @@ import {
   completionStatusToEventType,
   validateMedicationInstruction,
 } from './lib/carePlanLogic'
+import { getActiveCaregiverGrant, redactCarePlanForCaregiver } from './lib/caregiverAccess'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 
@@ -70,14 +71,25 @@ export const listByPatient = query({
   },
   returns: v.array(carePlanDocValidator),
   handler: async (ctx, args) => {
-    await requirePatientAccess(ctx, args.patientId, 'view_plan')
+    const { user } = await requirePatientAccess(ctx, args.patientId, 'view_plan')
 
     const limit = Math.min(Math.max(args.limit ?? 50, 1), 100)
 
-    return await ctx.db
+    const tasks = await ctx.db
       .query('carePlans')
       .withIndex('by_patientId', q => q.eq('patientId', args.patientId))
       .take(limit)
+
+    if (user.role !== 'caregiver') {
+      return tasks
+    }
+
+    const grant = await getActiveCaregiverGrant(ctx, args.patientId, user._id, Date.now())
+    if (!grant) {
+      throw new Error('Forbidden: Caregiver does not have active consent for this patient.')
+    }
+
+    return tasks.map(task => redactCarePlanForCaregiver(task, grant.scopes))
   },
 })
 

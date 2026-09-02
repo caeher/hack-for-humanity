@@ -8,12 +8,14 @@
  * @module
  */
 
+import type * as accessNotifications from "../accessNotifications.js";
 import type * as activityExposures from "../activityExposures.js";
 import type * as aiGovernance from "../aiGovernance.js";
 import type * as alerts from "../alerts.js";
 import type * as auditLogs from "../auditLogs.js";
 import type * as baseline from "../baseline.js";
 import type * as carePlans from "../carePlans.js";
+import type * as caregiverDashboard from "../caregiverDashboard.js";
 import type * as caseload from "../caseload.js";
 import type * as checkIns from "../checkIns.js";
 import type * as clerkReconciliation from "../clerkReconciliation.js";
@@ -72,12 +74,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  accessNotifications: typeof accessNotifications;
   activityExposures: typeof activityExposures;
   aiGovernance: typeof aiGovernance;
   alerts: typeof alerts;
   auditLogs: typeof auditLogs;
   baseline: typeof baseline;
   carePlans: typeof carePlans;
+  caregiverDashboard: typeof caregiverDashboard;
   caseload: typeof caseload;
   checkIns: typeof checkIns;
   clerkReconciliation: typeof clerkReconciliation;

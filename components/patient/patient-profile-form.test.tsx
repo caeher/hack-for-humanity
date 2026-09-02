@@ -24,11 +24,12 @@ let queryCallCount = 0
 
 vi.mock('convex/react', () => ({
   useQuery: vi.fn(() => {
-    const position = queryCallCount % 3
+    const position = queryCallCount % 4
     queryCallCount += 1
     if (position === 0) return mockMe
     if (position === 1) return mockPatient
-    return mockPreferences
+    if (position === 2) return mockPreferences
+    return []
   }),
   useMutation: vi.fn(() => vi.fn()),
 }))

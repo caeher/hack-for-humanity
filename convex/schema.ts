@@ -218,9 +218,17 @@ export default defineSchema({
       )
     ),
     relationship: v.optional(v.string()),
-    status: v.union(v.literal('active'), v.literal('revoked'), v.literal('expired')),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('active'),
+      v.literal('revoked'),
+      v.literal('expired')
+    ),
     grantedAt: v.number(),
     expiresAt: v.optional(v.number()),
+    invitedAt: v.optional(v.number()),
+    acceptedAt: v.optional(v.number()),
+    invitedByUserId: v.optional(v.id('users')),
     revokedAt: v.optional(v.number()),
     revokedByUserId: v.optional(v.id('users')),
   })
@@ -229,6 +237,26 @@ export default defineSchema({
     .index('by_patientId_and_granteeUserId', ['patientId', 'granteeUserId'])
     .index('by_granteeUserId_and_status', ['granteeUserId', 'status'])
     .index('by_patientId_and_status', ['patientId', 'status']),
+
+  // 6b. In-app notifications for consent and access changes
+  accessNotifications: defineTable({
+    recipientUserId: v.id('users'),
+    patientId: v.optional(v.id('patients')),
+    consentGrantId: v.optional(v.id('consentGrants')),
+    type: v.union(
+      v.literal('consent_invited'),
+      v.literal('consent_accepted'),
+      v.literal('consent_granted'),
+      v.literal('consent_updated'),
+      v.literal('consent_revoked')
+    ),
+    title: v.string(),
+    message: v.string(),
+    readAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index('by_recipientUserId', ['recipientUserId'])
+    .index('by_recipientUserId_and_createdAt', ['recipientUserId', 'createdAt']),
 
   // 7. Concussion Daily Check-Ins (8-symptom inventory 0-6 + danger signs)
   checkIns: defineTable({

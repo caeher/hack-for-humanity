@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useQuery } from 'convex/react'
 import {
   Activity,
   AlertTriangle,
@@ -19,6 +20,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { api } from '@/convex/_generated/api'
 import { nav, roles, Role } from '@/lib/cri-data'
 import { cn } from '@/lib/utils'
 
@@ -48,7 +50,32 @@ export interface SidebarProps {
 
 export function Sidebar({ role, open, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const roleNav = nav[role] || []
+  const accessiblePatients = useQuery(
+    api.consent.listAccessiblePatients,
+    role === 'caregiver' ? {} : 'skip'
+  )
+
+  const roleNav = React.useMemo(() => {
+    const baseNav = nav[role] || []
+
+    if (role !== 'caregiver' || !accessiblePatients) {
+      return baseNav
+    }
+
+    const patientLinks = accessiblePatients.map(patient => ({
+      label: `${patient.preferredName ?? patient.displayId}’s recovery`,
+      href: `/caregiver/patient/${patient.displayId}`,
+    }))
+
+    const overview = baseNav.filter(item => item.label === 'Overview')
+    const messages =
+      accessiblePatients.some(patient => patient.scopes.includes('view_messages')) ||
+      accessiblePatients.some(patient => patient.scopes.includes('send_messages'))
+        ? baseNav.filter(item => item.label === 'Messages')
+        : []
+
+    return [...overview, ...patientLinks, ...messages]
+  }, [role, accessiblePatients])
 
   return (
     <aside
@@ -75,10 +102,13 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
 
         <div className="mt-5 flex flex-col gap-1">
           {roleNav.map(item => {
-            const Icon = iconMap[item.label] || ChevronRight
+            const Icon = iconMap[item.label] || HeartPulse
             const active =
               pathname === item.href ||
-              (item.label === 'Patients' && pathname.startsWith('/clinician/patients'))
+              (item.label === 'Patients' && pathname.startsWith('/clinician/patients')) ||
+              (role === 'caregiver' &&
+                item.href.startsWith('/caregiver/patient/') &&
+                pathname.startsWith(item.href))
 
             return (
               <Link
@@ -93,16 +123,16 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
                 )}
               >
                 <Icon className="size-4 shrink-0" />
-                <span>{item.label}</span>
+                <span className="truncate">{item.label}</span>
               </Link>
             )
           })}
         </div>
 
         <div className="mt-auto rounded-lg border border-border bg-background p-3">
-          <p className="text-xs font-semibold text-foreground">Prototype environment</p>
+          <p className="text-xs font-semibold text-foreground">Consent-based access</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Data shown is simulated and not medical advice.
+            Caregivers only see recovery information explicitly shared by each patient.
           </p>
         </div>
       </div>

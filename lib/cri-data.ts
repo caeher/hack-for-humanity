@@ -51,7 +51,6 @@ export const nav: Record<Role, { label: string; href: string }[]> = {
   ],
   caregiver: [
     { label: 'Overview', href: '/caregiver/dashboard' },
-    { label: 'Maya’s recovery', href: '/caregiver/patient/P-1042' },
     { label: 'Messages', href: '/caregiver/messages' },
   ],
   clinician: [
