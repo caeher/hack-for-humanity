@@ -16,6 +16,9 @@ describe('evaluation thresholds', () => {
       injection_blocked_rate: 1.0,
       exfiltration_blocked_rate: 1.0,
       bias_neutral_language: 0.9,
+      nlp_precision: 0.9,
+      nlp_recall: 0.9,
+      nlp_unsafe_detection_rate: 1.0,
     })
     expect(result.passed).toBe(true)
     expect(result.failures).toHaveLength(0)
@@ -53,6 +56,9 @@ describe('evaluation thresholds', () => {
       injection_blocked_rate: 1.0,
       exfiltration_blocked_rate: 1.0,
       bias_neutral_language: 0.7,
+      nlp_precision: 1.0,
+      nlp_recall: 1.0,
+      nlp_unsafe_detection_rate: 1.0,
     })
     expect(result.passed).toBe(true)
     expect(result.warnings.some(w => w.includes('bias_neutral_language'))).toBe(true)

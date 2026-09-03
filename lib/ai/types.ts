@@ -92,6 +92,14 @@ export interface EvaluationCase {
     requiresRefusal?: boolean
     requiresCitation?: boolean
     neutralLanguage?: boolean
+    requiresSafetyEscalation?: boolean
+    extraction?: {
+      symptom?: string
+      activityDomain?: string
+      durationMinutes?: number
+      noCandidates?: boolean
+      symptomOptional?: boolean
+    }
   }
   tags: string[]
 }

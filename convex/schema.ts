@@ -847,6 +847,7 @@ export default defineSchema({
       v.literal('onboarding'),
       v.literal('baseline'),
       v.literal('free_text'),
+      v.literal('structured_extraction'),
       v.literal('ai_query'),
       v.literal('longitudinal')
     ),
@@ -1080,6 +1081,28 @@ export default defineSchema({
   })
     .index('by_datasetVersion', ['datasetVersion'])
     .index('by_runAt', ['runAt']),
+
+  // 21b. Recovery note extraction audit (metadata only — no raw notes)
+  recoveryExtractionAudit: defineTable({
+    requestId: v.string(),
+    ctxSessionId: v.string(),
+    patientId: v.optional(v.id('patients')),
+    orgId: v.optional(v.id('organizations')),
+    schemaVersion: v.string(),
+    promptVersion: v.string(),
+    modelId: v.string(),
+    validationOutcome: v.string(),
+    candidateCount: v.number(),
+    confirmedCount: v.optional(v.number()),
+    discardedCount: v.optional(v.number()),
+    latencyMs: v.number(),
+    outcome: v.string(),
+    promptFingerprint: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_requestId', ['requestId'])
+    .index('by_patientId_and_createdAt', ['patientId', 'createdAt'])
+    .index('by_orgId_and_createdAt', ['orgId', 'createdAt']),
 
   // 22. AI request audit log (no prompts, no PII — metadata only)
   aiRequestAudit: defineTable({

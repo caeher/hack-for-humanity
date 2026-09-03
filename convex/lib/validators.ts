@@ -1084,6 +1084,7 @@ export const safetyContextTypeValidator = v.union(
   v.literal('onboarding'),
   v.literal('baseline'),
   v.literal('free_text'),
+  v.literal('structured_extraction'),
   v.literal('ai_query'),
   v.literal('longitudinal')
 )

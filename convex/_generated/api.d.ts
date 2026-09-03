@@ -74,6 +74,7 @@ import type * as patientDashboard from "../patientDashboard.js";
 import type * as patients from "../patients.js";
 import type * as patternInsights from "../patternInsights.js";
 import type * as profilePreferences from "../profilePreferences.js";
+import type * as recoveryExtraction from "../recoveryExtraction.js";
 import type * as recoveryReports from "../recoveryReports.js";
 import type * as recoveryTimeline from "../recoveryTimeline.js";
 import type * as recoveryTrends from "../recoveryTrends.js";
@@ -156,6 +157,7 @@ declare const fullApi: ApiFromModules<{
   patients: typeof patients;
   patternInsights: typeof patternInsights;
   profilePreferences: typeof profilePreferences;
+  recoveryExtraction: typeof recoveryExtraction;
   recoveryReports: typeof recoveryReports;
   recoveryTimeline: typeof recoveryTimeline;
   recoveryTrends: typeof recoveryTrends;

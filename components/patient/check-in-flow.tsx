@@ -29,6 +29,11 @@ import {
 } from '@/lib/symptomTotals'
 import type { ExposureEntryInput } from '@/lib/exposureTracking'
 import { ExposureQuickLog } from '@/components/patient/exposure-quick-log'
+import { NoteExtractionPanel } from '@/components/patient/note-extraction-panel'
+import {
+  mapConfirmedCandidatesToExposureEntries,
+  type RecoveryEventCandidate,
+} from '@/lib/extraction'
 
 const symptomQuestions = [
   {
@@ -87,6 +92,7 @@ interface CheckInFormState {
   selectedDangerSigns: string[]
   note: string
   exposureEntries: ExposureEntryInput[]
+  extractionCandidates: RecoveryEventCandidate[]
 }
 
 interface CheckInFlowViewProps {
@@ -103,6 +109,10 @@ interface CheckInFlowViewProps {
   submitError?: string | null
   onAcknowledge?: (safetyEvaluationId: Id<'safetyEvaluations'>) => Promise<void>
   isAcknowledging?: boolean
+  onRequestExtraction?: (note: string) => Promise<{
+    candidates: RecoveryEventCandidate[]
+    message?: string
+  } | null>
 }
 
 function getLocalDateString(date = new Date()): string {
@@ -134,6 +144,7 @@ function CheckInFlowView({
   submitError = null,
   onAcknowledge,
   isAcknowledging = false,
+  onRequestExtraction,
 }: CheckInFlowViewProps) {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -142,6 +153,7 @@ function CheckInFlowView({
   const [selectedDangerSigns, setSelectedDangerSigns] = useState<string[]>([])
   const [note, setNote] = useState('')
   const [exposureEntries, setExposureEntries] = useState<ExposureEntryInput[]>([])
+  const [extractionCandidates, setExtractionCandidates] = useState<RecoveryEventCandidate[]>([])
   const [draftLoaded, setDraftLoaded] = useState(mode === 'demo')
   const [outcome, setOutcome] = useState<{
     safetyResult: SafetyEvaluationResult
@@ -185,12 +197,16 @@ function CheckInFlowView({
   }, [activityImpact, answers, draftLoaded, note, patientId, selectedDangerSigns, step])
 
   const handleFinish = async () => {
+    const confirmedExposures = mapConfirmedCandidatesToExposureEntries(extractionCandidates)
+    const mergedExposures = [...exposureEntries, ...confirmedExposures]
+
     const form: CheckInFormState = {
       answers,
       activityImpact,
       selectedDangerSigns,
       note,
-      exposureEntries,
+      exposureEntries: mergedExposures,
+      extractionCandidates,
     }
 
     if (onFinish) {
@@ -321,6 +337,13 @@ function CheckInFlowView({
             }
           />
 
+          <NoteExtractionPanel
+            note={note}
+            candidates={extractionCandidates}
+            onCandidatesChange={setExtractionCandidates}
+            onRequestExtraction={onRequestExtraction}
+          />
+
           <ExposureQuickLog value={exposureEntries} onChange={setExposureEntries} />
 
           <div className="flex justify-between border-t border-border pt-4">
@@ -414,6 +437,7 @@ function CheckInFlowPersisted() {
   const patient = useQuery(api.patients.getMePatient)
   const submitCheckIn = useMutation(api.checkIns.submitCheckIn)
   const logExposureBatch = useMutation(api.exposureEntries.logBatch)
+  const extractFromNote = useMutation(api.recoveryExtraction.extractFromNote)
   const acknowledgeSafety = useMutation(api.safety.acknowledgeSafetyOutcome)
   const [submission, setSubmission] = useState<SubmissionState>({ status: 'idle' })
   const [isAcknowledging, setIsAcknowledging] = useState(false)
@@ -514,6 +538,23 @@ function CheckInFlowPersisted() {
     [acknowledgeSafety, patient]
   )
 
+  const handleRequestExtraction = useCallback(
+    async (noteText: string) => {
+      if (!patient) return null
+      const result = await extractFromNote({
+        patientId: patient._id,
+        noteText,
+      })
+      return {
+        candidates: result.candidates,
+        message: result.message ?? result.rawTextSafety?.status === 'emergency'
+          ? 'Urgent safety signals detected in your note. Review emergency guidance.'
+          : undefined,
+      }
+    },
+    [extractFromNote, patient]
+  )
+
   if (patient === undefined) {
     return (
       <div
@@ -557,6 +598,7 @@ function CheckInFlowPersisted() {
       submitError={submission.status === 'error' ? submission.message : null}
       onAcknowledge={handleAcknowledge}
       isAcknowledging={isAcknowledging}
+      onRequestExtraction={handleRequestExtraction}
     />
   )
 }
