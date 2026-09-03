@@ -17,4 +17,11 @@ crons.interval(
   {}
 )
 
+crons.interval(
+  'rebuild cohort analytics snapshots',
+  { hours: 6 },
+  internal.cohortAnalytics.rebuildAllSnapshots,
+  {}
+)
+
 export default crons

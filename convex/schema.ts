@@ -1253,6 +1253,41 @@ export default defineSchema({
     .index('by_patientId_and_range', ['patientId', 'rangeStart', 'rangeEnd'])
     .index('by_orgId_and_generatedAt', ['orgId', 'generatedAt']),
 
+  // 26. Privacy-preserving organization cohort analytics snapshots (maintained aggregates)
+  cohortAnalyticsSnapshots: defineTable({
+    orgId: v.id('organizations'),
+    periodKey: v.string(),
+    dataSource: v.union(v.literal('live'), v.literal('simulated')),
+    methodologyVersion: v.string(),
+    computedAt: v.number(),
+    rangeStart: v.string(),
+    rangeEnd: v.string(),
+    eligiblePatients: v.number(),
+    activeEpisodes: v.number(),
+    dimensionalCells: v.array(
+      v.object({
+        ageBand: v.string(),
+        episodeDurationBand: v.string(),
+        engagementTier: v.string(),
+        programPathway: v.string(),
+        patientCount: v.number(),
+        patientsWithCheckIn7d: v.number(),
+        patientsWithBaseline: v.number(),
+        patientsWithExposure30d: v.number(),
+        patientsWithActiveAlert: v.number(),
+        checkInsSubmitted30d: v.number(),
+        dangerSignCheckIns30d: v.number(),
+        symptomTotals7d: v.array(v.number()),
+      })
+    ),
+    dataFreshness: v.object({
+      lastCheckInDate: v.union(v.string(), v.null()),
+      lastPatientEnrollment: v.union(v.string(), v.null()),
+    }),
+  })
+    .index('by_orgId_and_periodKey', ['orgId', 'periodKey'])
+    .index('by_orgId_and_computedAt', ['orgId', 'computedAt']),
+
   // 24. Versioned education corpus metadata (environment-isolated)
   educationCorpusVersions: defineTable({
     versionId: v.string(),

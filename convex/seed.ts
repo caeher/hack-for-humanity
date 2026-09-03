@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 import { mutation } from './_generated/server'
+import { rebuildOrgSnapshotHandler } from './cohortAnalytics'
 import { seedEducationCorpusIfMissing } from './lib/educationLogic'
 import { SYMPTOM_METHODOLOGY_VERSION } from './lib/symptomMethodology'
 
@@ -1906,6 +1907,12 @@ export const seedDatabase = mutation({
     }
 
     await seedEducationCorpusIfMissing(ctx)
+
+    await rebuildOrgSnapshotHandler(ctx, {
+      orgId: org._id,
+      asOfDate: '2026-08-31',
+      periodKey: 'rolling-30d',
+    })
 
     return {
       success: true,

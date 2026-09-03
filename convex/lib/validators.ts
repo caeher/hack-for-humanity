@@ -524,6 +524,102 @@ export const orgAggregateMetricsValidator = v.object({
   ),
 })
 
+export const cohortFiltersValidator = v.object({
+  ageBand: v.optional(
+    v.union(
+      v.literal('13-17'),
+      v.literal('18-24'),
+      v.literal('25-39'),
+      v.literal('40-54'),
+      v.literal('55-plus'),
+      v.literal('unknown')
+    )
+  ),
+  episodeDurationBand: v.optional(
+    v.union(
+      v.literal('0-7d'),
+      v.literal('8-14d'),
+      v.literal('15-30d'),
+      v.literal('31-90d'),
+      v.literal('91d-plus'),
+      v.literal('unknown')
+    )
+  ),
+  engagementTier: v.optional(
+    v.union(v.literal('high'), v.literal('moderate'), v.literal('low'), v.literal('none'))
+  ),
+  programPathway: v.optional(v.string()),
+})
+
+export const cohortMetricValueValidator = v.object({
+  metricId: v.string(),
+  label: v.string(),
+  definition: v.string(),
+  denominator: v.string(),
+  caveat: v.string(),
+  sourceQuery: v.string(),
+  unit: v.union(v.literal('count'), v.literal('percent'), v.literal('median')),
+  descriptiveOnly: v.boolean(),
+  value: v.union(v.number(), v.null()),
+  numerator: v.number(),
+  denominatorCount: v.number(),
+  suppressed: v.boolean(),
+})
+
+export const cohortSegmentValidator = v.object({
+  segmentType: v.union(
+    v.literal('ageBand'),
+    v.literal('episodeDurationBand'),
+    v.literal('engagementTier'),
+    v.literal('programPathway')
+  ),
+  label: v.string(),
+  count: v.number(),
+  suppressed: v.boolean(),
+  displayCount: v.union(v.string(), v.null()),
+})
+
+export const cohortDashboardValidator = v.object({
+  orgId: v.id('organizations'),
+  periodKey: v.string(),
+  dataSource: v.union(v.literal('live'), v.literal('simulated')),
+  methodologyVersion: v.string(),
+  smallCellThreshold: v.number(),
+  computedAt: v.number(),
+  rangeStart: v.string(),
+  rangeEnd: v.string(),
+  filtersApplied: cohortFiltersValidator,
+  cohortSize: v.number(),
+  cohortSuppressed: v.boolean(),
+  suppressionReason: v.optional(v.string()),
+  metrics: v.array(cohortMetricValueValidator),
+  segments: v.array(cohortSegmentValidator),
+  filterOptions: v.object({
+    ageBands: v.array(v.string()),
+    episodeDurationBands: v.array(v.string()),
+    engagementTiers: v.array(v.string()),
+    programPathways: v.array(v.string()),
+  }),
+  dataFreshness: v.object({
+    lastCheckInDate: v.union(v.string(), v.null()),
+    lastPatientEnrollment: v.union(v.string(), v.null()),
+  }),
+  privacyNotice: v.string(),
+})
+
+export const cohortMetricDefinitionsValidator = v.array(
+  v.object({
+    metricId: v.string(),
+    label: v.string(),
+    definition: v.string(),
+    denominator: v.string(),
+    caveat: v.string(),
+    sourceQuery: v.string(),
+    unit: v.union(v.literal('count'), v.literal('percent'), v.literal('median')),
+    descriptiveOnly: v.boolean(),
+  })
+)
+
 export const userDocValidator = v.object({
   _id: v.id('users'),
   _creationTime: v.number(),
