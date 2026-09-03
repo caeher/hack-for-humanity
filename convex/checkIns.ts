@@ -608,6 +608,19 @@ export const submitCheckIn = mutation({
       createdAt: now,
     })
 
+    await ctx.db.insert('systemTelemetry', {
+      eventType: 'checkin_funnel',
+      operation: 'checkin_complete',
+      durationMs: Date.now() - now,
+      status: blocked ? 'intercept' : 'success',
+      correlationId: `cri_corr_${now}_chk`,
+      metadata: {
+        dangerSignsPresent,
+        safetyStatus: safetyResult.status,
+      },
+      timestamp: now,
+    })
+
     return {
       checkInId,
       blocked,
