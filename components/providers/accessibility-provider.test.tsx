@@ -7,6 +7,7 @@ import { AccessibilityProvider, useAccessibility } from './accessibility-provide
 vi.mock('convex/react', () => ({
   useQuery: () => null,
   useMutation: () => vi.fn().mockResolvedValue(null),
+  useConvex: () => undefined,
 }))
 
 function TestConsumer() {

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery } from 'convex/react'
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useConvex, useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import {
   DEFAULT_LOCALE,
@@ -49,7 +49,91 @@ function applyAttributesToDocument(prefs: AccessibilityPreferences) {
   root.lang = prefs.locale
 }
 
+interface AccessibilityConvexSyncProps {
+  currentLocale: SupportedLocale
+  setPreferences: React.Dispatch<React.SetStateAction<AccessibilityPreferences>>
+  persistBackendRef: React.MutableRefObject<((prefs: AccessibilityPreferences) => Promise<void>) | null>
+}
+
+function AccessibilityConvexSync({
+  currentLocale,
+  setPreferences,
+  persistBackendRef,
+}: AccessibilityConvexSyncProps) {
+  const patient = useQuery(api.patients.getMePatient, {})
+  const convexPrefs = useQuery(
+    api.profilePreferences.getForPatient,
+    patient?._id ? { patientId: patient._id } : 'skip'
+  )
+  const updateConvexMutation = useMutation(api.profilePreferences.updateForPatient)
+
+  // Sync with Convex preferences when patient logs in
+  useEffect(() => {
+    if (!convexPrefs || !convexPrefs.accessibilityPreferences) return
+
+    const incoming: AccessibilityPreferences = {
+      largeText: convexPrefs.accessibilityPreferences.largeText,
+      highContrast: convexPrefs.accessibilityPreferences.highContrast,
+      reducedMotion: convexPrefs.accessibilityPreferences.reducedMotion,
+      locale: currentLocale,
+      timeZone: resolveSafeTimeZone(convexPrefs.timeZone),
+    }
+
+    setPreferences(prev => {
+      // Only update if changed
+      if (
+        prev.largeText === incoming.largeText &&
+        prev.highContrast === incoming.highContrast &&
+        prev.reducedMotion === incoming.reducedMotion &&
+        prev.timeZone === incoming.timeZone
+      ) {
+        return prev
+      }
+      applyAttributesToDocument(incoming)
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming))
+      } catch {
+        // ignore
+      }
+      return incoming
+    })
+  }, [convexPrefs, currentLocale, setPreferences])
+
+  // Wire up backend persistence
+  useEffect(() => {
+    if (patient?._id) {
+      persistBackendRef.current = async (next: AccessibilityPreferences) => {
+        try {
+          await updateConvexMutation({
+            patientId: patient._id,
+            timeZone: next.timeZone,
+            accessibilityPreferences: {
+              largeText: next.largeText,
+              highContrast: next.highContrast,
+              reducedMotion: next.reducedMotion,
+            },
+          })
+        } catch {
+          // Backend update failed; local preference remains active
+        }
+      }
+    } else {
+      persistBackendRef.current = null
+    }
+
+    return () => {
+      persistBackendRef.current = null
+    }
+  }, [patient?._id, updateConvexMutation, persistBackendRef])
+
+  return null
+}
+
 export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
+  const convex = useConvex()
+  const hasConvexClient = !isE2ETestMode && Boolean(convex)
+  const persistBackendRef = useRef<((prefs: AccessibilityPreferences) => Promise<void>) | null>(null)
+
   const [preferences, setPreferences] = useState<AccessibilityPreferences>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -72,17 +156,6 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   })
 
   const [isLoaded, setIsLoaded] = useState(false)
-
-  // Query patient if in authenticated mode
-  const patient = useQuery(
-    api.patients.getMePatient,
-    isE2ETestMode ? 'skip' : {}
-  )
-  const convexPrefs = useQuery(
-    api.profilePreferences.getForPatient,
-    patient?._id && !isE2ETestMode ? { patientId: patient._id } : 'skip'
-  )
-  const updateConvexMutation = useMutation(api.profilePreferences.updateForPatient)
 
   // Initialize system preferences (reduced motion detection) if not set in storage
   useEffect(() => {
@@ -115,38 +188,6 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     }
   }, [])
 
-  // Sync with Convex preferences when patient logs in
-  useEffect(() => {
-    if (!convexPrefs || !convexPrefs.accessibilityPreferences) return
-
-    const incoming: AccessibilityPreferences = {
-      largeText: convexPrefs.accessibilityPreferences.largeText,
-      highContrast: convexPrefs.accessibilityPreferences.highContrast,
-      reducedMotion: convexPrefs.accessibilityPreferences.reducedMotion,
-      locale: preferences.locale,
-      timeZone: resolveSafeTimeZone(convexPrefs.timeZone),
-    }
-
-    setPreferences(prev => {
-      // Only update if changed
-      if (
-        prev.largeText === incoming.largeText &&
-        prev.highContrast === incoming.highContrast &&
-        prev.reducedMotion === incoming.reducedMotion &&
-        prev.timeZone === incoming.timeZone
-      ) {
-        return prev
-      }
-      applyAttributesToDocument(incoming)
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming))
-      } catch {
-        // ignore
-      }
-      return incoming
-    })
-  }, [convexPrefs])
-
   const updatePreferences = async (updates: Partial<AccessibilityPreferences>) => {
     const next: AccessibilityPreferences = {
       ...preferences,
@@ -164,21 +205,9 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       // ignore
     }
 
-    // Persist to backend if authenticated patient
-    if (patient?._id && !isE2ETestMode) {
-      try {
-        await updateConvexMutation({
-          patientId: patient._id,
-          timeZone: next.timeZone,
-          accessibilityPreferences: {
-            largeText: next.largeText,
-            highContrast: next.highContrast,
-            reducedMotion: next.reducedMotion,
-          },
-        })
-      } catch {
-        // Backend update failed; local preference remains active
-      }
+    // Persist to backend if authenticated patient and Convex is connected
+    if (persistBackendRef.current) {
+      await persistBackendRef.current(next)
     }
   }
 
@@ -205,6 +234,13 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
 
   return (
     <AccessibilityContext.Provider value={value}>
+      {hasConvexClient && (
+        <AccessibilityConvexSync
+          currentLocale={preferences.locale}
+          setPreferences={setPreferences}
+          persistBackendRef={persistBackendRef}
+        />
+      )}
       {children}
     </AccessibilityContext.Provider>
   )
