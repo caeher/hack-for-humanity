@@ -14,7 +14,10 @@ const manifestPath = resolve(root, '.next/app-path-routes-manifest.json')
 
 function normalizeRoute(route) {
   const withoutGroups = route.replace(/\/\([^)]+\)/g, '')
-  const cleaned = withoutGroups.replace(/\/page$/, '').replace(/\/index$/, '')
+  const cleaned = withoutGroups
+    .replace(/\/page$/, '')
+    .replace(/\/index$/, '')
+    .replace(/\/route$/, '')
   if (!cleaned || cleaned === '/page') return '/'
   return cleaned.startsWith('/') ? cleaned : `/${cleaned}`
 }

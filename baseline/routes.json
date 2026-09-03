@@ -3,6 +3,7 @@
   "description": "Expected CRI application routes (PR #39 baseline). Update intentionally when routes change.",
   "routes": [
     "/",
+    "/api/health",
     "/admin/audit",
     "/admin/cohorts",
     "/admin/dashboard",

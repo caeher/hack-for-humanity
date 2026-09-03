@@ -69,6 +69,7 @@ import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
 import type * as notificationJobs from "../notificationJobs.js";
 import type * as notifications from "../notifications.js";
+import type * as observability from "../observability.js";
 import type * as onboarding from "../onboarding.js";
 import type * as orgProvisioning from "../orgProvisioning.js";
 import type * as orgProvisioningActions from "../orgProvisioningActions.js";
@@ -158,6 +159,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   notificationJobs: typeof notificationJobs;
   notifications: typeof notifications;
+  observability: typeof observability;
   onboarding: typeof onboarding;
   orgProvisioning: typeof orgProvisioning;
   orgProvisioningActions: typeof orgProvisioningActions;

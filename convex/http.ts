@@ -10,6 +10,24 @@ import { ClerkWebhookEnvelope } from './lib/clerkWebhookTypes'
 const http = httpRouter()
 
 http.route({
+  path: '/health',
+  method: 'GET',
+  handler: httpAction(async () => {
+    return new Response(
+      JSON.stringify({
+        status: 'ok',
+        service: 'convex',
+        timestamp: Date.now(),
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+  }),
+})
+
+http.route({
   path: '/clerk-webhook',
   method: 'POST',
   handler: httpAction(async (ctx, request) => {
