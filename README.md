@@ -1,4 +1,4 @@
-﻿# Concussion Recovery Intelligence (CRI)
+# Concussion Recovery Intelligence (CRI)
 
 > **A coordinated, evidence-grounded concussion recovery workspace designed to organize patient-reported symptoms, daily context, safety guidance, and clinician-facing summaries.**
 
@@ -13,10 +13,14 @@
 ## 📖 Key Documentation & Specifications
 
 - 🛡️ **[Clinical Scope, Safety Boundaries & Evidence Governance Specification](docs/CLINICAL_SCOPE_AND_SAFETY.md)** — **Core clinical contract**, allowed vs prohibited claims, evidence citations, safety engine tiers, and the PR review safety checklist.
+- ⏱️ **[4-Minute Demo Script & Rehearsal Runbook](docs/DEMO_SCRIPT_4_MINUTES.md)** — Timed demo flow (0:00–4:00) from onboarding through safety intercepts to printable reports, plus deterministic seed steps.
+- 📊 **[Observability, Resilience & Performance Budgets](docs/OBSERVABILITY_AND_RESILIENCE.md)** — Health probe signals (`/api/health`), correlation IDs, PII redaction, telemetry schema, and mobile/desktop performance budgets.
+- ♿ **[Accessibility, Responsive & Localization Specification](docs/ACCESSIBILITY_AND_RESPONSIVE_SPECIFICATION.md)** — WCAG 2.2 AA audit matrix, cognitive calming guidelines, and screen reader equivalents.
 - 📋 **[Concussion Demo Review & PR #39 Baseline](docs/concussion-demo-review.md)** — Current baseline alignment, danger-sign intercept, backlog overview, and Phase 0 roadmap.
 - 🧠 **[Product Vision & Research Foundation](docs/base.md)** — Longitudinal tracking rationale, active recovery pacing, and research grounding.
 - 🎨 **[Frontend Design System Specifications](docs/frontend-design-specs.md)** — Color tokens, typography, component layouts, and accessibility requirements.
 - 🤖 **[Agent & Contributor Guidelines](AGENTS.md)** — Engineering rules, directory map, styling practices, and conventional commits.
+
 
 ---
 
@@ -53,6 +57,95 @@ CRI provides four dedicated role-based portals:
 - **Authentication:** Clerk (`@clerk/nextjs`) integrated with Convex
 - **Package Manager:** `pnpm`
 - **Code Quality:** TypeScript 5.7 (Strict Mode), Husky, Commitlint, Commitizen
+
+---
+
+## 🏛️ System Architecture & Data Flow
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Next.js 16 (App Router)                            │
+│  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌─────────────────┐  │
+│  │ /patient/*    │ │ /caregiver/*  │ │ /clinician/*  │ │ /admin/*        │  │
+│  │ Check-in, 0-48│ │ Consent-Gated │ │ Triage Queue, │ │ Cohort Outcomes,│  │
+│  │ Recovery Plan │ │ Pacing View   │ │ Encounters    │ │ Audit Logs      │  │
+│  └───────┬───────┘ └───────┬───────┘ └───────┬───────┘ └────────┬────────┘  │
+│          └─────────────────┴────────┬────────┴──────────────────┘           │
+│                                     ▼                                       │
+│                         Middleware & Route Guards                           │
+│        (x-correlation-id propagation, Clerk session verification)            │
+│                                     │                                       │
+│                 ┌───────────────────┴───────────────────┐                   │
+│                 ▼                                       ▼                   │
+│          /api/health Probe                     App Error Boundaries         │
+│     (Next, Convex, Clerk, AI)                (Safe Incident ID, Calming)    │
+└─────────────────┬───────────────────────────────────────┬───────────────────┘
+                  │                                       │
+                  ▼                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Convex Reactive Cloud Backend                         │
+│  ┌─────────────────────────────────┐   ┌─────────────────────────────────┐  │
+│  │        Deterministic Schema     │   │     Safety & Reliability Engine │  │
+│  │ • patients, checkIns, episodes  │   │ • CDC Red-Flag Intercept        │  │
+│  │ • alerts, encounters, carePlans │   │ • AI Kill Switch & Fallbacks    │  │
+│  │ • systemTelemetry, auditLogs    │   │ • Non-Causal Pattern Logic      │  │
+│  └─────────────────────────────────┘   └─────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                     Clerk JWT Authentication Sync                     │  │
+│  │         (Issuer domain verification & tokenIdentifier indexing)       │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Longitudinal Data Flow
+
+```
+[ Patient Completes 8 Symptoms ]
+               │
+               ▼
+[ Danger Signs Check: Any CDC Red Flags? ]
+      ├─── YES ───► [ Immediate Emergency Intercept (<50ms) ] ──► [ Call 911 / ED Screen ]
+      └─── NO  ───► [ Safe Likert Trajectory (0–48) ]
+                           │
+                           ▼
+             [ Deterministic Safety Engine ]
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+    [ Reactive Persistence ]     [ Telemetry Ingestion ]
+    (checkIns, safetyEvaluations) (latency, funnel, zero PII)
+             │
+             ├──► [ Caregiver Monitoring (Consent-gated) ]
+             ├──► [ Clinician Triage Dashboard (Stable / Review / Elevated) ]
+             └──► [ Printable Clinical Encounter Report ]
+```
+
+---
+
+## 📚 Cited Clinical Sources & Evidence Governance
+
+CRI's symptom definitions, danger-sign intercepts, and recovery pacing guidelines are grounded in established clinical consensus:
+
+1. **CDC HEADS UP Concussion Clinical Guidance:**
+   - [CDC Signs, Symptoms and Danger Signs](https://www.cdc.gov/traumatic-brain-injury/signs-symptoms/index.html)
+   - [Managing Return to Activities & School](https://www.cdc.gov/heads-up/hcp/clinical-guidance/index.html)
+2. **Amsterdam 2023 International Consensus Statement on Concussion in Sport:**
+   - Patricios JS, et al. *Br J Sports Med* 2023;57:695–711. Focus on active recovery, sub-symptom-threshold pacing, and multidisciplinary referral.
+3. **Berlin 2016 Consensus Statement on Concussion in Sport:**
+   - McCrory P, et al. *Br J Sports Med* 2017;51:838–847. Foundation for return-to-learn and return-to-sport stepwise frameworks.
+
+---
+
+## ⏱️ 4-Minute Hackathon Demo Rehearsal
+
+A fully scripted, timed 4-minute demo script is documented in **[`docs/DEMO_SCRIPT_4_MINUTES.md`](docs/DEMO_SCRIPT_4_MINUTES.md)**.
+It rehearses:
+- **0:00–1:00:** Problem statement, cognitive calming design, accessible calibration controls.
+- **1:00–2:00:** Step-by-step 8-symptom check-in, acute danger-sign intercept (<50ms), and 911 emergency guidance.
+- **2:00–3:00:** Longitudinal symptom trajectory (0–48), authentic missing-day gaps, non-causal pattern observation, and resilience when AI is disabled.
+- **3:00–4:00:** Clinician triage queue (`Stable`, `Review`, `Elevated`), encounter documentation, and printable recovery report.
 
 ---
 
@@ -163,14 +256,16 @@ Open [http://localhost:3000](http://localhost:3000), sign in, and confirm Clerk 
 ## 🧪 Scripts & verification
 
 ```bash
-pnpm lint        # ESLint (Convex, env helpers, providers)
-pnpm typecheck   # tsc --noEmit
-pnpm test        # vitest run
-pnpm check       # lint + typecheck + test
-pnpm build       # production Next.js build (requires a real .env.local)
-pnpm start       # serve the production build
-pnpm convex:codegen
-pnpm commit      # interactive conventional commit
+pnpm lint           # ESLint (Convex, env helpers, providers)
+pnpm typecheck      # tsc --noEmit
+pnpm test           # vitest run
+pnpm check          # lint + typecheck + test
+pnpm perf:budgets   # verify mobile & desktop performance budgets
+pnpm verify:routes  # verify 26 application routes against manifest
+pnpm build          # production Next.js build (requires a real .env.local)
+pnpm start          # serve the production build
+pnpm convex:codegen # generate Convex bindings
+pnpm commit         # interactive conventional commit
 ```
 
 ---

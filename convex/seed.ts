@@ -1914,6 +1914,63 @@ export const seedDatabase = mutation({
       periodKey: 'rolling-30d',
     })
 
+    // 21. Seed privacy-safe system telemetry baseline
+    const existingTelemetry = await ctx.db.query('systemTelemetry').first()
+    if (!existingTelemetry) {
+      const now = Date.now()
+      const telemetrySeedData = [
+        {
+          eventType: 'latency' as const,
+          operation: 'check_in_submission',
+          durationMs: 142,
+          status: 'success' as const,
+          correlationId: `cri_corr_${now - 3600000}_seed1`,
+          timestamp: now - 3600000,
+        },
+        {
+          eventType: 'latency' as const,
+          operation: 'rag_query',
+          durationMs: 385,
+          status: 'success' as const,
+          correlationId: `cri_corr_${now - 7200000}_seed2`,
+          timestamp: now - 7200000,
+        },
+        {
+          eventType: 'checkin_funnel' as const,
+          operation: 'checkin_start',
+          status: 'success' as const,
+          correlationId: `cri_corr_${now - 14400000}_seed3`,
+          timestamp: now - 14400000,
+        },
+        {
+          eventType: 'checkin_funnel' as const,
+          operation: 'checkin_complete',
+          status: 'success' as const,
+          correlationId: `cri_corr_${now - 14400000}_seed3`,
+          timestamp: now - 14350000,
+        },
+        {
+          eventType: 'safety_rule_execution' as const,
+          operation: 'checkin_safety_eval',
+          status: 'success' as const,
+          correlationId: `cri_corr_${now - 14400000}_seed3`,
+          metadata: { ruleSeverity: 'safe' },
+          timestamp: now - 14350000,
+        },
+        {
+          eventType: 'retrieval_quality' as const,
+          operation: 'rag_query',
+          status: 'success' as const,
+          correlationId: `cri_corr_${now - 7200000}_seed2`,
+          metadata: { chunksMatched: 3 },
+          timestamp: now - 7200000,
+        },
+      ]
+      for (const t of telemetrySeedData) {
+        await ctx.db.insert('systemTelemetry', t)
+      }
+    }
+
     return {
       success: true,
       message:

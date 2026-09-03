@@ -1384,6 +1384,33 @@ export default defineSchema({
   })
     .index('by_jobName_and_startedAt', ['jobName', 'startedAt'])
     .index('by_startedAt', ['startedAt']),
+
+  // 30. Privacy-Safe System Telemetry & Reliability Signals (Issue #33)
+  systemTelemetry: defineTable({
+    eventType: v.union(
+      v.literal('latency'),
+      v.literal('error'),
+      v.literal('checkin_funnel'),
+      v.literal('retrieval_quality'),
+      v.literal('safety_rule_execution')
+    ),
+    operation: v.string(),
+    durationMs: v.optional(v.number()),
+    status: v.union(
+      v.literal('success'),
+      v.literal('failure'),
+      v.literal('intercept'),
+      v.literal('fallback')
+    ),
+    correlationId: v.string(),
+    metadata: v.optional(v.any()),
+    timestamp: v.number(),
+  })
+    .index('by_eventType_and_timestamp', ['eventType', 'timestamp'])
+    .index('by_operation_and_timestamp', ['operation', 'timestamp'])
+    .index('by_correlationId', ['correlationId'])
+    .index('by_timestamp', ['timestamp']),
 })
+
 
 

@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "verify:routes": "node scripts/verify-routes-from-manifest.mjs",
+    "perf:budgets": "node scripts/measure-performance-budgets.mjs",
     "security:audit": "pnpm audit --audit-level=high",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "convex:dev": "convex dev",

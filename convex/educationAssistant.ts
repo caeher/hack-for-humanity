@@ -120,6 +120,18 @@ export const askQuestion = mutation({
       createdAt: Date.now(),
     })
 
+    await ctx.db.insert('systemTelemetry', {
+      eventType: 'retrieval_quality',
+      operation: 'rag_query',
+      status: response.kind === 'ai_disabled_fallback' ? 'fallback' : 'success',
+      correlationId: response.requestId,
+      metadata: {
+        chunksMatched: response.citations.length,
+        kind: response.kind,
+      },
+      timestamp: Date.now(),
+    })
+
     return response
   },
 })
