@@ -24,4 +24,11 @@ crons.interval(
   {}
 )
 
+crons.interval(
+  'run statutory data retention purge',
+  { hours: 24 },
+  internal.retention.runScheduledRetentionJob,
+  {}
+)
+
 export default crons

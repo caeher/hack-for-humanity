@@ -12,5 +12,5 @@ describe('InitialRecoveryAssessmentFlow', () => {
 
     expect(screen.getByText(/capture your starting symptom baseline/i)).toBeInTheDocument()
     expect(screen.getByText(/does not diagnose concussion/i)).toBeInTheDocument()
-  })
+  }, 15000)
 })

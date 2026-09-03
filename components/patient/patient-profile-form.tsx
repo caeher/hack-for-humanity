@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
-import { User, Mail } from 'lucide-react'
+import { User, Mail, Download, Trash2, Shield, AlertTriangle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layouts/page-header'
 import { TextField, PhoneField, SwitchField } from '@/components/forms'
@@ -71,6 +71,30 @@ function PatientProfileFormDemo() {
             disabled
           />
         </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
+            <Shield className="h-5 w-5 text-primary" />
+            Recovery Data Privacy & Right to be Forgotten
+          </h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            [E2E Demo Shell] Export recovery archives under GDPR/HIPAA or request account erasure.
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              className="rounded-md bg-secondary px-3.5 py-1.5 text-xs font-semibold text-secondary-foreground"
+            >
+              Download Demo Archive
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-destructive/40 bg-background px-3.5 py-1.5 text-xs font-semibold text-destructive"
+            >
+              Request Deletion (Demo)
+            </button>
+          </div>
+        </Card>
       </div>
     </div>
   )
@@ -115,7 +139,15 @@ function PatientProfileFormLive() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   useEffect(() => {
-    if (!me || !preferences) return
+    if (
+      !me ||
+      !preferences ||
+      !preferences.communicationPreferences ||
+      !preferences.accessibilityPreferences ||
+      !preferences.quietHours
+    ) {
+      return
+    }
     setProfileForm(prev => {
       const next = {
         ...prev,
@@ -332,7 +364,225 @@ function PatientProfileFormLive() {
       </div>
 
       {patient?._id && <CaregiverAccessSection patientId={patient._id} />}
+      {patient?._id && (
+        <PatientDataPrivacySection patientId={patient._id} displayId={patient.displayId} />
+      )}
     </div>
+  )
+}
+
+function PatientDataPrivacySection({
+  patientId,
+  displayId,
+}: {
+  patientId: any
+  displayId: string
+}) {
+  const requestExport = useMutation(api.privacy.requestExport)
+  const latestExport = useQuery(api.privacy.getLatestExport, { patientId })
+  const requestDeletion = useMutation(api.privacy.requestDeletion)
+  const confirmDeletion = useMutation(api.privacy.confirmDeletion)
+
+  const [exporting, setExporting] = useState(false)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deletionChallenge, setDeletionChallenge] = useState<string | null>(null)
+  const [deletionRequestId, setDeletionRequestId] = useState<any>(null)
+  const [verificationInput, setVerificationInput] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletionBlocked, setDeletionBlocked] = useState<string | null>(null)
+  const [deletionSuccess, setDeletionSuccess] = useState<string | null>(null)
+
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      await requestExport({ patientId, reason: 'Patient requested full archive' })
+      setExportMessage('Export compiled successfully.')
+    } catch (err) {
+      setExportMessage(`Export failed: ${String(err)}`)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const downloadArchive = () => {
+    if (!latestExport?.exportPayload) return
+    const dataStr =
+      'data:text/json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(latestExport.exportPayload, null, 2))
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.setAttribute('href', dataStr)
+    downloadAnchor.setAttribute(
+      'download',
+      `cri-recovery-archive-${displayId}-${new Date().toISOString().slice(0, 10)}.json`
+    )
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
+  }
+
+  const handleInitiateDeletion = async () => {
+    try {
+      setIsDeleting(true)
+      const res = await requestDeletion({ patientId, reason: 'Right to be forgotten request' })
+      if (res.isBlocked) {
+        setDeletionBlocked(res.message)
+      } else {
+        setDeletionRequestId(res.requestId)
+        setDeletionChallenge(res.verificationCode)
+        setShowDeleteModal(true)
+      }
+    } catch (err) {
+      setDeletionBlocked(String(err))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleConfirmDeletion = async () => {
+    if (!deletionRequestId) return
+    try {
+      setIsDeleting(true)
+      const res = await confirmDeletion({
+        requestId: deletionRequestId,
+        verificationCode: verificationInput.trim(),
+      })
+      setDeletionSuccess(`Your data has been anonymized and deleted (${res.anonymizedDisplayId}).`)
+      setShowDeleteModal(false)
+    } catch (err) {
+      alert(`Error confirming deletion: ${String(err)}`)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <Card className="p-6 flex flex-col gap-4">
+      <div className="border-b border-border pb-3">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" />
+          Recovery Data Privacy & Right to be Forgotten
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Export your complete health record under GDPR Art. 20 and HIPAA, or exercise your right to account erasure.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Export Data */}
+        <div className="rounded-lg border border-border bg-card p-4 flex flex-col justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Download className="h-4 w-4 text-foreground" />
+              Download Recovery Archive
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Obtain a machine-readable JSON archive of all daily check-ins, symptom trends, activity exposures, care plans, alerts, and access logs.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="rounded-md bg-secondary px-3.5 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 transition-colors"
+            >
+              {exporting ? 'Compiling…' : 'Generate Export'}
+            </button>
+            {latestExport?.exportPayload && (
+              <button
+                type="button"
+                onClick={downloadArchive}
+                className="rounded-md bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Download JSON Archive
+              </button>
+            )}
+          </div>
+          {exportMessage && <p className="text-xs text-muted-foreground">{exportMessage}</p>}
+        </div>
+
+        {/* Delete Data */}
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-col justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-destructive flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" />
+              Request Data Erasure
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Permanently anonymize personal identifiers, discharge recovery episodes, and revoke caregiver access.
+            </p>
+          </div>
+          <div>
+            {deletionBlocked ? (
+              <div className="rounded-md bg-destructive/10 p-2.5 text-xs text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{deletionBlocked}</span>
+              </div>
+            ) : deletionSuccess ? (
+              <p className="text-xs text-success font-medium">{deletionSuccess}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={handleInitiateDeletion}
+                disabled={isDeleting}
+                className="rounded-md border border-destructive/40 bg-background px-3.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
+              >
+                {isDeleting ? 'Checking Holds…' : 'Request Deletion'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-background border border-border p-6 shadow-xl flex flex-col gap-4">
+            <h3 className="text-base font-semibold text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Data Deletion
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              This action is permanent and cannot be undone. All direct identifiers will be irreversibly anonymized.
+            </p>
+            <div className="rounded-md bg-muted p-3 text-xs font-mono text-foreground select-all">
+              Challenge Code: <strong>{deletionChallenge}</strong>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground block mb-1">
+                Type the verification challenge code exactly to confirm:
+              </label>
+              <input
+                type="text"
+                value={verificationInput}
+                onChange={e => setVerificationInput(e.target.value)}
+                placeholder={deletionChallenge ?? ''}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs font-mono text-foreground"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeletion}
+                disabled={isDeleting || verificationInput.trim() !== deletionChallenge}
+                className="px-3 py-1.5 text-xs rounded-md bg-destructive text-destructive-foreground font-semibold hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting…' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   )
 }
 

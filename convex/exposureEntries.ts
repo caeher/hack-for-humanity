@@ -157,7 +157,7 @@ export const logEntry = mutation({
   },
   returns: exposureLogResultValidator,
   handler: async (ctx, args) => {
-    const { user } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
+    const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
     const validDate = validateExposureDate(args.date)
 
@@ -206,6 +206,19 @@ export const logEntry = mutation({
 
     await syncDailyRollup(ctx, args.patientId, validDate, episodeId, args.checkInId)
 
+    await ctx.db.insert('auditLogs', {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: patient.orgId,
+      patientId: args.patientId,
+      event: `Logged ${validated.domain} activity exposure (${validated.durationMinutes}m)`,
+      targetResource: 'exposureEntries',
+      resourceId: entryId,
+      action: 'create',
+      result: 'success',
+      createdAt: now,
+    })
+
     return {
       entryId,
       warnings: validated.warnings,
@@ -229,7 +242,7 @@ export const logBatch = mutation({
     warnings: v.array(exposureValidationWarningValidator),
   }),
   handler: async (ctx, args) => {
-    const { user } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
+    const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
     const validDate = validateExposureDate(args.date)
     const entryIds: Id<'exposureEntries'>[] = []
@@ -294,6 +307,18 @@ export const logBatch = mutation({
 
     if (entryIds.length > 0) {
       await syncDailyRollup(ctx, args.patientId, validDate, episodeId, args.checkInId)
+
+      await ctx.db.insert('auditLogs', {
+        actorUserId: user._id,
+        actorRole: user.role,
+        orgId: patient.orgId,
+        patientId: args.patientId,
+        event: `Logged batch of ${entryIds.length} activity exposures for ${validDate}`,
+        targetResource: 'exposureEntries',
+        action: 'create',
+        result: 'success',
+        createdAt: now,
+      })
     }
 
     return { entryIds, warnings: allWarnings }
@@ -311,7 +336,7 @@ export const updateEntry = mutation({
   },
   returns: exposureLogResultValidator,
   handler: async (ctx, args) => {
-    await requirePatientAccess(ctx, args.patientId, 'log_proxy')
+    const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
     const existing = await ctx.db.get('exposureEntries', args.entryId)
     if (!existing || existing.patientId !== args.patientId) {
@@ -354,6 +379,19 @@ export const updateEntry = mutation({
       existing.checkInId
     )
 
+    await ctx.db.insert('auditLogs', {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: patient.orgId,
+      patientId: args.patientId,
+      event: `Updated ${validated.domain} activity exposure (${validated.durationMinutes}m)`,
+      targetResource: 'exposureEntries',
+      resourceId: args.entryId,
+      action: 'update',
+      result: 'success',
+      createdAt: now,
+    })
+
     return {
       entryId: args.entryId,
       warnings: validated.warnings,
@@ -371,7 +409,7 @@ export const deleteEntry = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requirePatientAccess(ctx, args.patientId, 'log_proxy')
+    const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
     const existing = await ctx.db.get('exposureEntries', args.entryId)
     if (!existing || existing.patientId !== args.patientId) {
@@ -381,6 +419,19 @@ export const deleteEntry = mutation({
     const { date, episodeId, checkInId } = existing
     await ctx.db.delete('exposureEntries', args.entryId)
     await syncDailyRollup(ctx, args.patientId, date, episodeId, checkInId)
+
+    await ctx.db.insert('auditLogs', {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: patient.orgId,
+      patientId: args.patientId,
+      event: `Deleted ${existing.domain} activity exposure for ${date}`,
+      targetResource: 'exposureEntries',
+      resourceId: args.entryId,
+      action: 'delete',
+      result: 'success',
+      createdAt: Date.now(),
+    })
 
     return null
   },

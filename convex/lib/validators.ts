@@ -191,7 +191,17 @@ export const auditActionValidator = v.union(
   v.literal('auth_failure'),
   v.literal('safety_notification'),
   v.literal('safety_acknowledgement'),
-  v.literal('report_generate')
+  v.literal('report_generate'),
+  v.literal('export'),
+  v.literal('retention_purge'),
+  v.literal('legal_hold_apply'),
+  v.literal('legal_hold_release')
+)
+
+export const auditResultValidator = v.union(
+  v.literal('success'),
+  v.literal('failure'),
+  v.literal('denied')
 )
 
 export const symptomsObjectValidator = v.object({
@@ -1162,15 +1172,95 @@ export const auditLogDocValidator = v.object({
   _creationTime: v.number(),
   actorUserId: v.id('users'),
   actorRole: v.string(),
+  actorName: v.optional(v.string()),
+  actorEmail: v.optional(v.string()),
   orgId: v.optional(v.id('organizations')),
   patientId: v.optional(v.id('patients')),
   event: v.string(),
   targetResource: v.string(),
   resourceId: v.optional(v.string()),
   action: auditActionValidator,
+  result: v.optional(auditResultValidator),
   ipAddress: v.optional(v.string()),
   userAgent: v.optional(v.string()),
   createdAt: v.number(),
+})
+
+export const legalHoldTypeValidator = v.union(
+  v.literal('legal'),
+  v.literal('clinical'),
+  v.literal('regulatory')
+)
+
+export const legalHoldStatusValidator = v.union(
+  v.literal('active'),
+  v.literal('released')
+)
+
+export const legalHoldDocValidator = v.object({
+  _id: v.id('legalHolds'),
+  _creationTime: v.number(),
+  orgId: v.id('organizations'),
+  patientId: v.optional(v.id('patients')),
+  holdType: legalHoldTypeValidator,
+  reason: v.string(),
+  appliedByUserId: v.id('users'),
+  status: legalHoldStatusValidator,
+  appliedAt: v.number(),
+  releasedAt: v.optional(v.number()),
+  releasedByUserId: v.optional(v.id('users')),
+  notes: v.optional(v.string()),
+})
+
+export const privacyRequestTypeValidator = v.union(
+  v.literal('export'),
+  v.literal('deletion')
+)
+
+export const privacyRequestStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('processing'),
+  v.literal('completed'),
+  v.literal('rejected'),
+  v.literal('failed')
+)
+
+export const privacyRequestDocValidator = v.object({
+  _id: v.id('privacyRequests'),
+  _creationTime: v.number(),
+  patientId: v.id('patients'),
+  orgId: v.id('organizations'),
+  requestedByUserId: v.id('users'),
+  requestType: privacyRequestTypeValidator,
+  status: privacyRequestStatusValidator,
+  verificationCode: v.string(),
+  reason: v.optional(v.string()),
+  requestedAt: v.number(),
+  processedAt: v.optional(v.number()),
+  resultSummary: v.optional(v.string()),
+  exportPayload: v.optional(v.any()),
+  failureReason: v.optional(v.string()),
+  legalHoldBlocked: v.optional(v.boolean()),
+})
+
+export const retentionRunStatusValidator = v.union(
+  v.literal('completed'),
+  v.literal('failed'),
+  v.literal('dry_run')
+)
+
+export const retentionRunDocValidator = v.object({
+  _id: v.id('retentionRuns'),
+  _creationTime: v.number(),
+  jobName: v.string(),
+  startedAt: v.number(),
+  completedAt: v.number(),
+  status: retentionRunStatusValidator,
+  recordsScanned: v.number(),
+  recordsEligible: v.number(),
+  recordsPurged: v.number(),
+  recordsRetainedDueToHold: v.number(),
+  errors: v.array(v.string()),
 })
 
 // --- Safety Engine Validators ---

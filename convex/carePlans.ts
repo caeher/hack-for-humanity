@@ -386,7 +386,7 @@ export const toggleTask = mutation({
       throw new Error(`Care plan task ${args.taskId} not found.`)
     }
 
-    await requirePatientAccess(ctx, task.patientId, 'log_proxy')
+    const { patient } = await requirePatientAccess(ctx, task.patientId, 'log_proxy')
 
     const completionStatus = args.completed ? 'completed' : 'pending'
     const now = Date.now()
@@ -398,6 +398,18 @@ export const toggleTask = mutation({
       completedByUserId: args.completed ? user._id : undefined,
       updatedAt: now,
       updatedByUserId: user._id,
+    })
+
+    await recordCarePlanEvent(ctx, {
+      patientId: task.patientId,
+      carePlanId: task._id,
+      actorUserId: user._id,
+      actorRole: user.role,
+      eventType: args.completed ? 'completed' : 'reopened',
+      summary: `${args.completed ? 'Completed' : 'Reopened'} plan task: ${task.title}`,
+      previousStatus: task.completionStatus,
+      newStatus: completionStatus,
+      orgId: patient.orgId,
     })
 
     return null

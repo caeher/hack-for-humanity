@@ -27,7 +27,7 @@ async function writeAlertAudit(
     patientId: Id<'patients'>
     alertId: Id<'alerts'>
     event: string
-    action: 'update' | 'safety_acknowledgement'
+    action: 'create' | 'update' | 'safety_acknowledgement' | 'safety_notification'
     now: number
   }
 ): Promise<void> {
@@ -40,6 +40,7 @@ async function writeAlertAudit(
     targetResource: 'alerts',
     resourceId: args.alertId,
     action: args.action,
+    result: 'success',
     createdAt: args.now,
   })
 }
@@ -200,11 +201,12 @@ export const createAlert = mutation({
   },
   returns: v.id('alerts'),
   handler: async (ctx, args) => {
-    const { patient } = await requirePatientAccess(ctx, args.patientId, 'receive_alerts')
+    const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'receive_alerts')
 
     const validDetail = validateStringLength(args.detail, 'Alert detail', 2, 500)
+    const now = Date.now()
 
-    return await ctx.db.insert('alerts', {
+    const alertId = await ctx.db.insert('alerts', {
       patientId: args.patientId,
       episodeId: args.episodeId,
       orgId: patient.orgId,
@@ -212,8 +214,21 @@ export const createAlert = mutation({
       severity: args.severity,
       status: 'active',
       dangerSigns: args.dangerSigns,
-      createdAt: Date.now(),
+      createdAt: now,
     })
+
+    await writeAlertAudit(ctx, {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: patient.orgId,
+      patientId: args.patientId,
+      alertId,
+      event: `Created ${args.severity} clinical alert`,
+      action: 'create',
+      now,
+    })
+
+    return alertId
   },
 })
 
