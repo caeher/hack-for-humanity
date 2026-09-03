@@ -34,9 +34,15 @@ export function ScoreGauge({
   const resolvedTone = trendDirection ? trendToneMap[trendDirection] ?? tone : tone
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
       <div
-        className="relative grid size-32 place-items-center rounded-full"
+        role="meter"
+        aria-label="Patient-reported symptom total"
+        aria-valuenow={score}
+        aria-valuemin={0}
+        aria-valuemax={maxScore}
+        aria-valuetext={`${score} of ${maxScore} symptom severity points, ${statusText}`}
+        className="relative grid size-32 shrink-0 place-items-center rounded-full"
         style={{ background: `conic-gradient(#f9a600 ${progress}%, #f0ede7 0)` }}
       >
         <div className="grid size-24 place-items-center rounded-full bg-card shadow-xs">
@@ -46,9 +52,11 @@ export function ScoreGauge({
           </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={resolvedTone}>{statusText}</Badge>
+      <div className="flex flex-col gap-2 text-center sm:text-left">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+          <Badge tone={resolvedTone} showIndicator>
+            {statusText}
+          </Badge>
           {methodologyVersion && (
             <span className="font-mono text-[10px] text-muted-foreground">
               method v{methodologyVersion}

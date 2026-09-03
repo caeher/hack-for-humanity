@@ -2,7 +2,7 @@ import { Geist_Mono, Inter } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { shadcn } from '@clerk/ui/themes'
-import { ConvexClientProvider } from '@/components/providers/convex-client-provider'
+import { ConvexClientProvider, AccessibilityProvider } from '@/components/providers'
 import { getClerkPublishableKey } from '@/lib/env'
 import { isE2ETestMode } from '@/lib/e2e'
 import './globals.css'
@@ -21,7 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   if (isE2ETestMode) {
     return (
       <html lang="en" className="bg-background">
-        <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>{children}</body>
+        <body className={`${inter.variable} ${mono.variable} font-sans antialiased`}>
+          <AccessibilityProvider>{children}</AccessibilityProvider>
+        </body>
       </html>
     )
   }
@@ -40,7 +42,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             },
           }}
         >
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <AccessibilityProvider>{children}</AccessibilityProvider>
+          </ConvexClientProvider>
         </ClerkProvider>
       </body>
     </html>

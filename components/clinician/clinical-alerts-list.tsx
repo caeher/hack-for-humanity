@@ -38,7 +38,7 @@ function ClinicalAlertsListDemo() {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-foreground">{a.patient}</p>
-                    <Badge tone={a.severity === 'High' ? 'bad' : 'warn'}>{a.severity}</Badge>
+                    <Badge tone={a.severity === 'High' ? 'bad' : 'warn'} showIndicator>{a.severity}</Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {a.detail} · {a.time}
@@ -49,6 +49,7 @@ function ClinicalAlertsListDemo() {
                 onClick={() =>
                   setResolved(r => (r.includes(a.patient) ? r : [...r, a.patient]))
                 }
+                aria-label={`Acknowledge alert for ${a.patient}`}
                 className="rounded-lg border border-border px-3.5 py-2 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
               >
                 {resolved.includes(a.patient) ? 'Acknowledged' : 'Acknowledge'}
@@ -151,7 +152,7 @@ function ClinicalAlertsListLive() {
                       >
                         {item.patientName}
                       </Link>
-                      <Badge tone={item.alert.severity === 'High' ? 'bad' : 'warn'}>
+                      <Badge tone={item.alert.severity === 'High' ? 'bad' : 'warn'} showIndicator>
                         {item.alert.severity}
                       </Badge>
                       <Badge tone="neutral">{item.alert.status}</Badge>

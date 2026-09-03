@@ -55,10 +55,17 @@ function MessagesChatViewDemo() {
             <p className="text-sm font-semibold text-foreground">Dr. Olivia Brooks</p>
             <p className="text-xs text-muted-foreground">Usually replies during clinical hours</p>
           </div>
-          <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
+          <div
+            role="log"
+            aria-live="polite"
+            aria-label="Care team messages"
+            className="flex flex-1 flex-col gap-3 overflow-y-auto p-5"
+          >
             {messages.map((message, index) => (
               <div
                 key={index}
+                role="article"
+                aria-label={message.mine ? `You: ${message.text}` : `${message.from}: ${message.text}`}
                 className={cn(
                   'max-w-md rounded-xl p-3.5 text-sm leading-6 shadow-xs',
                   message.mine
@@ -66,15 +73,21 @@ function MessagesChatViewDemo() {
                     : 'border border-border/60 bg-muted text-foreground'
                 )}
               >
-                {message.text}
+                {!message.mine && (
+                  <p className="mb-1 text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">
+                    {message.from}
+                  </p>
+                )}
+                <p>{message.text}</p>
               </div>
             ))}
           </div>
           <form
             onSubmit={handleSend}
-            className="flex items-center gap-2 border-t border-border bg-card p-3"
+            aria-label="Compose message to care team"
+            className="flex flex-wrap sm:flex-nowrap items-center gap-2 border-t border-border bg-card p-3"
           >
-            <div className="flex-1">
+            <div className="flex-1 min-w-[200px]">
               <TextField
                 placeholder="Write a message to your care team..."
                 value={inputText}
@@ -86,6 +99,7 @@ function MessagesChatViewDemo() {
             <button
               type="submit"
               disabled={!inputText.trim()}
+              aria-label="Send message"
               className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
             >
               <Send className="size-3.5" aria-hidden="true" /> Send
@@ -299,7 +313,12 @@ function MessagesChatViewLive() {
                 <Badge tone="neutral">Secure</Badge>
               </div>
 
-              <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
+              <div
+                role="log"
+                aria-live="polite"
+                aria-label="Care team messages"
+                className="flex flex-1 flex-col gap-3 overflow-y-auto p-5"
+              >
                 {status === 'CanLoadMore' ? (
                   <button
                     type="button"
@@ -320,6 +339,8 @@ function MessagesChatViewLive() {
                 {chronologicalMessages.map(message => (
                   <div
                     key={message._id}
+                    role="article"
+                    aria-label={message.isMine ? `You: ${message.content}` : `${message.senderName}: ${message.content}`}
                     className={cn(
                       'max-w-md rounded-xl p-3.5 text-sm leading-6 shadow-xs',
                       message.isMine
@@ -348,9 +369,10 @@ function MessagesChatViewLive() {
 
               <form
                 onSubmit={handleSend}
-                className="flex items-center gap-2 border-t border-border bg-card p-3"
+                aria-label="Compose message to care team"
+                className="flex flex-wrap sm:flex-nowrap items-center gap-2 border-t border-border bg-card p-3"
               >
-                <div className="flex-1">
+                <div className="flex-1 min-w-[200px]">
                   <TextField
                     placeholder="Write a message to your care team..."
                     value={inputText}
@@ -363,6 +385,7 @@ function MessagesChatViewLive() {
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isSending}
+                  aria-label="Send message"
                   className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
                 >
                   {isSending ? (

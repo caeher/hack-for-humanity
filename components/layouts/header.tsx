@@ -22,17 +22,18 @@ import { NotificationCenter } from '@/components/notifications/notification-cent
 export interface HeaderProps {
   role: Role
   onMenuClick: () => void
+  sidebarOpen?: boolean
 }
 
-export function Header({ role, onMenuClick }: HeaderProps) {
+export function Header({ role, onMenuClick, sidebarOpen }: HeaderProps) {
   if (isE2ETestMode) {
-    return <HeaderDemoSandbox role={role} onMenuClick={onMenuClick} />
+    return <HeaderDemoSandbox role={role} onMenuClick={onMenuClick} sidebarOpen={sidebarOpen} />
   }
 
-  return <HeaderWithAuth role={role} onMenuClick={onMenuClick} />
+  return <HeaderWithAuth role={role} onMenuClick={onMenuClick} sidebarOpen={sidebarOpen} />
 }
 
-function HeaderWithAuth({ role, onMenuClick }: HeaderProps) {
+function HeaderWithAuth({ role, onMenuClick, sidebarOpen }: HeaderProps) {
   const router = useRouter()
   const { isSignedIn } = useUser()
   const currentUser = useQuery(api.users.getMe)
@@ -60,12 +61,14 @@ function HeaderWithAuth({ role, onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="no-print sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur md:px-7">
+    <header role="banner" className="no-print sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur md:px-7">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
           className="grid size-9 place-items-center rounded-lg border border-border bg-card lg:hidden text-foreground hover:bg-muted cursor-pointer"
           aria-label="Open sidebar navigation"
+          aria-expanded={Boolean(sidebarOpen)}
+          aria-controls="mobile-sidebar"
         >
           <Menu className="size-5" />
         </button>

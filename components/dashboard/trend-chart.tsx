@@ -43,7 +43,33 @@ export function TrendChart({ clinical = false, data, emptyMessage }: TrendChartP
       : 'Patient-reported symptom total trend chart'
 
   return (
-    <div className="h-64 w-full" aria-label={ariaLabel}>
+    <div className="relative h-64 w-full" role="region" aria-label={ariaLabel}>
+      {/* Screen Reader Equivalent Data Table (WCAG 1.1.1 Non-text Content) */}
+      <div className="sr-only">
+        <table>
+          <caption>
+            Longitudinal patient-reported symptom total data ({chartData.length} logged entries).
+            Range is 0 to 48.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Symptom total (0–48)</th>
+              {clinical && <th scope="col">Headache (0–6)</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {chartData.map((item, index) => (
+              <tr key={index}>
+                <td>{item.day}</td>
+                <td>{item.symptomBurden} out of 48</td>
+                {clinical && <td>{item.headache ?? 'N/A'} out of 6</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 15, right: 8, left: -24, bottom: 0 }}>
           <defs>

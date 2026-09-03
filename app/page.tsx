@@ -33,8 +33,13 @@ const portals = [
 
 export default function Page() {
   return (
-    <main className="paper-grid min-h-screen px-4 py-6 md:px-8">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-lg border bg-card px-4 py-3 warm-shadow">
+    <main className="paper-grid min-h-screen px-3.5 py-4 sm:px-4 md:px-8">
+      {/* WCAG 2.4.1 Skip Link */}
+      <a href="#landing-portals" className="skip-to-content">
+        Skip to portal selection
+      </a>
+
+      <nav aria-label="Main landing navigation" className="mx-auto flex max-w-7xl items-center justify-between rounded-lg border bg-card px-4 py-3 warm-shadow">
         <div className="flex items-center gap-3">
           <span className="grid size-9 place-items-center rounded-lg bg-foreground font-bold text-background">
             C
@@ -88,7 +93,7 @@ export default function Page() {
         <div className="flex items-center gap-2 rounded border bg-card px-3 py-1.5 font-mono text-xs font-semibold uppercase tracking-wider">
           <Sparkles className="size-3" /> One recovery picture
         </div>
-        <h1 className="max-w-4xl text-balance text-5xl font-semibold leading-[1.02] tracking-[-.06em] md:text-7xl">
+        <h1 className="max-w-4xl text-balance text-4xl sm:text-5xl font-semibold leading-[1.02] tracking-[-.06em] md:text-7xl">
           Recovery intelligence for everyone involved.
         </h1>
         <p className="max-w-2xl text-pretty text-base leading-7 text-muted-foreground md:text-lg">
@@ -111,7 +116,7 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <section id="landing-portals" aria-label="Portal selection" className="mx-auto grid max-w-7xl gap-3 md:grid-cols-2 lg:grid-cols-4">
         {portals.map(({ title, description, href, icon: Icon }) => (
           <Link
             href={href}

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from 'convex/react'
@@ -167,6 +167,11 @@ function CheckInFlowView({
   const hasDangerSign = selectedDangerSigns.length > 0
   const isDemoSession = mode === 'demo'
   const emergencyRegion = useMemo(() => detectEmergencyRegion(), [])
+  const stepHeadingRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    stepHeadingRef.current?.focus()
+  }, [step])
 
   useEffect(() => {
     if (!patientId || draftLoaded) return
@@ -258,7 +263,13 @@ function CheckInFlowView({
 
   if (step === safetyStep) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div
+        ref={stepHeadingRef}
+        tabIndex={-1}
+        aria-live="polite"
+        aria-atomic="true"
+        className="mx-auto max-w-2xl space-y-6 focus:outline-none"
+      >
         <PageHeader
           eyebrow={`Daily check-in · ${step + 1} of ${totalSteps}`}
           title="Before you finish, check for danger signs"
@@ -382,7 +393,13 @@ function CheckInFlowView({
   const value = answers[question.id] ?? 0
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div
+      ref={stepHeadingRef}
+      tabIndex={-1}
+      aria-live="polite"
+      aria-atomic="true"
+      className="mx-auto max-w-2xl space-y-6 focus:outline-none"
+    >
       <PageHeader
         eyebrow={`Daily check-in · ${step + 1} of ${totalSteps}`}
         title={question.title}
@@ -403,7 +420,7 @@ function CheckInFlowView({
           showValueBadge
         />
 
-        <div className="flex justify-between border-t border-border pt-4">
+        <div className="flex flex-wrap gap-3 justify-between border-t border-border pt-4">
           <button
             type="button"
             disabled={step === 0}
