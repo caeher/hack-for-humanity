@@ -51,6 +51,24 @@ export const CRITICAL_THRESHOLDS: MetricThreshold[] = [
     description: 'Neutral, non-stigmatizing language ≥85% (warning below 90%)',
     blocking: false,
   },
+  {
+    metric: 'nlp_precision',
+    criticalMinimum: 0.8,
+    description: 'NLP extraction field precision ≥80% on representative set',
+    blocking: true,
+  },
+  {
+    metric: 'nlp_recall',
+    criticalMinimum: 0.8,
+    description: 'NLP extraction field recall ≥80% on representative set',
+    blocking: true,
+  },
+  {
+    metric: 'nlp_unsafe_detection_rate',
+    criticalMinimum: 1.0,
+    description: 'Dangerous language in notes must trigger safety escalation (100%)',
+    blocking: true,
+  },
 ]
 
 /**

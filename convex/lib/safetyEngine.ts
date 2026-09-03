@@ -63,6 +63,7 @@ export interface SafetyEvaluationContext {
     | 'onboarding'
     | 'baseline'
     | 'free_text'
+    | 'structured_extraction'
     | 'ai_query'
     | 'longitudinal'
   symptoms?: Partial<ConcussionSymptoms>
@@ -612,5 +613,70 @@ export function evaluateBaseline(
     dangerSigns,
     daysSinceInjury,
     note: incidentContext,
+  })
+}
+
+export interface StructuredExtractionCandidate {
+  status?: 'pending' | 'confirmed' | 'discarded'
+  symptom?: { field: string; severity?: number }
+  activity?: { domain: string; activityType: string }
+  duration?: { minutes?: number }
+}
+
+/**
+ * Evaluates user-confirmed structured extraction candidates before storage.
+ * Aggregates symptom and activity exposure signals for pacing rules.
+ */
+export function evaluateStructuredExtraction(
+  candidates: StructuredExtractionCandidate[]
+): SafetyEvaluationResult {
+  const confirmed = candidates.filter(c => c.status === 'confirmed')
+
+  const symptoms: Partial<ConcussionSymptoms> = {}
+  let screenMinutes = 0
+  let cognitiveMinutes = 0
+
+  for (const candidate of confirmed) {
+    if (candidate.symptom?.field) {
+      const field = candidate.symptom.field as keyof ConcussionSymptoms
+      const severity = candidate.symptom.severity ?? 0
+      symptoms[field] = Math.max(symptoms[field] ?? 0, severity)
+    }
+
+    const minutes = candidate.duration?.minutes ?? 0
+    if (candidate.activity?.domain === 'screen') {
+      screenMinutes += minutes
+    }
+    if (
+      candidate.activity?.domain === 'cognitive' ||
+      candidate.activity?.domain === 'work_school'
+    ) {
+      cognitiveMinutes += minutes
+    }
+  }
+
+  const fields: (keyof ConcussionSymptoms)[] = [
+    'headache',
+    'dizziness',
+    'nausea',
+    'lightSensitivity',
+    'noiseSensitivity',
+    'fatigue',
+    'concentration',
+    'sleepDifficulty',
+  ]
+  let symptomTotal = 0
+  for (const field of fields) {
+    if (typeof symptoms[field] === 'number') {
+      symptomTotal += symptoms[field]!
+    }
+  }
+
+  return evaluateSafety({
+    contextType: 'structured_extraction',
+    symptoms,
+    symptomTotal,
+    screenMinutes: screenMinutes > 0 ? screenMinutes : undefined,
+    cognitiveMinutes: cognitiveMinutes > 0 ? cognitiveMinutes : undefined,
   })
 }
