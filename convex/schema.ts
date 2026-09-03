@@ -824,7 +824,14 @@ export default defineSchema({
       v.literal('auth_failure'),
       v.literal('safety_notification'),
       v.literal('safety_acknowledgement'),
-      v.literal('report_generate')
+      v.literal('report_generate'),
+      v.literal('export'),
+      v.literal('retention_purge'),
+      v.literal('legal_hold_apply'),
+      v.literal('legal_hold_release')
+    ),
+    result: v.optional(
+      v.union(v.literal('success'), v.literal('failure'), v.literal('denied'))
     ),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
@@ -835,7 +842,9 @@ export default defineSchema({
     .index('by_patientId', ['patientId'])
     .index('by_targetResource', ['targetResource'])
     .index('by_createdAt', ['createdAt'])
-    .index('by_orgId_and_createdAt', ['orgId', 'createdAt']),
+    .index('by_orgId_and_createdAt', ['orgId', 'createdAt'])
+    .index('by_orgId_and_action', ['orgId', 'action'])
+    .index('by_orgId_and_targetResource', ['orgId', 'targetResource']),
 
   // 15. Deterministic Safety Engine Evaluations & Audit Trail
   safetyEvaluations: defineTable({
@@ -1317,6 +1326,64 @@ export default defineSchema({
       searchField: 'text',
       filterFields: ['corpusVersionId'],
     }),
+
+  // 27. Legal and Clinical Holds (prevents statutory retention pruning and right-to-be-forgotten deletion)
+  legalHolds: defineTable({
+    orgId: v.id('organizations'),
+    patientId: v.optional(v.id('patients')),
+    holdType: v.union(v.literal('legal'), v.literal('clinical'), v.literal('regulatory')),
+    reason: v.string(),
+    appliedByUserId: v.id('users'),
+    status: v.union(v.literal('active'), v.literal('released')),
+    appliedAt: v.number(),
+    releasedAt: v.optional(v.number()),
+    releasedByUserId: v.optional(v.id('users')),
+    notes: v.optional(v.string()),
+  })
+    .index('by_orgId_and_status', ['orgId', 'status'])
+    .index('by_patientId_and_status', ['patientId', 'status'])
+    .index('by_orgId_and_patientId', ['orgId', 'patientId']),
+
+  // 28. Consent-Aware Privacy Requests (GDPR / HIPAA Data Export & Deletion)
+  privacyRequests: defineTable({
+    patientId: v.id('patients'),
+    orgId: v.id('organizations'),
+    requestedByUserId: v.id('users'),
+    requestType: v.union(v.literal('export'), v.literal('deletion')),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('processing'),
+      v.literal('completed'),
+      v.literal('rejected'),
+      v.literal('failed')
+    ),
+    verificationCode: v.string(),
+    reason: v.optional(v.string()),
+    requestedAt: v.number(),
+    processedAt: v.optional(v.number()),
+    resultSummary: v.optional(v.string()),
+    exportPayload: v.optional(v.any()),
+    failureReason: v.optional(v.string()),
+    legalHoldBlocked: v.optional(v.boolean()),
+  })
+    .index('by_patientId_and_status', ['patientId', 'status'])
+    .index('by_orgId_and_status', ['orgId', 'status'])
+    .index('by_requestedByUserId', ['requestedByUserId']),
+
+  // 29. Automated Retention Runs (auditability & observability of statutory pruning)
+  retentionRuns: defineTable({
+    jobName: v.string(),
+    startedAt: v.number(),
+    completedAt: v.number(),
+    status: v.union(v.literal('completed'), v.literal('failed'), v.literal('dry_run')),
+    recordsScanned: v.number(),
+    recordsEligible: v.number(),
+    recordsPurged: v.number(),
+    recordsRetainedDueToHold: v.number(),
+    errors: v.array(v.string()),
+  })
+    .index('by_jobName_and_startedAt', ['jobName', 'startedAt'])
+    .index('by_startedAt', ['startedAt']),
 })
 
 

@@ -70,7 +70,7 @@ export const logExposure = mutation({
   },
   returns: v.id('activityExposures'),
   handler: async (ctx, args) => {
-    await requirePatientAccess(ctx, args.patientId, 'log_proxy')
+    const { user, patient } = await requirePatientAccess(ctx, args.patientId, 'log_proxy')
 
     const validDate = validateDateString(args.date, 'Exposure date')
     validateScore(args.cognitiveMinutes, 0, 1440)
@@ -99,10 +99,24 @@ export const logExposure = mutation({
         sleepHours: args.sleepHours,
         sleepQuality: args.sleepQuality,
       })
+
+      await ctx.db.insert('auditLogs', {
+        actorUserId: user._id,
+        actorRole: user.role,
+        orgId: patient.orgId,
+        patientId: args.patientId,
+        event: `Updated activity exposure for ${validDate}`,
+        targetResource: 'activityExposures',
+        resourceId: existing._id,
+        action: 'update',
+        result: 'success',
+        createdAt: now,
+      })
+
       return existing._id
     }
 
-    return await ctx.db.insert('activityExposures', {
+    const exposureId = await ctx.db.insert('activityExposures', {
       patientId: args.patientId,
       episodeId: args.episodeId,
       checkInId: args.checkInId,
@@ -114,5 +128,20 @@ export const logExposure = mutation({
       sleepQuality: args.sleepQuality,
       createdAt: now,
     })
+
+    await ctx.db.insert('auditLogs', {
+      actorUserId: user._id,
+      actorRole: user.role,
+      orgId: patient.orgId,
+      patientId: args.patientId,
+      event: `Logged activity exposure for ${validDate}`,
+      targetResource: 'activityExposures',
+      resourceId: exposureId,
+      action: 'create',
+      result: 'success',
+      createdAt: now,
+    })
+
+    return exposureId
   },
 })

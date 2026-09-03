@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { api } from '@/convex/_generated/api'
 
 const mockMe = { name: 'Maya Chen', email: 'maya.chen@example.com', phone: '(415) 555-0192' }
 const mockPatient = { _id: 'patient1', timeZone: 'America/New_York' }
@@ -20,15 +21,12 @@ const mockPreferences = {
   wearableSyncStatus: 'planned_disabled' as const,
 }
 
-let queryCallCount = 0
-
 vi.mock('convex/react', () => ({
-  useQuery: vi.fn(() => {
-    const position = queryCallCount % 4
-    queryCallCount += 1
-    if (position === 0) return mockMe
-    if (position === 1) return mockPatient
-    if (position === 2) return mockPreferences
+  useQuery: vi.fn((queryFn: any) => {
+    if (queryFn === api.users.getMe) return mockMe
+    if (queryFn === api.patients.getMePatient) return mockPatient
+    if (queryFn === api.profilePreferences.getForPatient) return mockPreferences
+    if (queryFn === api.privacy?.getLatestExport) return null
     return []
   }),
   useMutation: vi.fn(() => vi.fn()),
@@ -37,10 +35,6 @@ vi.mock('convex/react', () => ({
 import { PatientProfileForm } from './patient-profile-form'
 
 describe('PatientProfileForm', () => {
-  beforeEach(() => {
-    queryCallCount = 0
-  })
-
   it('keeps wearable sync disabled with planned prototype copy', () => {
     render(<PatientProfileForm />)
 
