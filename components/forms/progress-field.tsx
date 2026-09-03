@@ -129,6 +129,8 @@ export const ProgressField = forwardRef<HTMLDivElement, ProgressFieldProps>(
                 onValueChange={handleSliderChange}
                 disabled={disabled}
                 aria-invalid={effectiveStatus === 'error'}
+                aria-label={typeof label === 'string' ? label : 'Symptom rating'}
+                aria-valuetext={max === 6 ? `${currentValue} — ${currentValue === 0 ? 'None' : currentValue <= 2 ? 'Mild' : currentValue <= 4 ? 'Moderate' : 'Severe'}` : `${currentValue}${unit}`}
                 className={cn(
                   'w-full',
                   effectiveStatus === 'error' && '[&_[role=slider]]:border-destructive',

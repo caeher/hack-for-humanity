@@ -2,6 +2,8 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
+import { CheckCircle2, AlertTriangle, AlertCircle, Info } from 'lucide-react'
+
 export type BadgeTone = 'neutral' | 'good' | 'warn' | 'bad'
 
 export const badgeVariants = cva(
@@ -11,12 +13,12 @@ export const badgeVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground',
         secondary: 'bg-secondary text-secondary-foreground',
-        destructive: 'bg-[color-mix(in_srgb,var(--destructive)_12%,white)] text-[var(--destructive)]',
+        destructive: 'bg-[color-mix(in_srgb,var(--destructive)_12%,white)] text-[var(--destructive)] border border-destructive/30',
         outline: 'border border-border text-foreground',
-        good: 'bg-[color-mix(in_srgb,var(--success)_12%,white)] text-[var(--success)]',
-        warn: 'bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-[var(--warning)]',
-        bad: 'bg-[color-mix(in_srgb,var(--destructive)_10%,white)] text-[var(--destructive)]',
-        neutral: 'bg-secondary text-muted-foreground',
+        good: 'bg-[color-mix(in_srgb,var(--success)_12%,white)] text-[var(--success)] border border-success/30',
+        warn: 'bg-[color-mix(in_srgb,var(--warning)_12%,white)] text-[var(--warning)] border border-warning/30',
+        bad: 'bg-[color-mix(in_srgb,var(--destructive)_10%,white)] text-[var(--destructive)] border border-destructive/30',
+        neutral: 'bg-secondary text-muted-foreground border border-border/60',
       },
     },
     defaultVariants: {
@@ -29,23 +31,40 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
   tone?: BadgeTone
+  showIndicator?: boolean
+  icon?: React.ComponentType<{ className?: string }>
 }
 
 export function Badge({
   children,
   tone,
   variant,
+  showIndicator = false,
+  icon: CustomIcon,
   className,
   ...props
 }: BadgeProps) {
   // If tone is explicitly passed, map it to the corresponding tone variant for backwards compatibility
   const effectiveVariant = tone || variant || 'neutral'
 
+  const ToneIcon =
+    CustomIcon ??
+    (showIndicator
+      ? effectiveVariant === 'good'
+        ? CheckCircle2
+        : effectiveVariant === 'warn'
+        ? AlertTriangle
+        : effectiveVariant === 'bad' || effectiveVariant === 'destructive'
+        ? AlertCircle
+        : null
+      : null)
+
   return (
     <span
       className={cn(badgeVariants({ variant: effectiveVariant }), className)}
       {...props}
     >
+      {ToneIcon && <ToneIcon className="mr-1 size-3 shrink-0 text-current" aria-hidden="true" />}
       {children}
     </span>
   )

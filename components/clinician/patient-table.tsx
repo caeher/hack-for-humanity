@@ -83,7 +83,7 @@ function PatientTableDemo({ onAddPatient, className }: PatientTableProps) {
               <TableCell className="font-semibold">{p.symptomTotal} / 48</TableCell>
               <TableCell>{p.checkInRate}%</TableCell>
               <TableCell>
-                <Badge tone={attentionTone(p.attention)}>{p.attention}</Badge>
+                <Badge tone={attentionTone(p.attention)} showIndicator>{p.attention}</Badge>
               </TableCell>
             </TableRow>
           ))}
@@ -171,6 +171,7 @@ function PatientTableLive({ onAddPatient, className }: PatientTableProps) {
                   <TableCell>
                     <Badge
                       tone={attentionTone(row.attention)}
+                      showIndicator
                       title={row.attentionReasons.join(' ')}
                     >
                       {row.attention}

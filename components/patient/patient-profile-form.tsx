@@ -15,15 +15,19 @@ import {
 } from '@/lib/reminderPreferences'
 import { isE2ETestMode } from '@/lib/e2e'
 import { CaregiverAccessSection } from '@/components/patient/caregiver-access-section'
+import { useAccessibility } from '@/components/providers'
 
 function PatientProfileFormDemo() {
+  const { preferences: a11yPrefs, updatePreferences: updateA11yPrefs } = useAccessibility()
   const [profileForm, setProfileForm] = useState({
     name: 'Maya Chen',
     email: 'maya@example.com',
     phone: '(415) 555-0192',
     smsReminders: true,
-    largeText: false,
-    timeZone: 'America/New_York',
+    largeText: a11yPrefs.largeText,
+    highContrast: a11yPrefs.highContrast,
+    reducedMotion: a11yPrefs.reducedMotion,
+    timeZone: a11yPrefs.timeZone,
     quietHoursStart: DEFAULT_QUIET_HOURS.start,
     quietHoursEnd: DEFAULT_QUIET_HOURS.end,
   })
@@ -43,7 +47,10 @@ function PatientProfileFormDemo() {
           <TextField label="Full Name" value={profileForm.name} onChange={() => undefined} icon={User} />
           <TextField label="Email Address" type="email" value={profileForm.email} onChange={() => undefined} icon={Mail} />
           <PhoneField label="Mobile Phone" value={profileForm.phone} onChange={() => undefined} />
-          <TextField label="Time zone" value={profileForm.timeZone} onChange={() => undefined} />
+          <TextField label="Time zone" value={profileForm.timeZone} onChange={e => {
+            setProfileForm({ ...profileForm, timeZone: e.target.value })
+            updateA11yPrefs({ timeZone: e.target.value })
+          }} />
         </Card>
         <Card className="space-y-4 p-6">
           <h2 className="border-b border-border pb-3 text-lg font-semibold text-foreground">
@@ -58,9 +65,33 @@ function PatientProfileFormDemo() {
           />
           <SwitchField
             inline
-            label="High Contrast / Large Text Mode"
+            label="Large text mode"
+            sublabel="Increase typography sizing throughout the app"
             checked={profileForm.largeText}
-            onChange={e => setProfileForm({ ...profileForm, largeText: e.target.checked })}
+            onChange={e => {
+              setProfileForm({ ...profileForm, largeText: e.target.checked })
+              updateA11yPrefs({ largeText: e.target.checked })
+            }}
+          />
+          <SwitchField
+            inline
+            label="High contrast mode"
+            sublabel="Enhance text and border contrast ratios"
+            checked={profileForm.highContrast}
+            onChange={e => {
+              setProfileForm({ ...profileForm, highContrast: e.target.checked })
+              updateA11yPrefs({ highContrast: e.target.checked })
+            }}
+          />
+          <SwitchField
+            inline
+            label="Reduce motion"
+            sublabel="Suppress non-essential animations and transitions"
+            checked={profileForm.reducedMotion}
+            onChange={e => {
+              setProfileForm({ ...profileForm, reducedMotion: e.target.checked })
+              updateA11yPrefs({ reducedMotion: e.target.checked })
+            }}
           />
           <SwitchField
             inline
@@ -101,6 +132,7 @@ function PatientProfileFormDemo() {
 }
 
 function PatientProfileFormLive() {
+  const { updatePreferences: updateA11yPrefs } = useAccessibility()
   const me = useQuery(api.users.getMe, {})
   const patient = useQuery(api.patients.getMePatient, {})
   const preferences = useQuery(
@@ -304,16 +336,33 @@ function PatientProfileFormLive() {
           </div>
           <SwitchField
             inline
-            label="High contrast / large text mode"
+            label="Large text mode"
             sublabel="Increase typography sizing throughout the app"
             checked={profileForm.largeText}
-            onChange={e => setProfileForm({ ...profileForm, largeText: e.target.checked })}
+            onChange={e => {
+              setProfileForm({ ...profileForm, largeText: e.target.checked })
+              updateA11yPrefs({ largeText: e.target.checked })
+            }}
+          />
+          <SwitchField
+            inline
+            label="High contrast mode"
+            sublabel="Enhance text and border contrast ratios"
+            checked={profileForm.highContrast}
+            onChange={e => {
+              setProfileForm({ ...profileForm, highContrast: e.target.checked })
+              updateA11yPrefs({ highContrast: e.target.checked })
+            }}
           />
           <SwitchField
             inline
             label="Reduce motion"
+            sublabel="Suppress non-essential animations and transitions"
             checked={profileForm.reducedMotion}
-            onChange={e => setProfileForm({ ...profileForm, reducedMotion: e.target.checked })}
+            onChange={e => {
+              setProfileForm({ ...profileForm, reducedMotion: e.target.checked })
+              updateA11yPrefs({ reducedMotion: e.target.checked })
+            }}
           />
           <SwitchField
             inline

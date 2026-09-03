@@ -89,7 +89,12 @@ export function RecoveryReportDocument({ payload, className }: RecoveryReportDoc
             <p className="mt-2 text-xs leading-5 text-warning">{symptoms.missingDataNote}</p>
           )}
 
-          <div className="mt-6 overflow-x-auto">
+          <div
+            role="region"
+            aria-label="Individual symptom ratings table"
+            tabIndex={0}
+            className="mt-6 overflow-x-auto focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md"
+          >
             <table className="w-full min-w-[480px] border-collapse text-sm">
               <caption className="sr-only">Individual symptom ratings by dimension</caption>
               <thead>

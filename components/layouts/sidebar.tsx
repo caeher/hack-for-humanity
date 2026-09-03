@@ -84,28 +84,57 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
   const pathname = usePathname()
   const roleNav = nav[role] || []
 
+  // Close on Escape key for keyboard accessibility
+  React.useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   return (
-    <aside
-      className={cn(
-        'no-print fixed inset-y-0 left-0 z-30 w-64 border-r border-border bg-card p-4 transition-transform lg:translate-x-0',
-        open ? 'translate-x-0' : '-translate-x-full'
+    <>
+      {/* Accessible Backdrop on mobile */}
+      {open && (
+        <div
+          className="fixed inset-0 z-25 bg-black/40 backdrop-blur-xs lg:hidden transition-opacity"
+          onClick={onClose}
+          aria-hidden="true"
+        />
       )}
-    >
-      <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between px-2 py-3">
-          <Link href={roles[role]?.home || '/'} className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-lg bg-foreground text-sm font-bold text-background">
-              C
-            </span>
-            <div>
-              <strong className="block tracking-tight text-foreground">CRI</strong>
-              <span className="text-xs text-muted-foreground">Recovery intelligence</span>
-            </div>
-          </Link>
-          <button onClick={onClose} className="lg:hidden p-1 text-muted-foreground hover:text-foreground">
-            <X className="size-5" />
-          </button>
-        </div>
+
+      <aside
+        id="mobile-sidebar"
+        role="navigation"
+        aria-label="Main sidebar navigation"
+        className={cn(
+          'no-print fixed inset-y-0 left-0 z-30 w-64 border-r border-border bg-card p-4 transition-transform lg:translate-x-0',
+          open ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between px-2 py-3">
+            <Link href={roles[role]?.home || '/'} className="flex items-center gap-3">
+              <span className="grid size-9 place-items-center rounded-lg bg-foreground text-sm font-bold text-background">
+                C
+              </span>
+              <div>
+                <strong className="block tracking-tight text-foreground">CRI</strong>
+                <span className="text-xs text-muted-foreground">Recovery intelligence</span>
+              </div>
+            </Link>
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted"
+              aria-label="Close sidebar navigation"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
 
         <div className="mt-5 flex flex-col gap-1">
           {role === 'caregiver' ? (
@@ -160,5 +189,6 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
         </div>
       </div>
     </aside>
+    </>
   )
 }
