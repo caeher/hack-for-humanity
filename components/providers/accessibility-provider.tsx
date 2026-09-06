@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { useConvex, useMutation, useQuery } from 'convex/react'
+import { useConvex, useConvexAuth, useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import {
   DEFAULT_LOCALE,
@@ -60,10 +60,11 @@ function AccessibilityConvexSync({
   setPreferences,
   persistBackendRef,
 }: AccessibilityConvexSyncProps) {
-  const patient = useQuery(api.patients.getMePatient, {})
+  const { isAuthenticated } = useConvexAuth()
+  const patient = useQuery(api.patients.getMePatient, isAuthenticated ? {} : 'skip')
   const convexPrefs = useQuery(
     api.profilePreferences.getForPatient,
-    patient?._id ? { patientId: patient._id } : 'skip'
+    isAuthenticated && patient?._id ? { patientId: patient._id } : 'skip'
   )
   const updateConvexMutation = useMutation(api.profilePreferences.updateForPatient)
 

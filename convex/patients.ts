@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server'
 import { patientDocValidator, patientStatusValidator } from './lib/validators'
-import { requirePatientAccess, requireRole, requireUser, requireOrgAccess } from './lib/auth'
+import { requirePatientAccess, requireRole, requireUser, requireOrgAccess, getCurrentUser } from './lib/auth'
 import { validateStringLength } from './lib/businessLogic'
 
 /**
@@ -147,7 +147,20 @@ export const getMePatient = query({
   args: {},
   returns: v.union(patientDocValidator, v.null()),
   handler: async ctx => {
-    const { user } = await requireUser(ctx)
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) {
+      return null
+    }
+
+    const user = await getCurrentUser(ctx)
+    if (!user) {
+      return null
+    }
+
+    if (user.status === 'Suspended') {
+      throw new Error('Forbidden: Account is suspended.')
+    }
+
     return await ctx.db
       .query('patients')
       .withIndex('by_userId', q => q.eq('userId', user._id))

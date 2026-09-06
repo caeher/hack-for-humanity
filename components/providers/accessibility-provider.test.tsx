@@ -8,6 +8,7 @@ vi.mock('convex/react', () => ({
   useQuery: () => null,
   useMutation: () => vi.fn().mockResolvedValue(null),
   useConvex: () => undefined,
+  useConvexAuth: () => ({ isAuthenticated: false, isLoading: false, isRefreshing: false }),
 }))
 
 function TestConsumer() {

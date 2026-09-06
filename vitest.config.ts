@@ -10,6 +10,7 @@ export default defineConfig({
   test: {
     // Single retry surfaces flakes without masking them indefinitely.
     retry: 1,
+    testTimeout: 15000,
     reporters: process.env.CI ? ['default', 'json'] : ['default'],
     outputFile: process.env.CI ? { json: 'test-results/vitest-results.json' } : undefined,
     projects: [

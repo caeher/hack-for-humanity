@@ -14,6 +14,12 @@ describe('Convex API Authorization & RBAC', () => {
     )
   })
 
+  test('unauthenticated caller querying getMePatient returns null safely without throwing', async () => {
+    const t = convexTest(schema, modules)
+    const result = await t.query(api.patients.getMePatient, {})
+    expect(result).toBeNull()
+  })
+
   describe('Clerk Identity Synchronization & Lifecycle', () => {
     test('brand new Clerk user self-registers and is routed to onboarding', async () => {
       const t = convexTest(schema, modules)
