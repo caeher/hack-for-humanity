@@ -83,6 +83,6 @@ test.describe('gateway and denied-access scenarios', () => {
   })
 })
 
-test('route baseline count matches expected 25 application routes', async () => {
-  expect(baseline.routes).toHaveLength(25)
+test('route baseline count matches expected 26 application routes', async () => {
+  expect(baseline.routes).toHaveLength(26)
 })
